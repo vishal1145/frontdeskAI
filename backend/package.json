@@ -1,0 +1,49 @@
+{
+  "name": "frontdesk-ai-sdk",
+  "version": "1.0.0",
+  "description": "FrontDesk AI Voice & Chat Receptionist SDK & Prompt Asset Setup for Local Clinics",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "PATH=\"$HOME/.nvm/versions/node/v20.20.2/bin:$PATH\" tsx src/agent/livekitVoiceAgent.ts start",
+    "start:livekit": "PATH=\"$HOME/.nvm/versions/node/v20.20.2/bin:$PATH\" tsx src/agent/livekitVoiceAgent.ts start",
+    "api": "PATH=\"$HOME/.nvm/versions/node/v20.20.2/bin:$PATH\" tsx src/server/apiServer.ts",
+    "test": "tsx scripts/test_livekit_end_to_end.ts",
+    "db:check": "tsx scripts/check_database.ts"
+  },
+  "keywords": [
+    "ai-receptionist",
+    "gemini-api",
+    "hinglish",
+    "voice-ai",
+    "clinic-booking",
+    "frontdesk"
+  ],
+  "author": "Google DeepMind Antigravity Pair",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1156.0",
+    "@aws-sdk/s3-request-presigner": "^3.1156.0",
+    "@google/genai": "latest",
+    "@livekit/agents": "^1.9.3",
+    "@livekit/agents-plugin-deepgram": "^1.9.3",
+    "@livekit/agents-plugin-google": "^1.9.3",
+    "@livekit/agents-plugin-silero": "^1.9.3",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/pg": "^8.23.1",
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.7",
+    "express": "^5.3.0",
+    "livekit-server-sdk": "^2.19.1",
+    "pg": "^8.23.1",
+    "sharp": "^0.35.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "agent_id": "frontdesk-ai-receptionist",
+  "name": "FrontDesk AI",
+  "version": "1.0.0",
+  "default_model": "gemini-3.8-flash",
+  "temperature": 0.2,
+  "top_p": 0.95,
+  "supported_languages": ["en", "hi", "hinglish"],
+  "clinic_defaults": {
+    "clinic_name": "Care & Cure Clinic",
+    "address": "Plot 42, Sector 15, Near City Metro, Gurugram, Haryana 122001",
+    "working_hours": "Monday to Saturday, 9:00 AM - 8:00 PM (Sunday closed)",
+    "contact_phone": "+91 98765 43210",
+    "doctors": [
+      {
+        "name": "Dr. Ananya Sharma",
+        "specialties": ["General Physician", "Internal Medicine"],
+        "timings": "9:00 AM - 1:00 PM & 4:00 PM - 8:00 PM"
+      },
+      {
+        "name": "Dr. Rajesh Gupta",
+        "specialties": ["Dentist", "Orthodontist"],
+        "timings": "10:00 AM - 2:00 PM & 5:00 PM - 8:00 PM"
+      }
+    ],
+    "services": [
+      "General Consultation",
+      "Dental Checkup & Cleaning",
+      "Blood Pressure & Sugar Checkup",
+      "Follow-up Consultation",
+      "Routine Health Checkup"
+    ]
+  },
+  "tools": [
+    "check_availability",
+    "book_appointment"
+  ],
+  "safety": {
+    "refuse_medical_advice": true,
+    "detect_emergency_keywords": [
+      "chest pain",
+      "unconscious",
+      "heavy bleeding",
+      "shortness of breath",
+      "heart attack",
+      "stroke",
+      "sans nahi aarah"
+    ]
+  }
+}
