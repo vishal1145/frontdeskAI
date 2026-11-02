@@ -1,3 +1,5 @@
+import { doctorSlotKey } from "./doctorScheduleService.js";
+
 export interface SlotLock {
   slotIso: string;
   clinicId: string;
@@ -12,11 +14,11 @@ export interface SlotLock {
  * Ensures zero double-bookings when concurrent callers request the exact same slot at the exact same millisecond.
  */
 class SlotLockManager {
-  private locks: Map<string, SlotLock> = new Map(); // key: `${clinicId}:${slotIso}`
+  private locks: Map<string, SlotLock> = new Map(); // key: `${clinicId}:${slotIso}:${doctor}`
   private mutexLocks: Map<string, Promise<void>> = new Map();
 
-  private getKey(clinicId: string, slotIso: string): string {
-    return `${clinicId}:${slotIso}`;
+  private getKey(clinicId: string, slotIso: string, doctorName: string): string {
+    return `${clinicId}:${doctorSlotKey(slotIso, doctorName)}`;
   }
 
   /**
@@ -26,11 +28,12 @@ class SlotLockManager {
   public async acquireLock(
     clinicId: string,
     slotIso: string,
+    doctorName: string,
     patientName: string,
     patientPhone: string,
     bookingId: string
   ): Promise<{ success: boolean; existingLock?: SlotLock }> {
-    const key = this.getKey(clinicId, slotIso);
+    const key = this.getKey(clinicId, slotIso, doctorName);
 
     // Atomic Mutex acquisition for this specific key
     while (this.mutexLocks.has(key)) {
@@ -70,16 +73,16 @@ class SlotLockManager {
   /**
    * Checks if a slot is currently locked/booked.
    */
-  public isLocked(clinicId: string, slotIso: string): boolean {
-    const key = this.getKey(clinicId, slotIso);
+  public isLocked(clinicId: string, slotIso: string, doctorName: string): boolean {
+    const key = this.getKey(clinicId, slotIso, doctorName);
     return this.locks.has(key);
   }
 
   /**
    * Releases an acquired slot lock.
    */
-  public releaseLock(clinicId: string, slotIso: string): void {
-    const key = this.getKey(clinicId, slotIso);
+  public releaseLock(clinicId: string, slotIso: string, doctorName: string): void {
+    const key = this.getKey(clinicId, slotIso, doctorName);
     this.locks.delete(key);
   }
 

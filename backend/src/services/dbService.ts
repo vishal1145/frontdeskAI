@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import { BookingParams, BookingResult } from "../types/index.js";
 import { slotLockManager } from "./slotLockManager.js";
+import { doctorSlotKey } from "./doctorScheduleService.js";
 import { clinicRegistry } from "../config/clinicRegistry.js";
 
 dotenv.config();
@@ -119,8 +120,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     doctor_name VARCHAR(255) NOT NULL,
     service_type VARCHAR(128) NOT NULL,
     status VARCHAR(32) DEFAULT 'confirmed',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT unique_clinic_slot UNIQUE (clinic_id, slot_iso_timestamp)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS super_admins (
@@ -133,6 +133,7 @@ CREATE TABLE IF NOT EXISTS super_admins (
 );
 
 CREATE INDEX IF NOT EXISTS idx_appointments_clinic_date ON appointments (clinic_id, slot_iso_timestamp);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_clinic_doctor_slot ON appointments (clinic_id, doctor_name, slot_iso_timestamp) WHERE status <> 'cancelled';
     `;
   }
 
@@ -174,15 +175,16 @@ CREATE INDEX IF NOT EXISTS idx_appointments_clinic_date ON appointments (clinic_
     params: BookingParams & { clinic_id: string }
   ): Promise<BookingResult> {
     const { clinic_id, patient_name, patient_phone, slot_iso_timestamp, service_type, doctor_name } = params;
-    const key = `${clinic_id}:${slot_iso_timestamp}`;
 
     const clinicInfo = clinicRegistry.getClinicById(clinic_id) || clinicRegistry.getClinicByPhone(clinic_id);
     const resolvedAddress = clinicInfo ? `${clinicInfo.clinic_name}, ${clinicInfo.address}` : "Clinic Reception Desk";
     const resolvedDoctor = doctor_name || clinicInfo?.doctors[0]?.name || "Clinic Doctor";
+    const key = `${clinic_id}:${doctorSlotKey(slot_iso_timestamp, resolvedDoctor)}`;
 
-    // 1. Atomic lock check
-    if (this.mockAppointmentsTable.has(key)) {
-      const existing = this.mockAppointmentsTable.get(key)!;
+    // 1. Atomic lock check. With PostgreSQL the unique index decides, because this in-memory copy
+    // cannot see cancellations made by other processes.
+    const existing = this.pgPool ? undefined : this.mockAppointmentsTable.get(key);
+    if (existing && existing.status === "confirmed") {
       return {
         status: "slot_taken",
         patient_name,
@@ -210,6 +212,16 @@ CREATE INDEX IF NOT EXISTS idx_appointments_clinic_date ON appointments (clinic_
       // fallback
     }
 
+    const saveFailed = (): BookingResult => ({
+      status: "failed",
+      patient_name,
+      slot_iso_timestamp,
+      display_time: displayTime,
+      doctor_name: resolvedDoctor,
+      clinic_address: resolvedAddress,
+      error_message: "Maaf kijiye, abhi appointment save nahi ho payi. Kripya thodi der baad dobara try karein ya reception se baat karein."
+    });
+
     const record: DatabaseAppointmentRecord = {
       booking_id: bookingId,
       clinic_id,
@@ -231,7 +243,7 @@ CREATE INDEX IF NOT EXISTS idx_appointments_clinic_date ON appointments (clinic_
           `INSERT INTO appointments (
             booking_id, clinic_id, patient_name, patient_phone, slot_iso_timestamp, display_time, doctor_name, service_type, status, created_at
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-          ON CONFLICT (clinic_id, slot_iso_timestamp) DO NOTHING`,
+          ON CONFLICT DO NOTHING`,
           [
             record.booking_id,
             record.clinic_id,
@@ -260,6 +272,7 @@ CREATE INDEX IF NOT EXISTS idx_appointments_clinic_date ON appointments (clinic_
         console.log(`[POSTGRES DB SUCCESS] Appointment ${bookingId} committed directly to Supabase PostgreSQL.`);
       } catch (dbErr: any) {
         console.error(`[POSTGRES DB ERROR] Failed to persist: ${dbErr.message}`);
+        return saveFailed();
       }
     } else if (this.supabaseUrl && this.supabaseKey) {
       try {
@@ -277,14 +290,20 @@ CREATE INDEX IF NOT EXISTS idx_appointments_clinic_date ON appointments (clinic_
 
         if (resp.ok) {
           console.log(`[SUPABASE SUCCESS] Appointment ${bookingId} committed to Supabase Cloud DB.`);
+        } else {
+          console.error(`[SUPABASE DB ERROR] Insert rejected with HTTP ${resp.status}`);
+          return saveFailed();
         }
       } catch (err: any) {
         console.error(`[SUPABASE DB ERROR] ${err.message}`);
+        return saveFailed();
       }
     }
 
-    // Always commit to in-memory map for fast atomic lock checks
-    this.mockAppointmentsTable.set(key, record);
+    // Without PostgreSQL, this map is what later availability and booking checks read
+    if (!this.pgPool) {
+      this.mockAppointmentsTable.set(key, record);
+    }
     console.log(`[PRODUCTION DB PERSIST] Inserted Appointment ${bookingId} into DB table 'appointments' for Clinic ${clinic_id}`);
 
     return {
@@ -299,25 +318,25 @@ CREATE INDEX IF NOT EXISTS idx_appointments_clinic_date ON appointments (clinic_
   }
 
   /**
-   * Fetches all booked slots from DB for a given clinic.
+   * Fetches booked slots for a clinic, keyed per doctor with doctorSlotKey().
    */
-  public async getBookedSlotsFromDb(clinicId: string): Promise<string[]> {
+  public async getBookedDoctorSlotsFromDb(clinicId: string): Promise<Set<string>> {
     if (this.pgPool) {
       try {
         const res = await this.pgPool.query(
-          `SELECT slot_iso_timestamp FROM appointments WHERE clinic_id = $1 AND status = 'confirmed'`,
+          `SELECT slot_iso_timestamp, doctor_name FROM appointments WHERE clinic_id = $1 AND status = 'confirmed'`,
           [clinicId]
         );
-        return res.rows.map((r: any) => r.slot_iso_timestamp);
+        return new Set(res.rows.map((r: any) => doctorSlotKey(r.slot_iso_timestamp, r.doctor_name)));
       } catch (err: any) {
         console.error(`[POSTGRES FETCH ERROR] ${err.message}`);
       }
     }
 
-    const bookedSlots: string[] = [];
+    const bookedSlots = new Set<string>();
     for (const [key, record] of this.mockAppointmentsTable.entries()) {
       if (key.startsWith(`${clinicId}:`) && record.status === "confirmed") {
-        bookedSlots.push(record.slot_iso_timestamp);
+        bookedSlots.add(doctorSlotKey(record.slot_iso_timestamp, record.doctor_name));
       }
     }
     return bookedSlots;
@@ -556,13 +575,13 @@ CREATE INDEX IF NOT EXISTS idx_appointments_clinic_date ON appointments (clinic_
     if (this.pgPool) {
       try {
         const res = await this.pgPool.query(
-          `UPDATE appointments SET status = 'cancelled' WHERE clinic_id = $1 AND booking_id = $2 RETURNING slot_iso_timestamp;`,
+          `UPDATE appointments SET status = 'cancelled' WHERE clinic_id = $1 AND booking_id = $2 RETURNING slot_iso_timestamp, doctor_name`,
           [clinicId, bookingId]
         );
         if (res.rows.length > 0) {
           const slotIso = res.rows[0].slot_iso_timestamp;
           if (slotIso) {
-            slotLockManager.releaseLock(clinicId, slotIso);
+            slotLockManager.releaseLock(clinicId, slotIso, res.rows[0].doctor_name);
           }
           return true;
         }
@@ -575,7 +594,7 @@ CREATE INDEX IF NOT EXISTS idx_appointments_clinic_date ON appointments (clinic_
     for (const [key, record] of this.mockAppointmentsTable.entries()) {
       if (record.clinic_id === clinicId && record.booking_id === bookingId) {
         record.status = "cancelled";
-        slotLockManager.releaseLock(clinicId, record.slot_iso_timestamp);
+        slotLockManager.releaseLock(clinicId, record.slot_iso_timestamp, record.doctor_name);
         return true;
       }
     }

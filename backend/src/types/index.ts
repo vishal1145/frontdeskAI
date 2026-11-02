@@ -4,6 +4,8 @@ export interface ClinicDoctor {
   specialization?: string;
   specialty?: string;
   timings?: string;
+  services?: string[];
+  working_days?: number[]; // 0 = Sunday ... 6 = Saturday
 }
 
 export interface ClinicConfig {
@@ -47,6 +49,8 @@ export interface AvailabilityResult {
   is_available: boolean;
   matching_slots: SlotOption[];
   alternative_slots: SlotOption[];
+  needs_doctor_selection?: boolean;
+  eligible_doctors?: string[];
   notes?: string;
 }
 

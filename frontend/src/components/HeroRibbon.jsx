@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { heroVoice, useCanvasLoop } from '../motion/heroVoice';
+import { colors, rgbChannels } from '../../design-tokens.js';
 
 // ─── The FrontDesk AI voice ribbon ─────────────────────────────────────────────────────────────
 // A sculptural, full-bleed sound wave: many fine strands share one flowing centreline and twist
@@ -8,9 +9,11 @@ import { heroVoice, useCanvasLoop } from '../motion/heroVoice';
 // answering. Driven by `heroVoice` (entrance reveal, pointer, scroll settle).
 
 const TAU = Math.PI * 2;
-const AZURE = [43, 138, 247];
-const CYAN = [96, 247, 252];
-const DEEP = [23, 76, 150];
+const AZURE = rgbChannels(colors.blue[500]);
+const CYAN = rgbChannels(colors.glow);
+const DEEP = rgbChannels(colors.blue[800]);
+const CYAN_LIGHT = rgbChannels(colors.tint.cyan[5]);
+const SPARK = rgbChannels(colors.tint.cyan[12]);
 
 const smooth = (a, b, x) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -81,10 +84,10 @@ function drawRibbon(ctx, w, h, t) {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   const glow = ctx.createLinearGradient(0, 0, w, 0);
-  glow.addColorStop(0, 'rgba(43,138,247,0)');
-  glow.addColorStop(0.35, `rgba(43,138,247,${0.1 + 0.06 * energy})`);
-  glow.addColorStop(0.7, `rgba(96,247,252,${0.16 + 0.1 * energy})`);
-  glow.addColorStop(1, 'rgba(43,138,247,0)');
+  glow.addColorStop(0, `rgba(${AZURE.join(',')},0)`);
+  glow.addColorStop(0.35, `rgba(${AZURE.join(',')},${0.1 + 0.06 * energy})`);
+  glow.addColorStop(0.7, `rgba(${CYAN.join(',')},${0.16 + 0.1 * energy})`);
+  glow.addColorStop(1, `rgba(${AZURE.join(',')},0)`);
   ctx.strokeStyle = glow;
   ctx.lineWidth = W * 1.9 * widthK;
   ctx.beginPath();
@@ -122,8 +125,8 @@ function drawRibbon(ctx, w, h, t) {
   if (uMax < 1) {
     const k = kMax;
     const r = ctx.createRadialGradient(cx[k], cyl[k], 0, cx[k], cyl[k], W * 0.9);
-    r.addColorStop(0, 'rgba(160,250,255,0.85)');
-    r.addColorStop(1, 'rgba(96,247,252,0)');
+    r.addColorStop(0, `rgba(${CYAN_LIGHT.join(',')},0.85)`);
+    r.addColorStop(1, `rgba(${CYAN.join(',')},0)`);
     ctx.fillStyle = r;
     ctx.beginPath();
     ctx.arc(cx[k], cyl[k], W * 0.9, 0, TAU);
@@ -149,7 +152,7 @@ function drawRibbon(ctx, w, h, t) {
       ctx.beginPath();
       ctx.arc(cx[k], y, rad * 5, 0, TAU);
       ctx.fill();
-      ctx.fillStyle = `rgba(235,253,255,${Math.min(1, a).toFixed(3)})`;
+      ctx.fillStyle = `rgba(${SPARK.join(',')},${Math.min(1, a).toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(cx[k], y, rad, 0, TAU);
       ctx.fill();

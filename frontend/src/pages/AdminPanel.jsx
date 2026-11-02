@@ -174,73 +174,73 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
 
   return (
     // data-motion-scope opts this tool page out of the marketing site's magnetic/tilt effects.
-    <div className="relative min-h-[calc(100vh-4.25rem)] pb-20 text-ink before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-[32rem] before:z-0 before:bg-[radial-gradient(40rem_18rem_at_12%_0%,rgba(162,232,253,0.45),transparent_70%),radial-gradient(36rem_20rem_at_92%_8%,rgba(188,220,255,0.5),transparent_70%)] before:pointer-events-none" data-motion-scope="admin">
+    <div className="relative min-h-[calc(100vh-4.25rem)] pb-20 text-ink before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-[32rem] before:z-0 before:bg-[radial-gradient(40rem_18rem_at_12%_0%,theme(colors.tint.cyan.6_/_0.45),transparent_70%),radial-gradient(36rem_20rem_at_92%_8%,theme(colors.blue.200_/_0.5),transparent_70%)] before:pointer-events-none" data-motion-scope="admin">
 
       {/* Main Content Area */}
       <div className="relative z-[1] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 space-y-8">
         {/* KPI Summary Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Admin metrics">
           {/* Card 1: Registered Businesses */}
-          <div className="relative p-[1.125rem_1.25rem_1.25rem] rounded-[14px] bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_rgba(14,26,46,0.04),0_10px_28px_-18px_rgba(23,76,150,0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-[2px] before:bg-[#1570E0] before:opacity-85 cx-enter" style={{ '--i': 1 }}>
+          <div className="relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-blue-600 before:opacity-85 cx-enter" style={{ '--i': 1 }}>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold tracking-[0.04em] uppercase text-slate-500">Registered Businesses</span>
-              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-[9px] text-[#1570E0] bg-[#EEF6FF]">
+              <span className="text-xs font-semibold tracking-wide-40 uppercase text-slate-500">Registered Businesses</span>
+              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-blue-600 bg-blue-50">
                 <Building2 className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 mt-3.5 text-[1.875rem] font-semibold leading-none tracking-[-0.025em] tabular-nums text-ink">
+            <div className="flex items-baseline gap-1.5 mt-3.5 text-30 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
               {clinics.length}
             </div>
-            <p className="mt-2.5 text-[0.8125rem] leading-[1.4] text-slate-500">
-              <span><strong className="font-semibold text-[#3B4A63]">100% Dynamic</strong> &middot; Stored in Supabase</span>
+            <p className="mt-2.5 text-13 leading-ratio-140 text-slate-500">
+              <span><strong className="font-semibold text-ink-soft">100% Dynamic</strong> &middot; Stored in Supabase</span>
             </p>
           </div>
 
           {/* Card 2: Total Calls Logged */}
-          <div className="relative p-[1.125rem_1.25rem_1.25rem] rounded-[14px] bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_rgba(14,26,46,0.04),0_10px_28px_-18px_rgba(23,76,150,0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-[2px] before:bg-[#6366F1] before:opacity-85 cx-enter" style={{ '--i': 2 }}>
+          <div className="relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-tint-blue-30 before:opacity-85 cx-enter" style={{ '--i': 2 }}>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold tracking-[0.04em] uppercase text-slate-500">Total Calls Logged</span>
-              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-[9px] text-[#6366F1] bg-[#EEF2FF]">
+              <span className="text-xs font-semibold tracking-wide-40 uppercase text-slate-500">Total Calls Logged</span>
+              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-tint-blue-30 bg-tint-blue-9">
                 <Phone className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 mt-3.5 text-[1.875rem] font-semibold leading-none tracking-[-0.025em] tabular-nums text-ink">
+            <div className="flex items-baseline gap-1.5 mt-3.5 text-30 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
               {totalCalls}
             </div>
-            <p className="mt-2.5 text-[0.8125rem] leading-[1.4] text-slate-500">
+            <p className="mt-2.5 text-13 leading-ratio-140 text-slate-500">
               <span>AI Handled &amp; Vobiz CDRs</span>
             </p>
           </div>
 
           {/* Card 3: Appointments Booked */}
-          <div className="relative p-[1.125rem_1.25rem_1.25rem] rounded-[14px] bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_rgba(14,26,46,0.04),0_10px_28px_-18px_rgba(23,76,150,0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-[2px] before:bg-[#10B981] before:opacity-85 cx-enter" style={{ '--i': 3 }}>
+          <div className="relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-tint-green-7 before:opacity-85 cx-enter" style={{ '--i': 3 }}>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold tracking-[0.04em] uppercase text-slate-500">Appointments Booked</span>
-              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-[9px] text-[#10B981] bg-[#ECFDF5]">
+              <span className="text-xs font-semibold tracking-wide-40 uppercase text-slate-500">Appointments Booked</span>
+              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-tint-green-7 bg-tint-green-2">
                 <Calendar className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 mt-3.5 text-[1.875rem] font-semibold leading-none tracking-[-0.025em] tabular-nums text-ink">
+            <div className="flex items-baseline gap-1.5 mt-3.5 text-30 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
               {totalAppointments}
             </div>
-            <p className="mt-2.5 text-[0.8125rem] leading-[1.4] text-slate-500">
-              <span><strong className="font-semibold text-[#3B4A63]">Atomic DB Locked</strong> Slots</span>
+            <p className="mt-2.5 text-13 leading-ratio-140 text-slate-500">
+              <span><strong className="font-semibold text-ink-soft">Atomic DB Locked</strong> Slots</span>
             </p>
           </div>
 
           {/* Card 4: Voice AI Engine */}
-          <div className="relative p-[1.125rem_1.25rem_1.25rem] rounded-[14px] bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_rgba(14,26,46,0.04),0_10px_28px_-18px_rgba(23,76,150,0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-[2px] before:bg-[#0284C7] before:opacity-85 cx-enter" style={{ '--i': 4 }}>
+          <div className="relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-accent-sapphire before:opacity-85 cx-enter" style={{ '--i': 4 }}>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold tracking-[0.04em] uppercase text-slate-500">Voice AI Engine</span>
-              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-[9px] text-[#0284C7] bg-[#F0F9FF]">
+              <span className="text-xs font-semibold tracking-wide-40 uppercase text-slate-500">Voice AI Engine</span>
+              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-accent-sapphire bg-accent-sapphire-light">
                 <Sparkles className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 mt-3.5 text-[1.35rem] leading-snug font-semibold tracking-[-0.025em] text-ink">
+            <div className="flex items-baseline gap-1.5 mt-3.5 text-21-6 leading-snug font-semibold tracking-tight-25 text-ink">
               Gemini 2.5 + LiveKit
             </div>
-            <p className="mt-2.5 text-[0.8125rem] leading-[1.4] text-slate-500">
-              <span><strong className="font-semibold text-[#3B4A63]">Active &amp; Ready</strong> for incoming SIP calls</span>
+            <p className="mt-2.5 text-13 leading-ratio-140 text-slate-500">
+              <span><strong className="font-semibold text-ink-soft">Active &amp; Ready</strong> for incoming SIP calls</span>
             </p>
           </div>
         </section>
@@ -254,16 +254,16 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by business name, or address..."
-              className="w-full h-[2.875rem] pl-[2.6rem] pr-[0.95rem] rounded-full text-sm text-ink bg-white/85 border border-slate-900/[0.14] shadow-[0_1px_2px_rgba(14,26,46,0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-[#2B8AF7] focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+              className="w-full h-[2.875rem] pl-s-41-6 pr-s-15-2 rounded-full text-sm text-ink bg-white/85 border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
             />
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               onClick={() => setActivePage('admin-create')}
-              className="inline-flex items-center gap-2 pl-[0.45rem] pr-[1.1rem] h-10 rounded-full text-sm font-semibold whitespace-nowrap cursor-pointer text-white bg-gradient-to-b from-[#2B8AF7] to-[#1570E0] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_12px_26px_-12px_rgba(21,112,224,0.75)] hover:not(:disabled):-translate-y-px hover:not(:disabled):shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_16px_30px_-12px_rgba(21,112,224,0.85)] active:not(:disabled):translate-y-0 transition-all duration-200 group"
+              className="inline-flex items-center gap-2 pl-s-7-2 pr-s-17-6 h-10 rounded-full text-sm font-semibold whitespace-nowrap cursor-pointer text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[inset_0_1px_0_theme(colors.white_/_0.22),0_12px_26px_-12px_theme(colors.blue.600_/_0.75)] hover:not(:disabled):-translate-y-px hover:not(:disabled):shadow-[inset_0_1px_0_theme(colors.white_/_0.22),0_16px_30px_-12px_theme(colors.blue.600_/_0.85)] active:not(:disabled):translate-y-0 transition-all duration-200 group"
             >
-              <span className="grid place-items-center w-[1.9rem] h-[1.9rem] rounded-full bg-white/[0.18] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.25)] transition-transform duration-350 ease-out group-hover:rotate-90" aria-hidden="true"><Plus className="w-4 h-4" /></span>
+              <span className="grid place-items-center w-[1.9rem] h-[1.9rem] rounded-full bg-white/[0.18] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.25)] transition-transform duration-350 ease-out group-hover:rotate-90" aria-hidden="true"><Plus className="w-4 h-4" /></span>
               <span>Create New Business</span>
             </button>
           </div>
@@ -277,7 +277,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
           </div>
         ) : filteredClinics.length === 0 ? (
           <div className="py-16 text-center space-y-3">
-            <div className="grid place-items-center flex-none w-14 h-14 rounded-2xl text-white bg-gradient-to-b from-[#2B8AF7] to-[#1570E0] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_0_4px_rgba(43,138,247,0.1),0_10px_22px_-10px_rgba(21,112,224,0.7)] mx-auto">
+            <div className="grid place-items-center flex-none w-14 h-14 rounded-2xl text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[inset_0_1px_0_theme(colors.white_/_0.25),0_0_0_4px_theme(colors.blue.500_/_0.1),0_10px_22px_-10px_theme(colors.blue.600_/_0.7)] mx-auto">
               <Building2 className="w-6 h-6" />
             </div>
             <div>
@@ -288,25 +288,25 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
             </div>
             <button
               onClick={() => setActivePage('admin-create')}
-              className="inline-flex items-center gap-2 pl-[0.45rem] pr-[1.1rem] h-10 rounded-full text-sm font-semibold whitespace-nowrap cursor-pointer text-white bg-gradient-to-b from-[#2B8AF7] to-[#1570E0] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_12px_26px_-12px_rgba(21,112,224,0.75)] hover:not(:disabled):-translate-y-px hover:not(:disabled):shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_16px_30px_-12px_rgba(21,112,224,0.85)] active:not(:disabled):translate-y-0 transition-all duration-200 group mx-auto"
+              className="inline-flex items-center gap-2 pl-s-7-2 pr-s-17-6 h-10 rounded-full text-sm font-semibold whitespace-nowrap cursor-pointer text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[inset_0_1px_0_theme(colors.white_/_0.22),0_12px_26px_-12px_theme(colors.blue.600_/_0.75)] hover:not(:disabled):-translate-y-px hover:not(:disabled):shadow-[inset_0_1px_0_theme(colors.white_/_0.22),0_16px_30px_-12px_theme(colors.blue.600_/_0.85)] active:not(:disabled):translate-y-0 transition-all duration-200 group mx-auto"
             >
-              <span className="grid place-items-center w-[1.9rem] h-[1.9rem] rounded-full bg-white/[0.18] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.25)] transition-transform duration-350 ease-out group-hover:rotate-90" aria-hidden="true"><Plus className="w-4 h-4" /></span>
+              <span className="grid place-items-center w-[1.9rem] h-[1.9rem] rounded-full bg-white/[0.18] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.25)] transition-transform duration-350 ease-out group-hover:rotate-90" aria-hidden="true"><Plus className="w-4 h-4" /></span>
               <span>Create First Business</span>
             </button>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-[1.5rem] bg-white/[0.72] backdrop-blur-[14px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.9),0_0_0_1px_rgba(15,23,42,0.08),0_1px_2px_rgba(14,26,46,0.04),0_18px_40px_-26px_rgba(23,76,150,0.35)] adm-rise" style={{ '--i': 4 }}>
+          <div className="overflow-hidden rounded-24 bg-white/[0.72] backdrop-blur-[14px] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.9),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] adm-rise" style={{ '--i': 4 }}>
             <div className="overflow-x-auto [overscroll-behavior-x:contain]">
-              <table className="w-full min-w-[60rem] border-separate border-spacing-0 text-[0.8125rem]">
+              <table className="w-full min-w-[60rem] border-separate border-spacing-0 text-13">
                 <thead>
                   <tr>
-                    <th scope="col" className="sticky top-0 left-0 z-20 pl-5 pr-[0.85rem] py-[0.8rem] text-left text-[0.6875rem] font-semibold tracking-[0.08em] uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-[#F6FAFF] to-[#EEF5FD] border-b border-slate-900/[0.08]">Business</th>
-                    <th scope="col" className="sticky top-0 z-10 px-[0.85rem] py-[0.8rem] text-left text-[0.6875rem] font-semibold tracking-[0.08em] uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-[#F6FAFF] to-[#EEF5FD] border-b border-slate-900/[0.08]">Location</th>
-                    <th scope="col" className="sticky top-0 z-10 px-[0.85rem] py-[0.8rem] text-left text-[0.6875rem] font-semibold tracking-[0.08em] uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-[#F6FAFF] to-[#EEF5FD] border-b border-slate-900/[0.08]">Hours</th>
-                    <th scope="col" className="sticky top-0 z-10 px-[0.85rem] py-[0.8rem] text-left text-[0.6875rem] font-semibold tracking-[0.08em] uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-[#F6FAFF] to-[#EEF5FD] border-b border-slate-900/[0.08]">Doctors</th>
-                    <th scope="col" className="sticky top-0 z-10 px-[0.85rem] py-[0.8rem] text-left text-[0.6875rem] font-semibold tracking-[0.08em] uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-[#F6FAFF] to-[#EEF5FD] border-b border-slate-900/[0.08]">Services</th>
-                    <th scope="col" className="sticky top-0 z-10 px-[0.85rem] py-[0.8rem] text-left text-[0.6875rem] font-semibold tracking-[0.08em] uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-[#F6FAFF] to-[#EEF5FD] border-b border-slate-900/[0.08]">Activity</th>
-                    <th scope="col" className="sticky top-0 z-10 pl-[0.85rem] pr-5 py-[0.8rem] text-center text-[0.6875rem] font-semibold tracking-[0.08em] uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-[#F6FAFF] to-[#EEF5FD] border-b border-slate-900/[0.08]">Status</th>
+                    <th scope="col" className="sticky top-0 left-0 z-20 pl-5 pr-s-13-6 py-s-12-8 text-left text-11 font-semibold tracking-wide-80 uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-tint-blue-3 to-tint-blue-11 border-b border-slate-900/[0.08]">Business</th>
+                    <th scope="col" className="sticky top-0 z-10 px-s-13-6 py-s-12-8 text-left text-11 font-semibold tracking-wide-80 uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-tint-blue-3 to-tint-blue-11 border-b border-slate-900/[0.08]">Location</th>
+                    <th scope="col" className="sticky top-0 z-10 px-s-13-6 py-s-12-8 text-left text-11 font-semibold tracking-wide-80 uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-tint-blue-3 to-tint-blue-11 border-b border-slate-900/[0.08]">Hours</th>
+                    <th scope="col" className="sticky top-0 z-10 px-s-13-6 py-s-12-8 text-left text-11 font-semibold tracking-wide-80 uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-tint-blue-3 to-tint-blue-11 border-b border-slate-900/[0.08]">Doctors</th>
+                    <th scope="col" className="sticky top-0 z-10 px-s-13-6 py-s-12-8 text-left text-11 font-semibold tracking-wide-80 uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-tint-blue-3 to-tint-blue-11 border-b border-slate-900/[0.08]">Services</th>
+                    <th scope="col" className="sticky top-0 z-10 px-s-13-6 py-s-12-8 text-left text-11 font-semibold tracking-wide-80 uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-tint-blue-3 to-tint-blue-11 border-b border-slate-900/[0.08]">Activity</th>
+                    <th scope="col" className="sticky top-0 z-10 pl-s-13-6 pr-5 py-s-12-8 text-center text-11 font-semibold tracking-wide-80 uppercase whitespace-nowrap text-slate-500 bg-gradient-to-b from-tint-blue-3 to-tint-blue-11 border-b border-slate-900/[0.08]">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -319,18 +319,18 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                       <tr
                         key={c.clinic_id}
                         onClick={() => setSelectedClinic(c)}
-                        className="group/tr adm-tr cursor-pointer hover:!bg-[#EAF3FF]/80 transition-colors duration-150"
+                        className="group/tr adm-tr cursor-pointer hover:!bg-tint-blue-12/80 transition-colors duration-150"
                         style={{ '--i': Math.min(rowIndex, 8) }}
                         title="Click on row to view full business details"
                       >
                         {/* Clinic */}
-                        <td className="sticky left-0 z-10 pl-5 pr-[0.85rem] py-4 align-top border-b border-slate-900/[0.06] bg-white/[0.96] shadow-[1px_0_0_rgba(15,23,42,0.06)] group-hover/tr:!bg-[#F3F8FF] transition-colors duration-200">
+                        <td className="sticky left-0 z-10 pl-5 pr-s-13-6 py-4 align-top border-b border-slate-900/[0.06] bg-white/[0.96] shadow-[1px_0_0_theme(colors.slate.900_/_0.06)] group-hover/tr:!bg-tint-blue-5 transition-colors duration-200">
                           <div className="space-y-1.5 min-w-[11rem] max-w-[14rem]">
                             <div className="font-semibold text-ink leading-snug flex items-center justify-between gap-1.5">
                               <span>{c.clinic_name}</span>
                               <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover/tr:text-blue-500 transition-colors shrink-0" />
                             </div>
-                            <span className="inline-flex items-center gap-1.5 flex-none py-[0.3rem] px-[0.7rem] rounded-full text-[0.6875rem] font-semibold text-[#1570E0] bg-gradient-to-b from-[#F2F8FF] to-[#E6F1FF] shadow-[inset_0_0_0_1px_rgba(21,112,224,0.18)]">
+                            <span className="inline-flex items-center gap-1.5 flex-none py-s-4-8 px-s-11-2 rounded-full text-11 font-semibold text-blue-600 bg-gradient-to-b from-tint-blue-6 to-tint-blue-14 shadow-[inset_0_0_0_1px_theme(colors.blue.600_/_0.18)]">
                               <UserCheck className="w-3 h-3" />
                               AI: {c.receptionist_name || 'Neha'}
                             </span>
@@ -338,7 +338,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                         </td>
 
                         {/* Location */}
-                        <td className="px-[0.85rem] py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-[#EAF3FF]/[0.55] transition-colors duration-200">
+                        <td className="px-s-13-6 py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-tint-blue-12/[0.55] transition-colors duration-200">
                           <div className="text-xs min-w-[9rem] max-w-[12rem]">
                             <div className="flex items-start gap-1.5">
                               <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
@@ -350,7 +350,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                         </td>
 
                         {/* Hours */}
-                        <td className="px-[0.85rem] py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-[#EAF3FF]/[0.55] transition-colors duration-200">
+                        <td className="px-s-13-6 py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-tint-blue-12/[0.55] transition-colors duration-200">
                           <div className="text-xs min-w-[9rem] max-w-[12rem]">
                             <div className="flex items-start gap-1.5">
                               <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
@@ -362,32 +362,32 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                         </td>
 
                         {/* Doctors */}
-                        <td className="px-[0.85rem] py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-[#EAF3FF]/[0.55] transition-colors duration-200">
+                        <td className="px-s-13-6 py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-tint-blue-12/[0.55] transition-colors duration-200">
                           <div className="space-y-1.5 text-xs min-w-[8rem] max-w-[11rem]">
                             <div className="flex flex-wrap gap-1">
                               {doctorsList.slice(0, 3).map((d, i) => (
-                                <span key={i} className="py-[0.15rem] px-[0.55rem] rounded-full text-[0.6875rem] font-medium text-[#3B4A63] bg-white shadow-[inset_0_0_0_1px_rgba(15,23,42,0.14)]">
+                                <span key={i} className="py-s-2-4 px-s-8-8 rounded-full text-11 font-medium text-ink-soft bg-white shadow-[inset_0_0_0_1px_theme(colors.slate.900_/_0.14)]">
                                   {d.name}
                                 </span>
                               ))}
                               {doctorsList.length > 3 && (
-                                <span className="text-[11px] text-slate-500 self-center">+{doctorsList.length - 3} more</span>
+                                <span className="text-11 text-slate-500 self-center">+{doctorsList.length - 3} more</span>
                               )}
                             </div>
                           </div>
                         </td>
 
                         {/* Services */}
-                        <td className="px-[0.85rem] py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-[#EAF3FF]/[0.55] transition-colors duration-200">
+                        <td className="px-s-13-6 py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-tint-blue-12/[0.55] transition-colors duration-200">
                           <div className="space-y-1.5 text-xs min-w-[9rem] max-w-[12rem]">
-                            <div className="text-slate-600 leading-relaxed line-clamp-2" title={servicesText} style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+                            <div className="text-slate-600 leading-relaxed line-clamp-2" title={servicesText} style={{ fontFamily: 'var(--fd-font-sans)' }}>
                               {servicesText}
                             </div>
                           </div>
                         </td>
 
                         {/* Activity */}
-                        <td className="px-[0.85rem] py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-[#EAF3FF]/[0.55] transition-colors duration-200">
+                        <td className="px-s-13-6 py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-tint-blue-12/[0.55] transition-colors duration-200">
                           <div className="space-y-1 text-xs text-slate-500 whitespace-nowrap">
                             <div><b className="font-semibold text-ink tabular-nums">{c.appointment_count || 0}</b> appts</div>
                             <div><b className="font-semibold text-ink tabular-nums">{c.call_count || 0}</b> calls</div>
@@ -397,7 +397,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                         {/* Status Toggle (Enable / Disable) */}
                         <td
                           onClick={(e) => e.stopPropagation()}
-                          className="pl-[0.85rem] pr-5 py-4 align-middle text-center border-b border-slate-900/[0.06] group-hover/tr:bg-[#EAF3FF]/[0.55] transition-colors duration-200"
+                          className="pl-s-13-6 pr-5 py-4 align-middle text-center border-b border-slate-900/[0.06] group-hover/tr:bg-tint-blue-12/[0.55] transition-colors duration-200"
                         >
                           <div className="inline-flex flex-col items-center gap-1">
                             <button
@@ -418,7 +418,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                               />
                             </button>
                             <span
-                              className={`text-[11px] leading-none ${
+                              className={`text-11 leading-none ${
                                 c.is_active !== false ? 'text-emerald-600 font-semibold' : 'text-slate-400 font-medium'
                               }`}
                             >
@@ -449,7 +449,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
             {/* Modal Header */}
             <div className="relative px-6 py-5 sm:px-8 sm:py-6 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 via-white to-blue-50/30 flex items-start justify-between gap-4">
               <div className="flex items-center gap-3.5 sm:gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#2B8AF7] to-[#1570E0] text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
                   <Building2 className="w-6 h-6" />
                 </div>
                 <div>
@@ -467,7 +467,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
-                    <span className="flex items-center gap-1 font-mono text-[11px] text-slate-400">
+                    <span className="flex items-center gap-1 font-mono text-11 text-slate-400">
                       ID: {selectedClinic.clinic_id}
                     </span>
                     <span>&bull;</span>
@@ -497,39 +497,39 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {/* Total Calls */}
                 <div className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-blue-50/70 border border-blue-200/80 flex flex-col justify-between">
-                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Total Calls</span>
+                  <span className="text-10 font-bold text-blue-600 uppercase tracking-wider">Total Calls</span>
                   <div className="flex items-baseline gap-1 mt-1">
                     <span className="text-xl font-bold text-blue-900 tabular-nums">{selectedClinic.call_count || 0}</span>
-                    <span className="text-[11px] font-medium text-blue-500">logged</span>
+                    <span className="text-11 font-medium text-blue-500">logged</span>
                   </div>
                 </div>
 
                 {/* Appointments */}
                 <div className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Appointments</span>
+                  <span className="text-10 font-bold text-emerald-600 uppercase tracking-wider">Appointments</span>
                   <div className="flex items-baseline gap-1 mt-1">
                     <span className="text-xl font-bold text-emerald-900 tabular-nums">{selectedClinic.appointment_count || 0}</span>
-                    <span className="text-[11px] font-medium text-emerald-600">booked</span>
+                    <span className="text-11 font-medium text-emerald-600">booked</span>
                   </div>
                 </div>
 
                 {/* Slot Duration */}
                 <div className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-purple-50/70 border border-purple-200/80 flex flex-col justify-between">
-                  <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Slot Duration</span>
+                  <span className="text-10 font-bold text-purple-600 uppercase tracking-wider">Slot Duration</span>
                   <div className="flex items-baseline gap-1 mt-1">
                     <span className="text-xl font-bold text-purple-900 tabular-nums">{selectedClinic.slot_duration_minutes || 30}</span>
-                    <span className="text-[11px] font-medium text-purple-500">mins</span>
+                    <span className="text-11 font-medium text-purple-500">mins</span>
                   </div>
                 </div>
 
                 {/* Specialists */}
                 <div className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 flex flex-col justify-between">
-                  <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Specialists</span>
+                  <span className="text-10 font-bold text-amber-700 uppercase tracking-wider">Specialists</span>
                   <div className="flex items-baseline gap-1 mt-1">
                     <span className="text-xl font-bold text-amber-900 tabular-nums">
                       {Array.isArray(selectedClinic.doctors) ? selectedClinic.doctors.length : 0}
                     </span>
-                    <span className="text-[11px] font-medium text-amber-600">doctors</span>
+                    <span className="text-11 font-medium text-amber-600">doctors</span>
                   </div>
                 </div>
               </div>
@@ -575,7 +575,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                 </h3>
                 <div className="p-4 rounded-xl border border-slate-200/80 bg-white flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-                  <div className="text-sm text-slate-700 leading-relaxed" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+                  <div className="text-sm text-slate-700 leading-relaxed" style={{ fontFamily: 'var(--fd-font-sans)' }}>
                     {selectedClinic.address || 'Address on file'}
                   </div>
                 </div>

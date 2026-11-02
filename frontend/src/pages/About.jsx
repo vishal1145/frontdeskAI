@@ -16,7 +16,7 @@ import {
 
 export default function About({ setActivePage }) {
   return (
-    <div className="w-full pt-14 sm:pt-20 lg:pt-24 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-20 sm:space-y-28">
+    <div className="w-full pt-8 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-20 sm:space-y-28">
       
       {/* Hero Header with Apex-Inspired Hierarchy */}
       <div className="text-left max-w-4xl space-y-5" data-fade>
@@ -33,7 +33,7 @@ export default function About({ setActivePage }) {
         </p>
 
         {/* Subtle Decorative Metric Pills */}
-        <div className="pt-2 flex flex-wrap items-center justify-start gap-2 sm:gap-2.5 text-xs sm:text-[13px] font-medium text-ink-soft">
+        <div className="pt-2 flex flex-wrap items-center justify-start gap-2 sm:gap-2.5 text-xs sm:text-13 font-medium text-ink-soft">
           <span className="glass-pill px-3.5 py-2 flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
             <span>24/7 Zero Call Drops</span>
@@ -54,7 +54,7 @@ export default function About({ setActivePage }) {
         
         {/* Left Column: Story & Problem Analysis */}
         <div className="lg:col-span-7 space-y-6 sm:space-y-7">
-          <div className="inline-flex px-3.5 py-1.5 rounded-full bg-rose-50/80 text-rose-700 text-[11px] font-mono font-semibold ring-1 ring-rose-200 uppercase tracking-wider">
+          <div className="inline-flex px-3.5 py-1.5 rounded-full bg-rose-50/80 text-rose-700 text-11 font-mono font-semibold ring-1 ring-rose-200 uppercase tracking-wider">
             THE UNSEEN RECEPTION CRISIS
           </div>
           
@@ -62,7 +62,7 @@ export default function About({ setActivePage }) {
             Why Front Desks and Reception Lines Are Overwhelmed
           </h2>
           
-          <div className="space-y-4 text-[0.95rem] sm:text-base text-ink-soft leading-relaxed">
+          <div className="space-y-4 text-15-2 sm:text-base text-ink-soft leading-relaxed">
             <p>
               During peak operational hours, businesses across India face overwhelming call volumes. A single receptionist or front desk executive has to juggle physical walk-in visitors, counter service, admin duties, and simultaneously answer dozens of ringing phone calls.
             </p>
@@ -88,7 +88,7 @@ export default function About({ setActivePage }) {
         </div>
 
         {/* Right Column: Core Architecture Card */}
-        <div className="lg:col-span-5 panel-ink rounded-[1.75rem] p-5 sm:p-7 md:p-8 space-y-5 sm:space-y-6 text-white relative overflow-hidden">
+        <div className="lg:col-span-5 panel-ink rounded-28 p-5 sm:p-7 md:p-8 space-y-5 sm:space-y-6 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
@@ -98,7 +98,7 @@ export default function About({ setActivePage }) {
               </div>
               Core Technology Architecture
             </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-950 border border-blue-800 text-blue-300 font-bold">
+            <span className="text-10 font-mono px-2 py-0.5 rounded-full bg-blue-950 border border-blue-800 text-blue-300 font-bold">
               STACK
             </span>
           </div>
@@ -124,7 +124,7 @@ export default function About({ setActivePage }) {
               </span>
               <div className="space-y-1">
                 <strong className="text-white block text-sm font-semibold tracking-tight">
-                  Vapi Telephony & Cartesia Voice
+                  LiveKit & Vobiz SIP Telephony
                 </strong>
                 <p className="text-slate-400 text-xs leading-relaxed">
                   High-fidelity natural human Indian vocal synthesis with background noise reduction, sub-800ms latency, and full SIP telephony protocol support.
@@ -236,7 +236,7 @@ export default function About({ setActivePage }) {
 
       {/* CTA Box - Matching Dark Luxury CTA */}
       <div 
-        className="glass !rounded-[2.25rem] p-6 sm:p-12 lg:p-16 text-left max-w-7xl mx-auto space-y-6 relative overflow-hidden"
+        className="glass !rounded-36 p-6 sm:p-12 lg:p-16 text-left max-w-7xl mx-auto space-y-6 relative overflow-hidden"
         data-fade
       >
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[36rem] max-w-full h-72 bg-cyan-200/50 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>

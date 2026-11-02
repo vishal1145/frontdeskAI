@@ -1,6 +1,7 @@
 import pg from "pg";
 import dotenv from "dotenv";
 import { ClinicConfig } from "../types/index.js";
+import { cleanWorkingDays } from "../services/doctorScheduleService.js";
 
 dotenv.config();
 
@@ -8,8 +9,6 @@ export interface ClinicRegistration extends ClinicConfig {
   clinic_id: string;
   virtual_phone_numbers: string[];
   password?: string;
-  calendly_link?: string;
-  calendly_api_key?: string;
   scheduling_enabled?: boolean;
   slot_duration_minutes?: number;
   is_active?: boolean;
@@ -67,7 +66,7 @@ class ClinicRegistry {
 
     try {
       const res = await this.pgPool.query(
-        "SELECT clinic_id, clinic_name, address, working_hours, contact_phone, receptionist_name, virtual_phone_numbers, doctors, services, password, calendly_link, calendly_api_key, scheduling_enabled, slot_duration_minutes, is_active FROM clinics ORDER BY created_at ASC;"
+        "SELECT clinic_id, clinic_name, address, working_hours, contact_phone, receptionist_name, virtual_phone_numbers, doctors, services, password, scheduling_enabled, slot_duration_minutes, is_active FROM clinics ORDER BY created_at ASC;"
       );
 
       if (res.rows.length > 0) {
@@ -91,7 +90,9 @@ class ClinicRegistry {
               name: doc?.name || "Doctor",
               specialties: specList,
               specialization: doc?.specialization || specList.join(", "),
-              timings: doc?.timings || row.working_hours || "10:00 AM - 7:00 PM"
+              timings: doc?.timings || row.working_hours || "10:00 AM - 7:00 PM",
+              services: Array.isArray(doc?.services) ? doc.services : [],
+              working_days: cleanWorkingDays(doc?.working_days)
             };
           });
 
@@ -117,8 +118,6 @@ class ClinicRegistry {
             virtual_phone_numbers: parsedPhones,
             doctors: normalizedDoctors,
             services: normalizedServices,
-            calendly_link: row.calendly_link || "",
-            calendly_api_key: row.calendly_api_key || "",
             scheduling_enabled: row.scheduling_enabled !== false,
             slot_duration_minutes: Number(row.slot_duration_minutes) || 30,
             is_active: row.is_active !== false
@@ -173,6 +172,18 @@ class ClinicRegistry {
     if (clinic) {
       clinic.is_active = isActive;
       this.clinics.set(clinicId, clinic);
+    }
+  }
+
+  public updateClinicProfile(clinicId: string, updates: Partial<ClinicRegistration>): void {
+    const clinic = this.clinics.get(clinicId);
+    if (clinic) {
+      Object.assign(clinic, updates);
+      this.clinics.set(clinicId, clinic);
+      if (updates.contact_phone) {
+        this.registerPhoneVariations(updates.contact_phone, clinicId);
+        this.registerContactPhoneVariations(updates.contact_phone, clinicId);
+      }
     }
   }
 

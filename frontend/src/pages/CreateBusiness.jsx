@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft,
@@ -14,12 +14,13 @@ import {
   X,
 } from 'lucide-react';
 import ReactCalendar from 'react-calendar';
+import { fontSize } from '../../design-tokens.js';
+import { DoctorDaysField, DoctorTimingsField, parseTimingShifts, parseWorkingDays, splitTimings } from '../components/DoctorSchedulePicker';
 
 const SECTIONS = [
   { id: 'biz-details', label: 'Business & Account Details' },
-  { id: 'biz-location', label: 'Location & AI Receptionist' },
-  { id: 'biz-doctors', label: 'Doctors & Timings' },
-  { id: 'biz-services', label: 'Services & Treatments' },
+  { id: 'biz-location', label: 'Working Hours' },
+  { id: 'biz-doctors', label: 'Doctors & Services' },
 ];
 
 // Create New Business & AI Agent — its own page (/admin/create), opened from the Super Admin Console.
@@ -56,8 +57,89 @@ export default function CreateBusiness({ setActivePage }) {
 
   // Doctor Timings Time Picker State
   const [activeDocTimePickerIndex, setActiveDocTimePickerIndex] = useState(null);
-  const [docTimePickerStart, setDocTimePickerStart] = useState('10:00');
-  const [docTimePickerEnd, setDocTimePickerEnd] = useState('19:00');
+
+  // Popover Placement & Max Height (auto-flip to top when insufficient space below)
+  const [docTimePickerPlacement, setDocTimePickerPlacement] = useState({ placement: 'bottom', maxHeight: undefined });
+  const [dateCalendarPlacement, setDateCalendarPlacement] = useState({ placement: 'bottom', maxHeight: undefined });
+  const [timePickerPlacement, setTimePickerPlacement] = useState({ placement: 'bottom', maxHeight: undefined });
+
+  const docTimePickerPopoverRef = useRef(null);
+  const dateCalendarPopoverRef = useRef(null);
+  const timePickerPopoverRef = useRef(null);
+
+  const updatePopoverPosition = (anchorEl, setPlacement, preferredHeight = 440) => {
+    if (!anchorEl) return;
+    const rect = anchorEl.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom - 16;
+    const navbarBottom = document.querySelector('header')?.getBoundingClientRect().bottom || 0;
+    const spaceAbove = rect.top - navbarBottom - 16;
+
+    if (spaceBelow < preferredHeight && spaceAbove > spaceBelow) {
+      setPlacement({
+        placement: 'top',
+        maxHeight: Math.max(220, Math.min(preferredHeight, spaceAbove))
+      });
+    } else {
+      setPlacement({
+        placement: 'bottom',
+        maxHeight: Math.max(220, Math.min(preferredHeight, spaceBelow))
+      });
+    }
+  };
+
+  useLayoutEffect(() => {
+    if (activeDocTimePickerIndex === null) return;
+    const update = () => {
+      const parent = docTimePickerPopoverRef.current?.parentElement;
+      if (parent) {
+        const height = docTimePickerPopoverRef.current?.offsetHeight || 560;
+        updatePopoverPosition(parent, setDocTimePickerPlacement, height);
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [activeDocTimePickerIndex]);
+
+  useLayoutEffect(() => {
+    if (!showDateCalendar) return;
+    const update = () => {
+      const parent = dateCalendarPopoverRef.current?.parentElement;
+      if (parent) {
+        const height = dateCalendarPopoverRef.current?.offsetHeight || 480;
+        updatePopoverPosition(parent, setDateCalendarPlacement, height);
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [showDateCalendar]);
+
+  useLayoutEffect(() => {
+    if (!showTimePicker) return;
+    const update = () => {
+      const parent = timePickerPopoverRef.current?.parentElement;
+      if (parent) {
+        const height = timePickerPopoverRef.current?.offsetHeight || 440;
+        updatePopoverPosition(parent, setTimePickerPlacement, height);
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [showTimePicker]);
 
   // Same guard as the console: only a signed-in super admin can open this page
   useEffect(() => {
@@ -120,11 +202,10 @@ export default function CreateBusiness({ setActivePage }) {
     });
   };
 
-  const updateDoctorTime = (index, start24, end24) => {
-    setDocTimePickerStart(start24);
-    setDocTimePickerEnd(end24);
-    const formatted = `${formatTime12h(start24)} - ${formatTime12h(end24)}`;
-    updateDoctorRow(index, 'timings', formatted);
+  const getDoctorSchedule = (doc) => splitTimings(doc.timings, formData.working_days);
+
+  const updateDoctorSchedule = (index, days, timing) => {
+    updateDoctorRow(index, 'timings', `${days}, ${timing}`);
   };
 
   const removeDoctorRow = (index) => {
@@ -277,6 +358,11 @@ export default function CreateBusiness({ setActivePage }) {
         toast.error('Doctor specialty cannot exceed 50 characters.');
         return;
       }
+      const doctorShifts = parseTimingShifts(d.timings);
+      if (doctorShifts.some((shift, shiftIdx) => shift.start >= shift.end || (shiftIdx > 0 && shift.start < doctorShifts[shiftIdx - 1].end))) {
+        toast.error('Each doctor shift must end after it starts, and shifts cannot overlap.');
+        return;
+      }
     }
 
     for (let i = 0; i < formData.services.length; i++) {
@@ -327,7 +413,8 @@ export default function CreateBusiness({ setActivePage }) {
         .map(d => ({
           name: d.name.trim(),
           specialization: d.specialization?.trim() || 'Consultant',
-          timings: d.timings?.trim() || combinedWorkingHours
+          timings: d.timings?.trim() || combinedWorkingHours,
+          working_days: parseWorkingDays(getDoctorSchedule(d).days)
         }));
 
       const cleanServices = formData.services
@@ -377,10 +464,9 @@ export default function CreateBusiness({ setActivePage }) {
 
   // Section completion drives the sidebar ticks
   const sectionDone = {
-    'biz-details': formData.clinic_name.trim().length >= 3 && formData.contact_phone.length === 10 && passwordStrength.score >= 2,
-    'biz-location': formData.address.trim().length >= 3 && !!formData.working_days.trim() && !!formData.working_time.trim() && !!formData.receptionist_name,
-    'biz-doctors': formData.doctors.some((d) => d.name.trim().length >= 3),
-    'biz-services': formData.services.some((s) => s.name.trim().length >= 3),
+    'biz-details': formData.clinic_name.trim().length >= 3 && formData.contact_phone.length === 10 && passwordStrength.score >= 2 && formData.address.trim().length >= 3 && !!formData.receptionist_name,
+    'biz-location': !!formData.working_days.trim() && !!formData.working_time.trim(),
+    'biz-doctors': formData.doctors.some((d) => d.name.trim().length >= 3) && formData.services.some((s) => s.name.trim().length >= 3),
   };
 
   const scrollToSection = (id) => {
@@ -392,7 +478,7 @@ export default function CreateBusiness({ setActivePage }) {
 
   return (
     // data-motion-scope opts this tool page out of the marketing site's magnetic/tilt effects.
-    <div className="relative min-h-[calc(100vh-4.25rem)] pb-20 text-ink before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-[32rem] before:z-0 before:bg-[radial-gradient(40rem_18rem_at_12%_0%,rgba(162,232,253,0.45),transparent_70%),radial-gradient(36rem_20rem_at_92%_8%,rgba(188,220,255,0.5),transparent_70%)] before:pointer-events-none" data-motion-scope="admin">
+    <div className="relative min-h-[calc(100vh-4.25rem)] pb-20 text-ink before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-[32rem] before:z-0 before:bg-[radial-gradient(40rem_18rem_at_12%_0%,theme(colors.tint.cyan.6_/_0.45),transparent_70%),radial-gradient(36rem_20rem_at_92%_8%,theme(colors.blue.200_/_0.5),transparent_70%)] before:pointer-events-none" data-motion-scope="admin">
       <div className="relative z-[1] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10">
 
         {/* Page header */}
@@ -400,36 +486,36 @@ export default function CreateBusiness({ setActivePage }) {
           <button
             type="button"
             onClick={goToConsole}
-            className="grid place-items-center flex-none w-14 h-14 rounded-[1.1rem] text-white bg-gradient-to-b from-[#2B8AF7] to-[#1570E0] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_0_4px_rgba(43,138,247,0.1),0_10px_22px_-10px_rgba(21,112,224,0.7)] hover:from-[#1570E0] hover:to-[#0D5BBF] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_0_4px_rgba(43,138,247,0.2),0_12px_24px_-8px_rgba(21,112,224,0.8)] active:scale-95 transition-all duration-200 cursor-pointer group"
+            className="grid place-items-center flex-none w-14 h-14 rounded-17-6 text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[inset_0_1px_0_theme(colors.white_/_0.25),0_0_0_4px_theme(colors.blue.500_/_0.1),0_10px_22px_-10px_theme(colors.blue.600_/_0.7)] hover:from-blue-600 hover:to-tint-blue-34 hover:shadow-[inset_0_1px_0_theme(colors.white_/_0.25),0_0_0_4px_theme(colors.blue.500_/_0.2),0_12px_24px_-8px_theme(colors.blue.600_/_0.8)] active:scale-95 transition-all duration-200 cursor-pointer group"
             title="Back to Super Admin Console"
           >
             <ArrowLeft className="w-6 h-6 transition-transform duration-200 group-hover:-translate-x-0.5" />
           </button>
           <div className="min-w-0">
-            <h1 className="text-[clamp(1.5rem,1.1rem+1.4vw,2.1rem)] font-semibold leading-[1.15] tracking-[-0.025em] text-ink" style={{ fontSize: 'calc(clamp(1.5rem, 1.1rem + 1.4vw, 2.1rem) - 2px)' }}>Create New Business &amp; AI Agent</h1>
-            <div className="text-[1.05rem] mt-[0.2rem] text-slate-500" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>Deploy a dedicated voice receptionist instantly to PostgreSQL &amp; LiveKit</div>
+            <h1 className="text-fluid-2 font-semibold leading-ratio-115 tracking-tight-25 text-ink" style={{ fontSize: `calc(${fontSize['fluid-2']} - 2px)` }}>Create New Business &amp; AI Agent</h1>
+            <div className="text-16-8 mt-s-3-2 text-slate-500" style={{ fontFamily: 'var(--fd-font-sans)' }}>Deploy a dedicated voice receptionist instantly to PostgreSQL &amp; LiveKit</div>
           </div>
         </header>
 
         <form onSubmit={handleCreateClinic} className="grid grid-cols-1 lg:grid-cols-[15.5rem_minmax(0,1fr)] lg:gap-x-8 lg:gap-y-0 gap-5 mt-8">
           {/* Section index & sidebar actions */}
           <aside className="min-w-0 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:self-start lg:sticky lg:top-[calc(4.25rem+1.5rem)] adm-rise" style={{ '--i': 2 }} aria-label="Form sections">
-            <ol className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:p-[0.6rem] lg:overflow-visible lg:rounded-[1.25rem] lg:bg-white/70 lg:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.9),0_0_0_1px_rgba(15,23,42,0.08),0_1px_2px_rgba(14,26,46,0.04),0_18px_40px_-26px_rgba(23,76,150,0.35)]">
+            <ol className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:p-s-9-6 lg:overflow-visible lg:rounded-20 lg:bg-white/70 lg:shadow-[inset_0_0_0_1px_theme(colors.white_/_0.9),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)]">
               {SECTIONS.map((s, i) => (
                 <li key={s.id}>
                   <button
                     type="button"
                     onClick={() => scrollToSection(s.id)}
-                    className={`flex items-center gap-[0.65rem] w-full py-[0.55rem] pr-[0.75rem] pl-[0.55rem] rounded-[0.875rem] text-[0.8125rem] font-medium text-left whitespace-nowrap lg:whitespace-normal transition-[background-color,color,box-shadow] duration-200 cursor-pointer ${
+                    className={`flex items-center gap-s-10-4 w-full py-s-8-8 pr-s-12 pl-s-8-8 rounded-14 text-13 font-medium text-left whitespace-nowrap lg:whitespace-normal transition-[background-color,color,box-shadow] duration-200 cursor-pointer ${
                       sectionDone[s.id]
-                        ? 'text-ink bg-[#EEF5FF] shadow-none'
-                        : 'text-[#3B4A63] bg-white/80 lg:bg-transparent shadow-[inset_0_0_0_1px_rgba(15,23,42,0.08)] lg:shadow-none hover:text-ink hover:bg-[#EEF5FF]'
+                        ? 'text-ink bg-tint-blue-10 shadow-none'
+                        : 'text-ink-soft bg-white/80 lg:bg-transparent shadow-[inset_0_0_0_1px_theme(colors.slate.900_/_0.08)] lg:shadow-none hover:text-ink hover:bg-tint-blue-10'
                     }`}
                   >
-                    <span className={`grid place-items-center flex-none w-[1.6rem] h-[1.6rem] rounded-full text-[0.75rem] font-semibold transition-[background-color,color,transform] duration-300 ${
+                    <span className={`grid place-items-center flex-none w-[1.6rem] h-[1.6rem] rounded-full text-12 font-semibold transition-[background-color,color,transform] duration-300 ${
                       sectionDone[s.id]
-                        ? '!text-white !bg-[#10B981] !shadow-[0_0_0_3px_rgba(16,185,129,0.15)] scale-[1.04]'
-                        : 'text-[#1570E0] bg-[#EAF3FF] shadow-[inset_0_0_0_1px_rgba(21,112,224,0.2)]'
+                        ? '!text-white !bg-tint-green-7 !shadow-[0_0_0_3px_theme(colors.tint.green.7_/_0.15)] scale-[1.04]'
+                        : 'text-blue-600 bg-tint-blue-12 shadow-[inset_0_0_0_1px_theme(colors.blue.600_/_0.2)]'
                     }`}>
                       {sectionDone[s.id] ? <Check className="w-3.5 h-3.5" /> : i + 1}
                     </span>
@@ -440,11 +526,11 @@ export default function CreateBusiness({ setActivePage }) {
             </ol>
 
             {/* Action buttons */}
-            <div className="flex flex-col gap-2 mt-3 p-3.5 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-[0_4px_16px_-4px_rgba(23,76,150,0.1)]">
+            <div className="flex flex-col gap-2 mt-3 p-3.5 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-[0_4px_16px_-4px_theme(colors.blue.800_/_0.1)]">
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center gap-2 w-full justify-center text-xs py-2.5 px-3 rounded-full font-semibold cursor-pointer text-white bg-gradient-to-b from-[#2B8AF7] to-[#1570E0] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_12px_26px_-12px_rgba(21,112,224,0.75)] hover:not(:disabled):-translate-y-px hover:not(:disabled):shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_16px_30px_-12px_rgba(21,112,224,0.85)] active:not(:disabled):translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 transition-all duration-200"
+                className="inline-flex items-center gap-2 w-full justify-center text-xs py-2.5 px-3 rounded-full font-semibold cursor-pointer text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[inset_0_1px_0_theme(colors.white_/_0.22),0_12px_26px_-12px_theme(colors.blue.600_/_0.75)] hover:not(:disabled):-translate-y-px hover:not(:disabled):shadow-[inset_0_1px_0_theme(colors.white_/_0.22),0_16px_30px_-12px_theme(colors.blue.600_/_0.85)] active:not(:disabled):translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 transition-all duration-200"
               >
                 {submitting ? (
                   <>
@@ -461,7 +547,7 @@ export default function CreateBusiness({ setActivePage }) {
               <button
                 type="button"
                 onClick={goToConsole}
-                className="inline-flex items-center gap-2 w-full justify-center text-xs py-2 px-3 rounded-full font-semibold cursor-pointer text-slate-500 bg-white/[0.85] shadow-[inset_0_0_0_1px_rgba(15,23,42,0.14),0_1px_2px_rgba(14,26,46,0.04)] hover:not(:disabled):text-slate-800 hover:not(:disabled):bg-white hover:not(:disabled):shadow-[inset_0_0_0_1px_rgba(21,112,224,0.3),0_6px_16px_-10px_rgba(23,76,150,0.4)] disabled:cursor-not-allowed disabled:opacity-70 transition-all duration-200"
+                className="inline-flex items-center gap-2 w-full justify-center text-xs py-2 px-3 rounded-full font-semibold cursor-pointer text-slate-500 bg-white/[0.85] shadow-[inset_0_0_0_1px_theme(colors.slate.900_/_0.14),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] hover:not(:disabled):text-slate-800 hover:not(:disabled):bg-white hover:not(:disabled):shadow-[inset_0_0_0_1px_theme(colors.blue.600_/_0.3),0_6px_16px_-10px_theme(colors.blue.800_/_0.4)] disabled:cursor-not-allowed disabled:opacity-70 transition-all duration-200"
               >
                 Cancel
               </button>
@@ -471,18 +557,18 @@ export default function CreateBusiness({ setActivePage }) {
           {/* Form sections */}
           <div className="grid gap-5 min-w-0 lg:col-start-2">
           {/* Section 1: Basic Clinic Info */}
-          <div className="relative p-6 sm:px-8 sm:py-7 rounded-[1.5rem] bg-white/[0.86] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.95),0_0_0_1px_rgba(15,23,42,0.08),0_1px_2px_rgba(14,26,46,0.04),0_18px_40px_-26px_rgba(23,76,150,0.35)] scroll-mt-24 space-y-4" id="biz-details">
-            <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.08em] uppercase text-[#1570E0] before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-[#60A5FA] before:to-[#1570E0] before:shadow-[0_0_0_3px_rgba(43,138,247,0.12)]">
+          <div className="relative p-6 sm:px-8 sm:py-7 rounded-24 bg-white/[0.86] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.95),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] scroll-mt-24 space-y-4" id="biz-details">
+            <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-wide-80 uppercase text-blue-600 before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-tint-blue-28 before:to-blue-600 before:shadow-[0_0_0_3px_theme(colors.blue.500_/_0.12)]">
               <span>1. Business &amp; Account Details</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block mb-1 text-[0.8125rem] font-medium text-[#3B4A63]">
+                  <label className="block mb-1 text-13 font-medium text-ink-soft">
                     Business Name <span className="text-rose-500">*</span>
                   </label>
-                  <span className={`text-[11px] font-mono font-semibold ${formData.clinic_name.length > 45 ? 'text-amber-600' : 'text-slate-400'}`}>
+                  <span className={`text-11 font-mono font-semibold ${formData.clinic_name.length > 45 ? 'text-amber-600' : 'text-slate-400'}`}>
                     {formData.clinic_name.length}/50
                   </span>
                 </div>
@@ -497,16 +583,16 @@ export default function CreateBusiness({ setActivePage }) {
                     setFormData({ ...formData, clinic_name: clean });
                   }}
                   placeholder="e.g. Apex Dental & Orthodontics"
-                  className="w-full h-[2.875rem] px-[0.95rem] rounded-[0.875rem] text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_rgba(14,26,46,0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-[#2B8AF7] focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                  className="w-full h-[2.875rem] px-s-15-2 rounded-14 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block mb-1 text-[0.8125rem] font-medium text-[#3B4A63]">
+                  <label className="block mb-1 text-13 font-medium text-ink-soft">
                     Primary Mobile Number <span className="text-rose-500">*</span>
                   </label>
-                  <span className={`text-[11px] font-mono font-semibold ${formData.contact_phone.length === 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                  <span className={`text-11 font-mono font-semibold ${formData.contact_phone.length === 10 ? 'text-emerald-600' : 'text-slate-400'}`}>
                     {formData.contact_phone.length}/10 digits
                   </span>
                 </div>
@@ -524,7 +610,7 @@ export default function CreateBusiness({ setActivePage }) {
                       setFormData({ ...formData, contact_phone: digitsOnly });
                     }}
                     placeholder="9876543210"
-                    className="w-full h-[2.875rem] pl-11 pr-[0.95rem] rounded-[0.875rem] text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_rgba(14,26,46,0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-[#2B8AF7] focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                    className="w-full h-[2.875rem] pl-11 pr-s-15-2 rounded-14 text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                   />
                 </div>
               </div>
@@ -533,13 +619,13 @@ export default function CreateBusiness({ setActivePage }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block mb-1 text-[0.8125rem] font-medium text-[#3B4A63]">
+                  <label className="block mb-1 text-13 font-medium text-ink-soft">
                     Portal Password <span className="text-rose-500">*</span>
                   </label>
                   <button
                     type="button"
                     onClick={generateStrongPassword}
-                    className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-1"
+                    className="text-11 font-semibold text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-1"
                   >
                     Auto-Generate
                   </button>
@@ -551,7 +637,7 @@ export default function CreateBusiness({ setActivePage }) {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="e.g. Strong@2025"
-                    className="w-full h-[2.875rem] pl-[0.95rem] pr-10 rounded-[0.875rem] text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_rgba(14,26,46,0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-[#2B8AF7] focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                    className="w-full h-[2.875rem] pl-s-15-2 pr-10 rounded-14 text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                   />
                   <button
                     type="button"
@@ -571,7 +657,7 @@ export default function CreateBusiness({ setActivePage }) {
                       style={{ width: passwordStrength.width }}
                     />
                   </div>
-                  <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center justify-between text-11">
                     <span className={`font-semibold ${passwordStrength.text}`}>
                       {passwordStrength.label}
                     </span>
@@ -581,25 +667,39 @@ export default function CreateBusiness({ setActivePage }) {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Section 2: Location & AI Receptionist */}
-          <div
-            className="relative p-6 sm:px-8 sm:py-7 rounded-[1.5rem] bg-white/[0.86] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.95),0_0_0_1px_rgba(15,23,42,0.08),0_1px_2px_rgba(14,26,46,0.04),0_18px_40px_-26px_rgba(23,76,150,0.35)] scroll-mt-24 space-y-4"
-            id="biz-location"
-            style={{ zIndex: (showDateCalendar || showTimePicker) ? 35 : 2 }}
-          >
-            <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.08em] uppercase text-[#1570E0] before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-[#60A5FA] before:to-[#1570E0] before:shadow-[0_0_0_3px_rgba(43,138,247,0.12)]">
-              <span>2. Location &amp; AI Receptionist Personality</span>
-            </h4>
+              {/* AI Receptionist Name: Dropdown with 6 names */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block mb-1 text-13 font-medium text-ink-soft">
+                    AI Receptionist Name <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-11 font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                    6 Names Available
+                  </span>
+                </div>
+                <select
+                  value={formData.receptionist_name}
+                  onChange={(e) => setFormData({ ...formData, receptionist_name: e.target.value })}
+                  className="w-full h-[2.875rem] px-s-15-2 rounded-14 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200 cursor-pointer"
+                >
+                  <option value="Neha">Neha (Recommended)</option>
+                  <option value="Pooja">Pooja</option>
+                  <option value="Priya">Priya</option>
+                  <option value="Shivani">Shivani</option>
+                  <option value="Riya">Riya</option>
+                  <option value="Aditi">Aditi</option>
+                </select>
+                <span className="block mt-1 text-11 text-slate-500">Choose which AI voice receptionist greets callers on live phone calls</span>
+              </div>
+            </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block mb-1 text-[0.8125rem] font-medium text-[#3B4A63]">
+                <label className="block mb-1 text-13 font-medium text-ink-soft">
                   Full Business Address <span className="text-rose-500">*</span>
                 </label>
-                <span className={`text-[11px] font-mono font-semibold ${formData.address.length > 180 ? 'text-amber-600' : 'text-slate-400'}`}>
+                <span className={`text-11 font-mono font-semibold ${formData.address.length > 180 ? 'text-amber-600' : 'text-slate-400'}`}>
                   {formData.address.length}/200
                 </span>
               </div>
@@ -611,20 +711,31 @@ export default function CreateBusiness({ setActivePage }) {
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value.slice(0, 200) })}
                 placeholder="e.g. Suite 204, Metro Plaza, Sector 18, Noida 201301"
-                className="w-full h-[2.875rem] px-[0.95rem] rounded-[0.875rem] text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_rgba(14,26,46,0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-[#2B8AF7] focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                className="w-full h-[2.875rem] px-s-15-2 rounded-14 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
               />
-              <span className="block mt-1 text-[0.6875rem] text-slate-500">AI Receptionist quotes this when callers ask for directions or location</span>
+              <span className="block mt-1 text-11 text-slate-500">AI Receptionist quotes this when callers ask for directions or location</span>
             </div>
+          </div>
+
+          {/* Section 2: Working Hours */}
+          <div
+            className="relative p-6 sm:px-8 sm:py-7 rounded-24 bg-white/[0.86] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.95),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] scroll-mt-24 space-y-4"
+            id="biz-location"
+            style={{ zIndex: (showDateCalendar || showTimePicker) ? 35 : 2 }}
+          >
+            <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-wide-80 uppercase text-blue-600 before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-tint-blue-28 before:to-blue-600 before:shadow-[0_0_0_3px_theme(colors.blue.500_/_0.12)]">
+              <span>2. Working Hours</span>
+            </h4>
 
             {/* Working Hours divided into 2 fields: Date & Day, and Time (both with Calendar) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Field 1: Date & Day with Calendar */}
               <div className="relative">
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block mb-1 text-[0.8125rem] font-medium text-[#3B4A63]">
+                  <label className="block mb-1 text-13 font-medium text-ink-soft">
                     Working Days &amp; Dates <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[11px] font-medium text-slate-400">
+                  <span className="text-11 font-medium text-slate-400">
                     Date &amp; Day
                   </span>
                 </div>
@@ -642,12 +753,16 @@ export default function CreateBusiness({ setActivePage }) {
                       }));
                     }}
                     placeholder="e.g. Monday to Saturday"
-                    className="w-full h-[2.875rem] pl-[0.95rem] pr-10 rounded-[0.875rem] text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_rgba(14,26,46,0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-[#2B8AF7] focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                    className="w-full h-[2.875rem] pl-s-15-2 pr-10 rounded-14 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowDateCalendar(!showDateCalendar);
+                    onClick={(e) => {
+                      const next = !showDateCalendar;
+                      if (next) {
+                        updatePopoverPosition(e.currentTarget.closest('.relative') || e.currentTarget.parentElement, setDateCalendarPlacement, 480);
+                      }
+                      setShowDateCalendar(next);
                       setShowTimePicker(false);
                       setActiveDocTimePickerIndex(null);
                     }}
@@ -657,7 +772,7 @@ export default function CreateBusiness({ setActivePage }) {
                     <Calendar className="w-4 h-4 text-blue-600" />
                   </button>
                 </div>
-                <span className="block mt-1 text-[0.6875rem] text-slate-500">Days / dates when business is open</span>
+                <span className="block mt-1 text-11 text-slate-500">Days / dates when business is open</span>
 
                 {/* Date Calendar Popover */}
                 {showDateCalendar && (
@@ -666,7 +781,13 @@ export default function CreateBusiness({ setActivePage }) {
                       className="fixed inset-0 z-30"
                       onClick={() => setShowDateCalendar(false)}
                     />
-                    <div className="absolute top-full mt-1.5 bg-white border border-slate-900/[0.12] rounded-2xl shadow-[0_14px_35px_-5px_rgba(15,23,42,0.18),0_8px_12px_-6px_rgba(15,23,42,0.08)] p-[0.9rem] z-40 left-0 right-0 sm:right-auto sm:w-80 adm-calendar-widget">
+                    <div
+                      ref={dateCalendarPopoverRef}
+                      style={{ maxHeight: dateCalendarPlacement.maxHeight ? `${dateCalendarPlacement.maxHeight}px` : undefined }}
+                      className={`absolute ${
+                        dateCalendarPlacement.placement === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                      } bg-white border border-slate-900/[0.12] rounded-2xl shadow-[0_14px_35px_-5px_theme(colors.slate.900_/_0.18),0_8px_12px_-6px_theme(colors.slate.900_/_0.08)] p-s-14-4 z-40 left-0 right-0 sm:right-auto sm:w-80 adm-calendar-widget overflow-y-auto`}
+                    >
                       <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-ink">
                           <Calendar className="w-3.5 h-3.5 text-blue-600" />
@@ -683,7 +804,7 @@ export default function CreateBusiness({ setActivePage }) {
 
                       {/* Quick Day Presets */}
                       <div className="space-y-1.5 mb-2.5">
-                        <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                        <span className="block text-10 font-semibold uppercase tracking-wider text-slate-400">
                           Common Working Schedules:
                         </span>
                         <div className="grid grid-cols-2 gap-1.5">
@@ -702,7 +823,7 @@ export default function CreateBusiness({ setActivePage }) {
                                 updateWorkingDays(preset);
                                 setShowDateCalendar(false);
                               }}
-                              className={`text-left px-2 py-1.5 rounded-md text-[11px] font-medium border transition-colors ${
+                              className={`text-left px-2 py-1.5 rounded-md text-11 font-medium border transition-colors ${
                                 formData.working_days === preset
                                   ? 'bg-blue-50 border-blue-300 text-blue-700 font-semibold'
                                   : 'bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100'
@@ -716,7 +837,7 @@ export default function CreateBusiness({ setActivePage }) {
 
                       {/* Interactive Calendar */}
                       <div>
-                        <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                        <span className="block text-10 font-semibold uppercase tracking-wider text-slate-400 mb-1">
                           Pick Specific Date / Day from Calendar:
                         </span>
                         <ReactCalendar
@@ -731,7 +852,7 @@ export default function CreateBusiness({ setActivePage }) {
                       </div>
 
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                        <span className="text-[11px] text-slate-500 truncate max-w-[170px]" title={formData.working_days}>
+                        <span className="text-11 text-slate-500 truncate max-w-[170px]" title={formData.working_days}>
                           {formData.working_days}
                         </span>
                         <button
@@ -750,10 +871,10 @@ export default function CreateBusiness({ setActivePage }) {
               {/* Field 2: Time with Calendar / Time Picker */}
               <div className="relative">
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block mb-1 text-[0.8125rem] font-medium text-[#3B4A63]">
+                  <label className="block mb-1 text-13 font-medium text-ink-soft">
                     Working Hours (Time) <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[11px] font-medium text-slate-400">
+                  <span className="text-11 font-medium text-slate-400">
                     Daily Timings
                   </span>
                 </div>
@@ -771,12 +892,16 @@ export default function CreateBusiness({ setActivePage }) {
                       }));
                     }}
                     placeholder="e.g. 09:00 AM - 08:00 PM"
-                    className="w-full h-[2.875rem] pl-[0.95rem] pr-10 rounded-[0.875rem] text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_rgba(14,26,46,0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-[#2B8AF7] focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                    className="w-full h-[2.875rem] pl-s-15-2 pr-10 rounded-14 text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowTimePicker(!showTimePicker);
+                    onClick={(e) => {
+                      const next = !showTimePicker;
+                      if (next) {
+                        updatePopoverPosition(e.currentTarget.closest('.relative') || e.currentTarget.parentElement, setTimePickerPlacement, 440);
+                      }
+                      setShowTimePicker(next);
                       setShowDateCalendar(false);
                       setActiveDocTimePickerIndex(null);
                     }}
@@ -786,7 +911,7 @@ export default function CreateBusiness({ setActivePage }) {
                     <Clock className="w-4 h-4 text-blue-600" />
                   </button>
                 </div>
-                <span className="block mt-1 text-[0.6875rem] text-slate-500">Opening &amp; closing timings quoted by AI</span>
+                <span className="block mt-1 text-11 text-slate-500">Opening &amp; closing timings quoted by AI</span>
 
                 {/* Time Calendar Popover */}
                 {showTimePicker && (
@@ -795,7 +920,13 @@ export default function CreateBusiness({ setActivePage }) {
                       className="fixed inset-0 z-30"
                       onClick={() => setShowTimePicker(false)}
                     />
-                    <div className="absolute top-full mt-1.5 bg-white border border-slate-900/[0.12] rounded-2xl shadow-[0_14px_35px_-5px_rgba(15,23,42,0.18),0_8px_12px_-6px_rgba(15,23,42,0.08)] p-[0.9rem] z-40 right-0 left-0 sm:left-auto sm:w-80">
+                    <div
+                      ref={timePickerPopoverRef}
+                      style={{ maxHeight: timePickerPlacement.maxHeight ? `${timePickerPlacement.maxHeight}px` : undefined }}
+                      className={`absolute ${
+                        timePickerPlacement.placement === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                      } bg-white border border-slate-900/[0.12] rounded-2xl shadow-[0_14px_35px_-5px_theme(colors.slate.900_/_0.18),0_8px_12px_-6px_theme(colors.slate.900_/_0.08)] p-s-14-4 z-40 right-0 left-0 sm:left-auto sm:w-80 overflow-y-auto`}
+                    >
                       <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-ink">
                           <Clock className="w-3.5 h-3.5 text-blue-600" />
@@ -813,7 +944,7 @@ export default function CreateBusiness({ setActivePage }) {
                       {/* Time Inputs */}
                       <div className="grid grid-cols-2 gap-2 mb-3">
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          <label className="block text-11 font-semibold text-slate-600 mb-1">
                             Opening Time
                           </label>
                           <input
@@ -824,7 +955,7 @@ export default function CreateBusiness({ setActivePage }) {
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          <label className="block text-11 font-semibold text-slate-600 mb-1">
                             Closing Time
                           </label>
                           <input
@@ -838,7 +969,7 @@ export default function CreateBusiness({ setActivePage }) {
 
                       {/* Quick Time Presets */}
                       <div className="space-y-1.5 mb-2.5">
-                        <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                        <span className="block text-10 font-semibold uppercase tracking-wider text-slate-400">
                           Common Daily Timings:
                         </span>
                         <div className="grid grid-cols-1 gap-1.5">
@@ -856,7 +987,7 @@ export default function CreateBusiness({ setActivePage }) {
                                 updateWorkingTime(t.start, t.end);
                                 setShowTimePicker(false);
                               }}
-                              className={`text-left px-2.5 py-1.5 rounded-md text-[11px] font-mono border transition-colors ${
+                              className={`text-left px-2.5 py-1.5 rounded-md text-11 font-mono border transition-colors ${
                                 timePickerStart === t.start && timePickerEnd === t.end
                                   ? 'bg-blue-50 border-blue-300 text-blue-700 font-semibold'
                                   : 'bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100'
@@ -869,7 +1000,7 @@ export default function CreateBusiness({ setActivePage }) {
                       </div>
 
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                        <span className="text-[11px] font-mono text-slate-500 truncate">
+                        <span className="text-11 font-mono text-slate-500 truncate">
                           {formData.working_time}
                         </span>
                         <button
@@ -885,47 +1016,22 @@ export default function CreateBusiness({ setActivePage }) {
                 )}
               </div>
             </div>
-
-            {/* AI Receptionist Name: Dropdown with 6 names */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block mb-1 text-[0.8125rem] font-medium text-[#3B4A63]">
-                  AI Receptionist Name <span className="text-rose-500">*</span>
-                </label>
-                <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                  6 Names Available
-                </span>
-              </div>
-              <select
-                value={formData.receptionist_name}
-                onChange={(e) => setFormData({ ...formData, receptionist_name: e.target.value })}
-                className="w-full h-[2.875rem] px-[0.95rem] rounded-[0.875rem] text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_rgba(14,26,46,0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-[#2B8AF7] focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200 cursor-pointer"
-              >
-                <option value="Neha">Neha (Recommended)</option>
-                <option value="Pooja">Pooja</option>
-                <option value="Priya">Priya</option>
-                <option value="Shivani">Shivani</option>
-                <option value="Riya">Riya</option>
-                <option value="Aditi">Aditi</option>
-              </select>
-              <span className="block mt-1 text-[0.6875rem] text-slate-500">Choose which AI voice receptionist greets callers on live phone calls</span>
-            </div>
           </div>
 
-          {/* Section 3: Doctors */}
+          {/* Section 3: Doctors & Services */}
           <div
-            className="relative p-6 sm:px-8 sm:py-7 rounded-[1.5rem] bg-white/[0.86] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.95),0_0_0_1px_rgba(15,23,42,0.08),0_1px_2px_rgba(14,26,46,0.04),0_18px_40px_-26px_rgba(23,76,150,0.35)] scroll-mt-24 space-y-4"
+            className="relative p-6 sm:px-8 sm:py-7 rounded-24 bg-white/[0.86] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.95),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] scroll-mt-24 space-y-4"
             id="biz-doctors"
             style={{ zIndex: activeDocTimePickerIndex !== null ? 35 : 1 }}
           >
             <div className="flex items-center justify-between gap-3">
-              <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.08em] uppercase text-[#1570E0] before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-[#60A5FA] before:to-[#1570E0] before:shadow-[0_0_0_3px_rgba(43,138,247,0.12)]">
-                <span>3. Doctors &amp; Timings</span>
+              <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-wide-80 uppercase text-blue-600 before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-tint-blue-28 before:to-blue-600 before:shadow-[0_0_0_3px_theme(colors.blue.500_/_0.12)]">
+                <span>3. Doctors &amp; Services</span>
               </h4>
               <button
                 type="button"
                 onClick={addDoctorRow}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold text-[#1570E0] bg-[#EEF5FF] shadow-[inset_0_0_0_1px_rgba(21,112,224,0.18)] hover:text-white hover:bg-[#1570E0] transition-colors duration-200 cursor-pointer"
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold text-blue-600 bg-tint-blue-10 shadow-[inset_0_0_0_1px_theme(colors.blue.600_/_0.18)] hover:text-white hover:bg-blue-600 transition-colors duration-200 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Doctor</span>
@@ -936,7 +1042,7 @@ export default function CreateBusiness({ setActivePage }) {
               {formData.doctors.map((doc, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-gradient-to-b from-[#F6FAFF] to-[#EFF5FD] shadow-[inset_0_0_0_1px_rgba(23,76,150,0.08)]"
+                  className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-gradient-to-b from-tint-blue-3 to-ice-base shadow-[inset_0_0_0_1px_theme(colors.blue.800_/_0.08)]"
                   style={{
                     position: 'relative',
                     zIndex: activeDocTimePickerIndex === idx ? 40 : 'auto'
@@ -950,7 +1056,7 @@ export default function CreateBusiness({ setActivePage }) {
                       value={doc.name}
                       onChange={(e) => updateDoctorRow(idx, 'name', e.target.value.replace(/[0-9]/g, '').slice(0, 50))}
                       placeholder="Doctor Name (e.g. Dr. Rajesh)"
-                      className="w-full h-[2.4rem] px-[0.95rem] rounded-[0.7rem] text-[0.8125rem] text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_rgba(14,26,46,0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-[#2B8AF7] focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                      className="w-full h-[2.4rem] px-s-15-2 rounded-11-2 text-13 text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                     />
                     <input
                       type="text"
@@ -959,7 +1065,7 @@ export default function CreateBusiness({ setActivePage }) {
                       value={doc.specialization}
                       onChange={(e) => updateDoctorRow(idx, 'specialization', e.target.value.replace(/[0-9]/g, '').slice(0, 50))}
                       placeholder="Specialty (e.g. Dentist)"
-                      className="w-full h-[2.4rem] px-[0.95rem] rounded-[0.7rem] text-[0.8125rem] text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_rgba(14,26,46,0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-[#2B8AF7] focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                      className="w-full h-[2.4rem] px-s-15-2 rounded-11-2 text-13 text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                     />
                     <div className="relative flex items-center">
                       <input
@@ -967,14 +1073,15 @@ export default function CreateBusiness({ setActivePage }) {
                         value={doc.timings}
                         onChange={(e) => updateDoctorRow(idx, 'timings', e.target.value)}
                         placeholder="e.g. 10:00 AM - 07:00 PM"
-                        className="w-full h-[2.4rem] pl-[0.95rem] pr-8 rounded-[0.7rem] text-xs font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_rgba(14,26,46,0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-[#2B8AF7] focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                        className="w-full h-[2.4rem] pl-s-15-2 pr-8 rounded-11-2 text-xs font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                       />
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
                           if (activeDocTimePickerIndex === idx) {
                             setActiveDocTimePickerIndex(null);
                           } else {
+                            updatePopoverPosition(e.currentTarget.parentElement, setDocTimePickerPlacement, 560);
                             setActiveDocTimePickerIndex(idx);
                             setShowTimePicker(false);
                             setShowDateCalendar(false);
@@ -993,7 +1100,13 @@ export default function CreateBusiness({ setActivePage }) {
                             className="fixed inset-0 z-30"
                             onClick={() => setActiveDocTimePickerIndex(null)}
                           />
-                          <div className="absolute top-full mt-1.5 bg-white border border-slate-900/[0.12] rounded-2xl shadow-[0_14px_35px_-5px_rgba(15,23,42,0.18),0_8px_12px_-6px_rgba(15,23,42,0.08)] p-[0.9rem] z-40 right-0 left-0 sm:left-auto sm:w-80">
+                          <div
+                            ref={docTimePickerPopoverRef}
+                            style={{ maxHeight: docTimePickerPlacement.maxHeight ? `${docTimePickerPlacement.maxHeight}px` : undefined }}
+                            className={`absolute ${
+                              docTimePickerPlacement.placement === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                            } bg-white border border-slate-900/[0.12] rounded-2xl shadow-[0_14px_35px_-5px_theme(colors.slate.900_/_0.18),0_8px_12px_-6px_theme(colors.slate.900_/_0.08)] p-s-14-4 z-40 right-0 left-0 sm:left-auto sm:w-80 md:w-doctor-popover overflow-y-auto adm-calendar-widget`}
+                          >
                             <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
                               <div className="flex items-center gap-1.5 text-xs font-semibold text-ink">
                                 <Clock className="w-3.5 h-3.5 text-blue-600" />
@@ -1008,72 +1121,24 @@ export default function CreateBusiness({ setActivePage }) {
                               </button>
                             </div>
 
-                            {/* Time Inputs */}
-                            <div className="grid grid-cols-2 gap-2 mb-3">
-                              <div>
-                                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                                  Start Time
-                                </label>
-                                <input
-                                  type="time"
-                                  value={docTimePickerStart}
-                                  onChange={(e) => updateDoctorTime(idx, e.target.value, docTimePickerEnd)}
-                                  className="w-full text-xs font-mono font-medium p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-blue-500 focus:outline-none"
+                            {/* Same timing and day controls as the portal's doctor modal */}
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-2.5 items-start">
+                              <div className="md:col-span-5">
+                                <DoctorTimingsField
+                                  timing={getDoctorSchedule(doc).timing}
+                                  onChange={(timing) => updateDoctorSchedule(idx, getDoctorSchedule(doc).days, timing)}
                                 />
                               </div>
-                              <div>
-                                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                                  End Time
-                                </label>
-                                <input
-                                  type="time"
-                                  value={docTimePickerEnd}
-                                  onChange={(e) => updateDoctorTime(idx, docTimePickerStart, e.target.value)}
-                                  className="w-full text-xs font-mono font-medium p-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:border-blue-500 focus:outline-none"
+                              <div className="md:col-span-7 space-y-3">
+                                <DoctorDaysField
+                                  days={getDoctorSchedule(doc).days}
+                                  onChange={(days) => updateDoctorSchedule(idx, days, getDoctorSchedule(doc).timing)}
                                 />
                               </div>
                             </div>
 
-                            {/* Quick Time Presets */}
-                            <div className="space-y-1.5 mb-2.5">
-                              <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                                Common Doctor Timings:
-                              </span>
-                              <div className="grid grid-cols-1 gap-1.5">
-                                {[
-                                  { label: '10:00 AM - 07:00 PM (Standard)', start: '10:00', end: '19:00', text: '10:00 AM - 07:00 PM' },
-                                  { label: '10:00 AM - 02:00 PM & 05:00 PM - 08:00 PM (Split Shift)', text: '10:00 AM - 02:00 PM & 05:00 PM - 08:00 PM' },
-                                  { label: '09:00 AM - 01:00 PM (Morning OPD)', start: '09:00', end: '13:00', text: '09:00 AM - 01:00 PM' },
-                                  { label: '05:00 PM - 09:00 PM (Evening OPD)', start: '17:00', end: '21:00', text: '05:00 PM - 09:00 PM' },
-                                  { label: '09:00 AM - 08:00 PM (Full Day)', start: '09:00', end: '20:00', text: '09:00 AM - 08:00 PM' },
-                                  { label: '11:00 AM - 04:00 PM (Day Shift)', start: '11:00', end: '16:00', text: '11:00 AM - 04:00 PM' },
-                                  { label: 'On Call / By Appointment', text: 'On Call / By Appointment' }
-                                ].map((t) => (
-                                  <button
-                                    key={t.label}
-                                    type="button"
-                                    onClick={() => {
-                                      if (t.start && t.end) {
-                                        setDocTimePickerStart(t.start);
-                                        setDocTimePickerEnd(t.end);
-                                      }
-                                      updateDoctorRow(idx, 'timings', t.text);
-                                      setActiveDocTimePickerIndex(null);
-                                    }}
-                                    className={`text-left px-2.5 py-1.5 rounded-md text-[11px] font-mono border transition-colors ${
-                                      doc.timings === t.text
-                                        ? 'bg-blue-50 border-blue-300 text-blue-700 font-semibold'
-                                        : 'bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100'
-                                    }`}
-                                  >
-                                    {t.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                              <span className="text-[11px] font-mono text-slate-500 truncate max-w-[190px]" title={doc.timings}>
+                            <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-3 text-xs">
+                              <span className="text-11 font-mono text-slate-500 truncate min-w-0" title={doc.timings}>
                                 {doc.timings || 'Select or enter timings'}
                               </span>
                               <button
@@ -1101,18 +1166,15 @@ export default function CreateBusiness({ setActivePage }) {
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* Section 4: Services */}
-          <div className="relative p-6 sm:px-8 sm:py-7 rounded-[1.5rem] bg-white/[0.86] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.95),0_0_0_1px_rgba(15,23,42,0.08),0_1px_2px_rgba(14,26,46,0.04),0_18px_40px_-26px_rgba(23,76,150,0.35)] scroll-mt-24 space-y-4" id="biz-services">
-            <div className="flex items-center justify-between gap-3">
-              <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.08em] uppercase text-[#1570E0] before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-[#60A5FA] before:to-[#1570E0] before:shadow-[0_0_0_3px_rgba(43,138,247,0.12)]">
-                <span>4. Services &amp; Treatments</span>
+            <div className="flex items-center justify-between gap-3 pt-2">
+              <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-wide-80 uppercase text-blue-600 before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-tint-blue-28 before:to-blue-600 before:shadow-[0_0_0_3px_theme(colors.blue.500_/_0.12)]">
+                <span>Services &amp; Treatments</span>
               </h4>
               <button
                 type="button"
                 onClick={addServiceRow}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold text-[#1570E0] bg-[#EEF5FF] shadow-[inset_0_0_0_1px_rgba(21,112,224,0.18)] hover:text-white hover:bg-[#1570E0] transition-colors duration-200 cursor-pointer"
+                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold text-blue-600 bg-tint-blue-10 shadow-[inset_0_0_0_1px_theme(colors.blue.600_/_0.18)] hover:text-white hover:bg-blue-600 transition-colors duration-200 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Service</span>
@@ -1121,7 +1183,7 @@ export default function CreateBusiness({ setActivePage }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {formData.services.map((srv, idx) => (
-                <div key={idx} className="flex items-center gap-2 h-[2.6rem] pl-[0.9rem] pr-2 rounded-[0.875rem] bg-white border border-slate-900/[0.14] focus-within:border-[#2B8AF7] focus-within:ring-4 focus-within:ring-blue-500/15 transition-[border-color,box-shadow] duration-200">
+                <div key={idx} className="flex items-center gap-2 h-[2.6rem] pl-s-14-4 pr-2 rounded-14 bg-white border border-slate-900/[0.14] focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/15 transition-[border-color,box-shadow] duration-200">
                   <input
                     type="text"
                     minLength={3}

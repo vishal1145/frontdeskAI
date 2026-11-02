@@ -20,7 +20,7 @@ export default function Footer({ setActivePage }) {
 
   return (
     <footer ref={footerRef} className="w-full max-w-7xl mx-auto relative text-ink-muted px-4 sm:px-6 lg:px-8 pb-16 pt-0">
-      <div className="w-full glass-solid !rounded-[1.75rem] px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-8 sm:pb-10 relative overflow-hidden">
+      <div className="w-full glass-solid !rounded-28 px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-8 sm:pb-10 relative overflow-hidden">
         {/* Soft cyan bloom in the card corner */}
         <div className="absolute -top-32 -right-24 w-96 h-72 bg-cyan-200/40 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-9 sm:gap-10 lg:gap-12 relative">
@@ -79,7 +79,7 @@ The AI receptionist for modern businesses. Answers naturally and prevents missed
 
           {/* Product & Flow Column (Col 7-9) */}
           <div className="lg:col-span-3 space-y-4">
-            <h4 className="text-xs uppercase tracking-[0.14em] text-ink font-semibold flex items-center gap-2">
+            <h4 className="text-xs uppercase tracking-wide-140 text-ink font-semibold flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
               Product &amp; Flow
             </h4>
@@ -113,7 +113,7 @@ The AI receptionist for modern businesses. Answers naturally and prevents missed
 
           {/* Legal & Compliance Column (Col 10-12) */}
           <div className="lg:col-span-3 space-y-4">
-            <h4 className="text-xs uppercase tracking-[0.14em] text-ink font-semibold flex items-center gap-2">
+            <h4 className="text-xs uppercase tracking-wide-140 text-ink font-semibold flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               Legal &amp; Privacy
             </h4>

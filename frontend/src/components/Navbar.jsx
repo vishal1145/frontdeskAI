@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Menu, X, ArrowRight, Building2, ShieldCheck, Settings, Users, LogOut, ChevronDown, LayoutDashboard, Plus } from 'lucide-react';
+import { 
+  Calendar, Menu, X, ArrowRight, Building2, ShieldCheck, 
+  Settings, Users, LogOut, ChevronDown, LayoutDashboard, 
+  Plus, User, CalendarCheck, Stethoscope 
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import BrandLogo from './BrandLogo';
 
-export default function Navbar({ activePage, setActivePage, clinicUser, isSuperAdmin }) {
+export default function Navbar({ activePage, setActivePage, clinicUser, isSuperAdmin, onClinicLogout }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
+  const [clinicDropdownOpen, setClinicDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -36,7 +41,11 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
 
   const handleNavClick = (id) => {
     setMobileMenuOpen(false);
-    if (['about', 'support', 'privacy', 'terms', 'login', 'portal', 'admin', 'admin-create'].includes(id)) {
+    if ([
+      'about', 'support', 'privacy', 'terms', 'login', 'portal', 
+      'admin', 'admin-create', 'dashboard', 'appointments', 
+      'doctors', 'doctors-services', 'calendar', 'profile'
+    ].includes(id)) {
       setActivePage(id);
     } else if (id === 'home') {
       setActivePage('home', null);
@@ -45,13 +54,32 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
     }
   };
 
-  // Marketing links + demo CTA are hidden on the app pages (login, clinic portal, super admin console)
-  const isPortalOrLogin = activePage === 'login' || activePage === 'portal' || activePage === 'admin' || activePage === 'admin-create';
+  // Marketing links + demo CTA are hidden on the app pages (login, clinic portal pages, super admin console)
+  const isClinicPage = ['portal', 'dashboard', 'appointments', 'doctors', 'doctors-services', 'calendar', 'profile'].includes(activePage);
+  const isPortalOrLogin = activePage === 'login' || isClinicPage || activePage === 'admin' || activePage === 'admin-create';
+
+  const clinicNavItems = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'appointments', label: 'Appointments' },
+    { id: 'doctors-services', label: 'Doctors & Services' },
+    { id: 'calendar', label: 'Calendar' },
+    { id: 'profile', label: 'Profile' },
+  ];
+
+  const isClinicTabActive = (itemId) => {
+    if (itemId === 'dashboard') {
+      return activePage === 'dashboard' || activePage === 'portal' || activePage === 'calls';
+    }
+    if (itemId === 'doctors-services') {
+      return activePage === 'doctors-services' || activePage === 'doctors';
+    }
+    return activePage === itemId;
+  };
 
   return (
     <header
       className={`sticky top-0 z-50 w-full nav-glass transition-shadow duration-300 ${
-        scrolled ? 'shadow-[0_1px_0_rgba(14,27,42,0.08),0_12px_30px_-18px_rgba(23,76,150,0.35)]' : ''
+        scrolled ? 'shadow-[0_1px_0_theme(colors.tint.blue.37_/_0.08),0_12px_30px_-18px_theme(colors.blue.800_/_0.35)]' : ''
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[4.25rem] flex items-center justify-between gap-3 sm:gap-4">
@@ -68,7 +96,7 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
           <BrandLogo variant="navbar" />
         </div>
 
-        {/* Desktop Nav Items - Hidden on Login & Portal pages as marked */}
+        {/* Desktop Nav Items */}
         {!isPortalOrLogin && (
           <nav
             className="hidden lg:flex items-center gap-0.5 p-1.5"
@@ -80,7 +108,7 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`px-4 py-2 rounded-full text-[0.92rem] font-medium whitespace-nowrap transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  className={`px-4 py-2 rounded-full text-14-72 font-medium whitespace-nowrap transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     isActive
                       ? 'text-blue-800 glass-pill'
                       : 'text-ink/70 hover:text-ink hover:bg-white/70'
@@ -100,7 +128,7 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
             <div className="relative">
               <button
                 onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
-                className={`px-3.5 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`h-nav-control px-3 rounded-full text-14-72 font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
                   activePage === 'admin' || activePage === 'admin-create' || adminDropdownOpen
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/30'
                     : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200'
@@ -161,96 +189,204 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
               )}
             </div>
           ) : clinicUser ? (
-            <button
-              onClick={() => handleNavClick('portal')}
-              className={`px-3.5 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                activePage === 'portal'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/30'
-                  : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>{clinicUser.clinic_name.split(' ')[0]} Portal</span>
-            </button>
+            <>
+              {/* Calendar Icon Button */}
+              <button
+                onClick={() => handleNavClick('calendar')}
+                className={`h-nav-control w-nav-control rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                  isClinicTabActive('calendar')
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/30'
+                    : 'bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-600 border border-slate-200/90 shadow-xs'
+                }`}
+                title="Calendar"
+                aria-label="Calendar"
+              >
+                <Calendar className="w-4 h-4" />
+              </button>
+
+              <div className="relative">
+                <button
+                  onClick={() => setClinicDropdownOpen(!clinicDropdownOpen)}
+                  className={`h-nav-control px-3 rounded-full text-14-72 font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isClinicPage || clinicDropdownOpen
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/30'
+                      : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200'
+                  }`}
+                  aria-expanded={clinicDropdownOpen}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>{clinicUser.clinic_name?.split(' ')[0] || 'Clinic'} Portal</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${clinicDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Clinic Portal Dropdown Menu */}
+                {clinicDropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setClinicDropdownOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl bg-white border border-slate-200/80 shadow-xl shadow-slate-900/10 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                      <button
+                        onClick={() => {
+                          setClinicDropdownOpen(false);
+                          handleNavClick('dashboard');
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer whitespace-nowrap ${
+                          isClinicTabActive('dashboard') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-slate-500" />
+                        <span>Dashboard</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setClinicDropdownOpen(false);
+                          handleNavClick('appointments');
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer whitespace-nowrap ${
+                          isClinicTabActive('appointments') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <CalendarCheck className="w-4 h-4 text-slate-500" />
+                        <span>Appointments</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setClinicDropdownOpen(false);
+                          handleNavClick('doctors-services');
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer whitespace-nowrap ${
+                          isClinicTabActive('doctors-services') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Stethoscope className="w-4 h-4 text-slate-500" />
+                        <span>Doctors &amp; Services</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setClinicDropdownOpen(false);
+                          handleNavClick('profile');
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer whitespace-nowrap ${
+                          isClinicTabActive('profile') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <User className="w-4 h-4 text-slate-500" />
+                        <span>Profile</span>
+                      </button>
+
+                    <div className="my-1 border-t border-slate-100" />
+
+                    <button
+                      onClick={() => {
+                        setClinicDropdownOpen(false);
+                        localStorage.removeItem('clinic_auth');
+                        if (onClinicLogout) onClinicLogout();
+                        toast.success('Logged out of Clinic Portal.');
+                        handleNavClick('login');
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50/60 hover:bg-rose-50 transition-colors text-left cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4 text-rose-500" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
           ) : (
             <button
               onClick={() => handleNavClick('login')}
-              className={`px-4 py-2 rounded-full text-[0.88rem] font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`h-nav-control px-3 rounded-full text-14-72 font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
                 activePage === 'login'
                   ? 'text-blue-700 bg-blue-50/90 border border-blue-200 shadow-xs'
                   : 'text-ink/75 hover:text-ink hover:bg-white/80 border border-slate-200/60'
               }`}
             >
               <Building2 className="w-4 h-4 text-blue-600" />
-              <span>Admin Login</span>
+              <span>Login</span>
             </button>
           )}
 
           {/* Primary CTA Button - Hidden on Login & Portal pages as marked */}
           {!isPortalOrLogin && (
-            <button
+            <button 
               onClick={() => handleNavClick('support')}
-              className="hidden lg:flex pill has-chip btn-brand !min-h-[2.75rem] !text-[0.9rem] active:scale-[0.98]"
+              className="hidden sm:inline-flex pill has-chip btn-brand cursor-pointer nav-cta"
             >
               <span>Book Live Demo</span>
-              <span className="btn-chip !w-8 !h-8" aria-hidden="true">
+              <span className="btn-chip" aria-hidden="true">
                 <Calendar />
               </span>
             </button>
           )}
 
-          {/* Mobile Hamburger Button - Only shown when not on portal/login */}
-          {!isPortalOrLogin && (
-            <div className="lg:hidden flex items-center gap-2">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="w-11 h-11 inline-flex items-center justify-center rounded-full glass-pill text-ink hover:text-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                aria-label={mobileMenuOpen ? 'Close Navigation Menu' : 'Open Navigation Menu'}
-                aria-expanded={mobileMenuOpen}
-              >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            </div>
-          )}
+          {/* Mobile Menu Hamburger */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="lg:hidden p-2 rounded-full text-ink hover:bg-white/60 transition-colors"
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
+
       </div>
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div 
-          className="lg:hidden bg-white/95 backdrop-blur-2xl border-t border-blue-900/5 px-4 sm:px-6 pt-3 pb-6 space-y-3 shadow-[0_24px_40px_-24px_rgba(23,76,150,0.45)] animate-slide-up max-h-[calc(100vh-4.25rem)] overflow-y-auto"
+          className="lg:hidden bg-white/95 backdrop-blur-2xl border-t border-blue-900/5 px-4 sm:px-6 pt-3 pb-6 space-y-3 shadow-[0_24px_40px_-24px_theme(colors.blue.800_/_0.45)] animate-slide-up max-h-[calc(100vh-4.25rem)] overflow-y-auto"
           role="dialog"
           aria-label="Mobile Navigation"
         >
-          {/* Gateway Status Badge in Mobile View */}
-          {/* <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300">
-            <span className="text-slate-400">System Telephony:</span>
-            <span className="flex items-center gap-2 font-semibold text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Gateway Active
-            </span>
-          </div> */}
-
           {/* Navigation Links */}
           <div className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = activePage === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item.id)}
-                  className={`w-full text-left px-4 py-3.5 rounded-2xl text-base font-medium flex items-center justify-between transition-colors ${
-                    isActive
-                      ? 'text-blue-800 glass-pill'
-                      : 'text-ink/80 hover:text-ink hover:bg-blue-50/70'
-                  }`}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  <span>{item.label}</span>
-                  {isActive && <ArrowRight className="w-4 h-4 text-blue-600" />}
-                </button>
-              );
-            })}
+            {clinicUser && isClinicPage ? (
+              clinicNavItems.map((item) => {
+                const isActive = isClinicTabActive(item.id);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavClick(item.id)}
+                    className={`w-full text-left px-4 py-3.5 rounded-2xl text-base font-medium flex items-center justify-between transition-colors ${
+                      isActive
+                        ? 'text-blue-800 glass-pill'
+                        : 'text-ink/80 hover:text-ink hover:bg-blue-50/70'
+                    }`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <span>{item.label}</span>
+                    {isActive && <ArrowRight className="w-4 h-4 text-blue-600" />}
+                  </button>
+                );
+              })
+            ) : (
+              navItems.map((item) => {
+                const isActive = activePage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavClick(item.id)}
+                    className={`w-full text-left px-4 py-3.5 rounded-2xl text-base font-medium flex items-center justify-between transition-colors ${
+                      isActive
+                        ? 'text-blue-800 glass-pill'
+                        : 'text-ink/80 hover:text-ink hover:bg-blue-50/70'
+                    }`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <span>{item.label}</span>
+                    {isActive && <ArrowRight className="w-4 h-4 text-blue-600" />}
+                  </button>
+                );
+              })
+            )}
           </div>
 
           {/* Mobile Clinic Login / Portal Button */}
@@ -268,7 +404,7 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
               </button>
             ) : clinicUser ? (
               <button
-                onClick={() => handleNavClick('portal')}
+                onClick={() => handleNavClick('dashboard')}
                 className="w-full py-3 px-4 rounded-2xl bg-blue-600 text-white font-bold text-sm flex items-center justify-between shadow-md shadow-blue-500/20"
               >
                 <div className="flex items-center gap-2">
@@ -292,17 +428,19 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
           </div>
 
           {/* Mobile CTA */}
-          <div className="pt-2 border-t border-blue-900/10">
-            <button
-              onClick={() => handleNavClick('support')}
-              className="pill has-chip btn-brand w-full active:scale-[0.98]"
-            >
-              <span>Book Live Demo</span>
-              <span className="btn-chip" aria-hidden="true">
-                <Calendar />
-              </span>
-            </button>
-          </div>
+          {!isPortalOrLogin && (
+            <div className="pt-2 border-t border-blue-900/10">
+              <button 
+                onClick={() => handleNavClick('support')}
+                className="pill has-chip btn-brand w-full active:scale-[0.98]"
+              >
+                <span>Book Live Demo</span>
+                <span className="btn-chip" aria-hidden="true">
+                  <Calendar />
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </header>

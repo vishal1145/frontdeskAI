@@ -90,16 +90,16 @@ export default function Login({ setActivePage, onLoginSuccess }) {
 
   return (
     <div className="relative w-full h-[calc(100dvh-4.25rem)] min-h-[calc(100dvh-4.25rem)] max-h-[calc(100dvh-4.25rem)] overflow-hidden text-ink font-sans" data-motion-scope="clinic">
-      <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(40rem_30rem_at_10%_10%,rgba(162,232,253,0.4),transparent_60%),radial-gradient(45rem_35rem_at_90%_90%,rgba(188,220,255,0.45),transparent_60%)]" aria-hidden="true" />
+      <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(40rem_30rem_at_10%_10%,theme(colors.tint.cyan.6_/_0.4),transparent_60%),radial-gradient(45rem_35rem_at_90%_90%,theme(colors.blue.200_/_0.45),transparent_60%)]" aria-hidden="true" />
 
       <div className="relative z-[1] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-center py-2 sm:py-3">
-        <div className="w-full grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] rounded-3xl bg-white/85 backdrop-blur-xl border border-slate-900/[0.09] shadow-[0_1px_3px_rgba(14,26,46,0.04),0_24px_60px_-20px_rgba(23,76,150,0.28)] overflow-hidden">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] rounded-3xl bg-white/85 backdrop-blur-xl border border-slate-900/[0.09] shadow-[0_1px_3px_theme(colors.ink.DEFAULT_/_0.04),0_24px_60px_-20px_theme(colors.blue.800_/_0.28)] overflow-hidden">
 
         {/* ─── Right (desktop) / first (mobile): the login form ─── */}
         <section className="flex flex-col justify-center p-6 sm:p-8 lg:p-10 order-2 lg:order-2">
           <div className="w-full max-w-[26rem] mx-auto">
             <div className="mb-5 sm:mb-6 flex flex-col items-center text-center">
-              <div className="grid place-items-center w-12 h-12 rounded-2xl text-white bg-gradient-to-b from-[#2B8AF7] to-[#1570E0] shadow-[0_0_0_4px_rgba(43,138,247,0.15),0_10px_22px_-10px_rgba(21,112,224,0.8)] mb-3" aria-hidden="true">
+              <div className="grid place-items-center w-12 h-12 rounded-2xl text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[0_0_0_4px_theme(colors.blue.500_/_0.15),0_10px_22px_-10px_theme(colors.blue.600_/_0.8)] mb-3" aria-hidden="true">
                 <Building2 className="w-6 h-6" />
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-ink leading-tight">
@@ -107,7 +107,7 @@ export default function Login({ setActivePage, onLoginSuccess }) {
               </h1>
               <div
                 className="mt-2 text-xs leading-relaxed text-slate-500 max-w-[21rem] mx-auto"
-                style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
+                style={{ fontFamily: 'var(--fd-font-sans)' }}
               >
                 Sign in with your registered mobile number and password to<br className="hidden sm:inline" /> access your business's call logs &amp; billing.
               </div>
@@ -198,7 +198,7 @@ export default function Login({ setActivePage, onLoginSuccess }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 px-5 rounded-xl font-semibold text-sm text-white bg-gradient-to-b from-[#2B8AF7] to-[#1570E0] hover:from-[#1570E0] hover:to-[#155BBA] active:translate-y-px transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_6px_16px_-8px_rgba(21,112,224,0.6)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="w-full h-12 px-5 rounded-xl font-semibold text-sm text-white bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 active:translate-y-px transition-all shadow-[inset_0_1px_0_theme(colors.white_/_0.2),0_6px_16px_-8px_theme(colors.blue.600_/_0.6)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {loading ? (
                   <>
@@ -217,43 +217,43 @@ export default function Login({ setActivePage, onLoginSuccess }) {
         </section>
 
         {/* ─── Left (desktop): brand panel ─── */}
-        <aside className="relative isolate flex flex-col items-center justify-center gap-4 md:gap-[clamp(0.625rem,1.5vh,1.25rem)] p-8 sm:px-6 sm:py-9 md:py-[clamp(1.25rem,2.5vh,2rem)] text-center bg-gradient-to-br from-[#F6FAFF] via-[#E9F3FD] to-[#DCECFD] border-t md:border-t-0 md:border-r border-slate-900/[0.07] order-1 lg:order-1 before:content-[''] before:absolute before:inset-0 before:-z-10 before:bg-[radial-gradient(rgba(23,76,150,0.09)_1px,transparent_1.2px)] before:bg-[size:22px_22px] before:[mask-image:radial-gradient(ellipse_75%_70%_at_50%_42%,#000_35%,transparent_100%)]">
+        <aside className="relative isolate flex flex-col items-center justify-center gap-4 md:gap-set-1 p-8 sm:px-6 sm:py-9 md:py-set-2 text-center bg-gradient-to-br from-tint-blue-3 via-tint-blue-13 to-tint-blue-19 border-t md:border-t-0 md:border-r border-slate-900/[0.07] order-1 lg:order-1 before:content-[''] before:absolute before:inset-0 before:-z-10 before:bg-[radial-gradient(theme(colors.blue.800_/_0.09)_1px,transparent_1.2px)] before:bg-[size:22px_22px] before:[mask-image:radial-gradient(ellipse_75%_70%_at_50%_42%,#000_35%,transparent_100%)]">
           {/* Decorative scene: patient calls flow into the clinic's reception desk and are verified */}
           <div className="cx-scene cx-enter" style={{ '--i': 1 }} aria-hidden="true">
             <svg className="cx-scene-links" viewBox="0 0 400 320" fill="none">
               <defs>
                 <radialGradient id="cxSceneHalo" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#2B8AF7" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#2B8AF7" stopOpacity="0" />
+                  <stop offset="0%" stopColor="var(--fd-brand-vivid)" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="var(--fd-brand-vivid)" stopOpacity="0" />
                 </radialGradient>
                 <linearGradient id="cxSceneLink" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#2B8AF7" stopOpacity="0.15" />
-                  <stop offset="100%" stopColor="#1570E0" stopOpacity="0.55" />
+                  <stop offset="0%" stopColor="var(--fd-brand-vivid)" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="var(--fd-brand)" stopOpacity="0.55" />
                 </linearGradient>
               </defs>
 
               <circle cx="268" cy="160" r="150" fill="url(#cxSceneHalo)" />
               <g className="cx-scene-rings">
-                <circle cx="268" cy="160" r="128" stroke="#174C96" strokeOpacity="0.07" />
-                <circle cx="268" cy="160" r="98" stroke="#1570E0" strokeOpacity="0.12" strokeDasharray="2 6" strokeLinecap="round" />
+                <circle cx="268" cy="160" r="128" stroke="var(--fd-brand-deep)" strokeOpacity="0.07" />
+                <circle cx="268" cy="160" r="98" stroke="var(--fd-brand)" strokeOpacity="0.12" strokeDasharray="2 6" strokeLinecap="round" />
               </g>
 
               {/* patient → reception */}
               <path className="cx-scene-link" pathLength="1" d="M146 86 C 168 86, 170 122, 192 122" stroke="url(#cxSceneLink)" strokeWidth="1.75" strokeLinecap="round" />
               <path className="cx-scene-link cx-scene-link--2" pathLength="1" d="M146 228 C 168 228, 170 196, 192 196" stroke="url(#cxSceneLink)" strokeWidth="1.75" strokeLinecap="round" />
-              <circle cx="146" cy="86" r="2.5" fill="#2B8AF7" />
-              <circle cx="146" cy="228" r="2.5" fill="#2B8AF7" />
+              <circle cx="146" cy="86" r="2.5" fill="var(--fd-brand-vivid)" />
+              <circle cx="146" cy="228" r="2.5" fill="var(--fd-brand-vivid)" />
 
               {/* signal pulses (hidden for reduced motion) */}
               <g className="cx-scene-signal" opacity="0">
-                <circle r="7" fill="#2B8AF7" opacity="0.18" />
-                <circle r="3" fill="#2B8AF7" />
+                <circle r="7" fill="var(--fd-brand-vivid)" opacity="0.18" />
+                <circle r="3" fill="var(--fd-brand-vivid)" />
                 <animateMotion begin="1.4s" dur="3.6s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.45;1" calcMode="linear" path="M146 86 C 168 86, 170 122, 192 122" />
                 <animate attributeName="opacity" begin="1.4s" dur="3.6s" repeatCount="indefinite" values="0;1;1;0;0" keyTimes="0;0.06;0.4;0.46;1" />
               </g>
               <g className="cx-scene-signal" opacity="0">
-                <circle r="7" fill="#2B8AF7" opacity="0.18" />
-                <circle r="3" fill="#2B8AF7" />
+                <circle r="7" fill="var(--fd-brand-vivid)" opacity="0.18" />
+                <circle r="3" fill="var(--fd-brand-vivid)" />
                 <animateMotion begin="3.2s" dur="3.6s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.45;1" calcMode="linear" path="M146 228 C 168 228, 170 196, 192 196" />
                 <animate attributeName="opacity" begin="3.2s" dur="3.6s" repeatCount="indefinite" values="0;1;1;0;0" keyTimes="0;0.06;0.4;0.46;1" />
               </g>
@@ -332,14 +332,14 @@ export default function Login({ setActivePage, onLoginSuccess }) {
 
           <div className="max-w-[22rem] cx-enter" style={{ '--i': 2 }}>
             <span className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-ink">
-              <ShieldCheck className="w-5 h-5 text-[#2B8AF7]" />
+              <ShieldCheck className="w-5 h-5 text-blue-500" />
               Admin Portal
             </span>
 
             {/* Security & Multi-tenant note */}
             <div
               className="max-w-[20rem] mx-auto mt-1.5 text-xs leading-relaxed text-slate-500"
-              style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
+              style={{ fontFamily: 'var(--fd-font-sans)' }}
             >
               🔒 Multi-tenant isolation active: You will strictly only see call logs and billing for your verified business.
             </div>

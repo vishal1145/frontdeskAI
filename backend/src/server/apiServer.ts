@@ -4,10 +4,11 @@ import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
 import { dbService } from "../services/dbService.js";
-import { clinicRegistry } from "../config/clinicRegistry.js";
+import { clinicRegistry, ClinicRegistration } from "../config/clinicRegistry.js";
 import { vobizService } from "../services/vobizService.js";
 import { recordingStorageService } from "../services/recordingStorageService.js";
 import { generateDynamicClinicSlots } from "../tools/availabilityTool.js";
+import { cleanWorkingDays, doctorSlotKey, normalizeName, selectDoctorForBooking, todayInIst } from "../services/doctorScheduleService.js";
 
 dotenv.config();
 
@@ -17,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Vapi-Secret"]
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json());
@@ -196,10 +197,7 @@ app.get("/api/clinics/:clinicId/dashboard", async (req, res) => {
         doctors: clinic.doctors,
         services: clinic.services,
         scheduling_enabled: clinic.scheduling_enabled !== false,
-        slot_duration_minutes: clinic.slot_duration_minutes || 30,
-        calendly_link: clinic.calendly_link || "",
-        has_calendly_api_key: Boolean(clinic.calendly_api_key),
-        calendly_api_key_masked: clinic.calendly_api_key ? `${clinic.calendly_api_key.slice(0, 4)}••••••••${clinic.calendly_api_key.slice(-4)}` : ""
+        slot_duration_minutes: clinic.slot_duration_minutes || 30
       },
       billing: billingSummary,
       call_logs: callLogs,
@@ -218,7 +216,7 @@ app.get("/api/clinics/:clinicId/dashboard", async (req, res) => {
 app.get("/api/clinics/:clinicId/calendar/slots", async (req, res) => {
   try {
     const { clinicId } = req.params;
-    const targetDate = String(req.query.date || new Date().toISOString().split("T")[0]);
+    const targetDate = String(req.query.date || todayInIst());
     const doctorName = String(req.query.doctor || "");
 
     await clinicRegistry.ensureLoaded();
@@ -228,54 +226,68 @@ app.get("/api/clinics/:clinicId/calendar/slots", async (req, res) => {
     }
 
     const isSchedulingEnabled = clinic.scheduling_enabled !== false;
-    const defaultDoctor = clinic.doctors?.[0]?.name || "Clinic Doctor";
-    const selectedDoctor = doctorName || defaultDoctor;
-
-    // Generate daily slots for this clinic & doctor
-    const rawSlots = generateDynamicClinicSlots(targetDate, selectedDoctor, clinic);
+    // One doctor when filtered, otherwise every doctor's own schedule
+    const doctorNames = doctorName
+      ? [doctorName]
+      : (clinic.doctors?.length ? clinic.doctors.map((d) => d.name) : ["Clinic Doctor"]);
+    const rawSlots = doctorNames.flatMap((name) => generateDynamicClinicSlots(targetDate, name, clinic));
 
     // Fetch existing appointments for this clinic on this date
     const appointments = await dbService.getAppointmentsForClinic(clinicId);
     const activeAppts = appointments.filter(
       (a) => a.status !== "cancelled" && a.slot_iso_timestamp.startsWith(targetDate)
+        && (!doctorName || normalizeName(a.doctor_name) === normalizeName(doctorName))
     );
     const apptMap = new Map<string, any>();
     for (const a of activeAppts) {
-      apptMap.set(a.slot_iso_timestamp, a);
+      apptMap.set(doctorSlotKey(a.slot_iso_timestamp, a.doctor_name), a);
     }
 
-    const now = new Date();
-    const slots = rawSlots.map((s) => {
-      const slotTime = new Date(s.slot_iso).getTime();
-      const isPast = slotTime < now.getTime();
-      const existingAppt = apptMap.get(s.slot_iso);
+    // Bookings outside the current schedule stay visible instead of vanishing from the calendar
+    const generatedKeys = new Set(rawSlots.map((s) => doctorSlotKey(s.slot_iso, s.doctor_name)));
+    const offScheduleSlots = activeAppts
+      .filter((a) => !generatedKeys.has(doctorSlotKey(a.slot_iso_timestamp, a.doctor_name)))
+      .map((a) => ({
+        slot_iso: a.slot_iso_timestamp,
+        display_time: new Date(a.slot_iso_timestamp).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" }),
+        doctor_name: a.doctor_name,
+        available: false
+      }));
 
-      return {
-        slot_iso: s.slot_iso,
-        display_time: s.display_time,
-        doctor_name: selectedDoctor,
-        is_booked: Boolean(existingAppt),
-        is_past: isPast,
-        available: !existingAppt && !isPast && isSchedulingEnabled,
-        appointment: existingAppt
-          ? {
-              booking_id: existingAppt.booking_id,
-              patient_name: existingAppt.patient_name,
-              patient_phone: existingAppt.patient_phone,
-              service_type: existingAppt.service_type,
-              status: existingAppt.status,
-              created_at: existingAppt.created_at
-            }
-          : null
-      };
-    });
+    const now = new Date();
+    const slots = [...rawSlots, ...offScheduleSlots]
+      .sort((a, b) => new Date(a.slot_iso).getTime() - new Date(b.slot_iso).getTime())
+      .map((s) => {
+        const slotTime = new Date(s.slot_iso).getTime();
+        const isPast = slotTime < now.getTime();
+        const existingAppt = apptMap.get(doctorSlotKey(s.slot_iso, s.doctor_name));
+
+        return {
+          slot_iso: s.slot_iso,
+          display_time: s.display_time,
+          doctor_name: s.doctor_name,
+          is_booked: Boolean(existingAppt),
+          is_past: isPast,
+          available: !existingAppt && !isPast && isSchedulingEnabled,
+          appointment: existingAppt
+            ? {
+                booking_id: existingAppt.booking_id,
+                patient_name: existingAppt.patient_name,
+                patient_phone: existingAppt.patient_phone,
+                service_type: existingAppt.service_type,
+                status: existingAppt.status,
+                created_at: existingAppt.created_at
+              }
+            : null
+        };
+      });
 
     return res.json({
       success: true,
       clinic_id: clinicId,
       scheduling_enabled: isSchedulingEnabled,
       date: targetDate,
-      selected_doctor: selectedDoctor,
+      selected_doctor: doctorName,
       doctors: clinic.doctors || [],
       slots_count: slots.length,
       booked_count: slots.filter((s) => s.is_booked).length,
@@ -389,6 +401,244 @@ app.post("/api/clinics/:clinicId/status", async (req, res) => {
 });
 
 /**
+ * 2.2c CLINIC PROFILE UPDATE:
+ * Allows a clinic to edit their business profile details
+ */
+const cleanDoctorServices = (assigned: any, allowed: string[]): string[] => {
+  const allowedByName = new Map(allowed.map((name) => [normalizeName(name), name]));
+  const picked = (Array.isArray(assigned) ? assigned : [])
+    .map((name: any) => allowedByName.get(normalizeName(String(name))))
+    .filter((name): name is string => Boolean(name));
+  return [...new Set(picked)];
+};
+
+const handleClinicProfileUpdate = async (req: express.Request, res: express.Response) => {
+  try {
+    const clinicId = String(req.params.clinicId || "");
+    const {
+      clinic_name,
+      contact_phone,
+      receptionist_name,
+      address,
+      working_hours,
+      slot_duration_minutes,
+      password,
+      doctors,
+      services,
+      doctor_renames
+    } = req.body;
+
+    if (!clinicId) {
+      return res.status(400).json({ success: false, message: "Clinic ID required." });
+    }
+
+    await clinicRegistry.ensureLoaded();
+    const clinic = clinicRegistry.getClinicById(clinicId);
+    if (!clinic) {
+      return res.status(404).json({ success: false, message: "Clinic not found." });
+    }
+
+    // Build dynamic UPDATE query
+    const updates: Partial<ClinicRegistration> = {};
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (clinic_name !== undefined) {
+      if (typeof clinic_name !== "string" || !clinic_name.trim()) {
+        return res.status(400).json({ success: false, message: "Clinic name is required." });
+      }
+      const trimmedName = clinic_name.trim();
+      if (/[0-9]/.test(trimmedName)) {
+        return res.status(400).json({ success: false, message: "Clinic name cannot contain numbers." });
+      }
+      if (trimmedName.length < 3 || trimmedName.length > 50) {
+        return res.status(400).json({ success: false, message: "Clinic name must be between 3 and 50 characters." });
+      }
+      setClauses.push(`clinic_name = $${paramIndex++}`);
+      values.push(trimmedName);
+      updates.clinic_name = trimmedName;
+    }
+
+    if (contact_phone !== undefined) {
+      if (typeof contact_phone !== "string" || !contact_phone.trim()) {
+        return res.status(400).json({ success: false, message: "Registered phone is required." });
+      }
+      let phoneDigits = contact_phone.replace(/[^0-9]/g, "");
+      if (phoneDigits.startsWith("91") && phoneDigits.length > 10) {
+        phoneDigits = phoneDigits.slice(2);
+      }
+      if (phoneDigits.length !== 10) {
+        return res.status(400).json({ success: false, message: "Phone number must be exactly 10 digits." });
+      }
+      const formattedPhone = `+91${phoneDigits}`;
+      setClauses.push(`contact_phone = $${paramIndex++}`);
+      values.push(formattedPhone);
+      updates.contact_phone = formattedPhone;
+    }
+
+    if (receptionist_name !== undefined && typeof receptionist_name === "string" && receptionist_name.trim()) {
+      setClauses.push(`receptionist_name = $${paramIndex++}`);
+      values.push(receptionist_name.trim());
+      updates.receptionist_name = receptionist_name.trim();
+    }
+
+    if (address !== undefined) {
+      if (typeof address === "string") {
+        const trimmedAddress = address.trim();
+        if (trimmedAddress && trimmedAddress.length < 3) {
+          return res.status(400).json({ success: false, message: "Address must be at least 3 characters." });
+        }
+        if (trimmedAddress.length > 200) {
+          return res.status(400).json({ success: false, message: "Address cannot exceed 200 characters." });
+        }
+        setClauses.push(`address = $${paramIndex++}`);
+        values.push(trimmedAddress);
+        updates.address = trimmedAddress;
+      }
+    }
+
+    if (working_hours !== undefined && typeof working_hours === "string") {
+      setClauses.push(`working_hours = $${paramIndex++}`);
+      values.push(working_hours.trim());
+      updates.working_hours = working_hours.trim();
+    }
+
+    if (slot_duration_minutes !== undefined) {
+      const durationNum = Number(slot_duration_minutes) || 30;
+      setClauses.push(`slot_duration_minutes = $${paramIndex++}`);
+      values.push(durationNum);
+      updates.slot_duration_minutes = durationNum;
+    }
+
+    if (password !== undefined && typeof password === "string" && password.trim()) {
+      setClauses.push(`password = $${paramIndex++}`);
+      values.push(password.trim());
+      updates.password = password.trim();
+    }
+
+    if (doctors !== undefined && Array.isArray(doctors)) {
+      for (const d of doctors) {
+        if (!d || typeof d.name !== "string" || d.name.trim().length < 3) {
+          return res.status(400).json({ success: false, message: "Doctor name must be at least 3 characters." });
+        }
+      }
+      const uniqueNames = new Set(doctors.map((d: any) => normalizeName(d.name.replace(/[0-9]/g, ''))));
+      if (uniqueNames.size !== doctors.length) {
+        return res.status(400).json({ success: false, message: "Each doctor must have a unique name." });
+      }
+
+      const allowedServices: string[] = Array.isArray(services)
+        ? services.map((s: any) => (typeof s === "string" ? s : (s?.name || "")))
+        : (clinicRegistry.getClinicById(clinicId)?.services || []);
+
+      const cleanDoctors = doctors.map((d: any) => {
+        const name = d.name.replace(/[0-9]/g, '').slice(0, 50).trim();
+        const spec = (d.specialization || d.specialties?.[0] || "Specialist").toString().replace(/[0-9]/g, '').slice(0, 50).trim() || "Specialist";
+        let specs = Array.isArray(d.specialties) && d.specialties.length > 0 
+          ? d.specialties.map((s: any) => String(s).replace(/[0-9]/g, '').slice(0, 50).trim()).filter(Boolean)
+          : [spec];
+        if (specs.length === 0) specs = [spec];
+        const timings = (d.timings || "10:00 AM - 7:00 PM").toString().slice(0, 100).trim();
+        return {
+          name,
+          specialization: spec,
+          specialties: specs,
+          timings,
+          services: cleanDoctorServices(d.services, allowedServices),
+          working_days: cleanWorkingDays(d.working_days)
+        };
+      });
+
+      setClauses.push(`doctors = $${paramIndex++}::jsonb`);
+      values.push(JSON.stringify(cleanDoctors));
+      updates.doctors = cleanDoctors;
+    }
+
+    if (services !== undefined && Array.isArray(services)) {
+      for (const s of services) {
+        const sName = typeof s === "string" ? s : (s?.name || "");
+        if (typeof sName !== "string" || sName.trim().length < 3) {
+          return res.status(400).json({ success: false, message: "Service name must be at least 3 characters." });
+        }
+      }
+      const cleanServices = services.map((s: any) => {
+        const str = typeof s === "string" ? s : (s?.name || "");
+        return str.replace(/[0-9]/g, '').slice(0, 50).trim();
+      }).filter((s: string) => s.length >= 3);
+
+      setClauses.push(`services = $${paramIndex++}::jsonb`);
+      values.push(JSON.stringify(cleanServices));
+      updates.services = cleanServices;
+
+      // A removed service must also leave every doctor it was assigned to
+      if (doctors === undefined) {
+        const prunedDoctors = (clinicRegistry.getClinicById(clinicId)?.doctors || []).map((d) => ({
+          ...d,
+          services: cleanDoctorServices(d.services, cleanServices)
+        }));
+        setClauses.push(`doctors = $${paramIndex++}::jsonb`);
+        values.push(JSON.stringify(prunedDoctors));
+        updates.doctors = prunedDoctors;
+      }
+    }
+
+    if (setClauses.length > 0) {
+      const pool = (clinicRegistry as any).pgPool;
+      if (pool) {
+        values.push(clinicId);
+        const query = `UPDATE clinics SET ${setClauses.join(", ")} WHERE clinic_id = $${paramIndex};`;
+        await pool.query(query, values);
+
+        // Bookings are stored by doctor name, so a rename must carry them across
+        for (const rename of Array.isArray(doctor_renames) ? doctor_renames : []) {
+          if (rename?.from && rename?.to) {
+            await pool.query(
+              `UPDATE appointments SET doctor_name = $1 WHERE clinic_id = $2 AND doctor_name = $3 AND status <> 'cancelled'`,
+              [String(rename.to), clinicId, String(rename.from)]
+            );
+          }
+        }
+      }
+      clinicRegistry.updateClinicProfile(clinicId, updates);
+    }
+
+    const updatedClinic = clinicRegistry.getClinicById(clinicId);
+
+    return res.json({
+      success: true,
+      message: "Clinic profile updated successfully.",
+      clinic: {
+        clinic_id: updatedClinic?.clinic_id,
+        clinic_name: updatedClinic?.clinic_name,
+        contact_phone: updatedClinic?.contact_phone,
+        address: updatedClinic?.address,
+        working_hours: updatedClinic?.working_hours,
+        receptionist_name: updatedClinic?.receptionist_name,
+        virtual_phone_numbers: (updatedClinic?.virtual_phone_numbers || []).filter(
+          (n: string) => !['8065355910', '+917668433939', '7668433939', '+13312923658'].includes(n)
+        ),
+        doctors: updatedClinic?.doctors,
+        services: updatedClinic?.services,
+        scheduling_enabled: updatedClinic?.scheduling_enabled !== false,
+        slot_duration_minutes: updatedClinic?.slot_duration_minutes || 30
+      }
+    });
+  } catch (err: any) {
+    console.error("[CLINIC PROFILE UPDATE ERROR]", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Failed to update clinic profile."
+    });
+  }
+};
+
+app.put("/api/clinics/:clinicId/profile", handleClinicProfileUpdate);
+app.post("/api/clinics/:clinicId/profile", handleClinicProfileUpdate);
+app.put("/api/clinics/:clinicId/doctors", handleClinicProfileUpdate);
+app.put("/api/clinics/:clinicId/services", handleClinicProfileUpdate);
+
+/**
  * 2.3 IN-HOUSE CALENDAR: DIRECT MANUAL BOOKING
  * Allows clinic admin / reception staff to book an appointment directly from the Calendar UI.
  */
@@ -407,18 +657,31 @@ app.post("/api/clinics/:clinicId/calendar/book", async (req, res) => {
       return res.status(404).json({ success: false, message: "Clinic not found." });
     }
 
+    const selection = selectDoctorForBooking(clinic, {
+      doctorName: doctor_name,
+      serviceType: service_type,
+      slotIso: slot_iso_timestamp,
+      bookedKeys: await dbService.getBookedDoctorSlotsFromDb(clinicId)
+    });
+    if (selection.status !== "ok") {
+      return res.status(selection.status === "slot_taken" ? 409 : 400).json({ success: false, message: selection.message });
+    }
+
     const dbResult = await dbService.bookAppointmentInDb({
       clinic_id: clinicId,
       patient_name,
       patient_phone: patient_phone || clinic.contact_phone || "Manual Booking",
       slot_iso_timestamp,
       service_type: service_type || "General Consultation",
-      doctor_name: doctor_name || clinic.doctors?.[0]?.name || "Clinic Doctor",
+      doctor_name: selection.doctorName,
       notes: notes || "Directly booked via Clinic Admin Calendar"
     });
 
     if (dbResult.status === "slot_taken") {
       return res.status(409).json({ success: false, message: "This time slot is already booked." });
+    }
+    if (dbResult.status !== "confirmed") {
+      return res.status(503).json({ success: false, message: dbResult.error_message || "Appointment could not be saved. Please try again." });
     }
 
     return res.json({
@@ -458,127 +721,7 @@ app.delete("/api/clinics/:clinicId/calendar/appointments/:bookingId", async (req
   }
 });
 
-/*
- * ═══════════════════════════════════════════════════════════════════
- * CALENDLY INTEGRATION (PRESERVED - COMMENTED OUT AS REQUESTED)
- * ═══════════════════════════════════════════════════════════════════
-app.post("/api/clinics/:clinicId/calendly", async (req, res) => {
-  try {
-    const { clinicId } = req.params;
-    const { calendly_link, calendly_api_key } = req.body;
 
-    if (!clinicId) {
-      return res.status(400).json({ success: false, message: "Clinic ID required." });
-    }
-
-    await clinicRegistry.ensureLoaded();
-    const clinic = clinicRegistry.getClinicById(clinicId);
-    if (!clinic) {
-      return res.status(404).json({ success: false, message: "Clinic not found." });
-    }
-
-    let cleanLink = typeof calendly_link === "string" ? calendly_link.trim() : "";
-    cleanLink = cleanLink.replace(/^(%20|\s)+/i, "");
-    if (cleanLink && !/^https?:\/\//i.test(cleanLink)) {
-      cleanLink = `https://${cleanLink}`;
-    }
-
-    const pool = (clinicRegistry as any).pgPool;
-    if (pool) {
-      if (typeof calendly_api_key === "string" && !calendly_api_key.includes("••••") && calendly_api_key.trim() !== "") {
-        await pool.query(
-          "UPDATE clinics SET calendly_link = $1, calendly_api_key = $2 WHERE clinic_id = $3;",
-          [cleanLink, calendly_api_key.trim(), clinicId]
-        );
-        clinic.calendly_api_key = calendly_api_key.trim();
-      } else {
-        await pool.query(
-          "UPDATE clinics SET calendly_link = $1 WHERE clinic_id = $2;",
-          [cleanLink, clinicId]
-        );
-      }
-      clinic.calendly_link = cleanLink;
-    }
-
-    return res.json({
-      success: true,
-      message: "Calendly configuration updated successfully.",
-      calendly_link: clinic.calendly_link,
-      has_calendly_api_key: Boolean(clinic.calendly_api_key),
-      calendly_api_key_masked: clinic.calendly_api_key ? `${clinic.calendly_api_key.slice(0, 4)}••••••••${clinic.calendly_api_key.slice(-4)}` : ""
-    });
-  } catch (err: any) {
-    console.error(`[CALENDLY CONFIG ERROR]`, err);
-    return res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.post("/api/clinics/:clinicId/calendly/test", async (req, res) => {
-  try {
-    const { clinicId } = req.params;
-    const { calendly_api_key } = req.body;
-
-    await clinicRegistry.ensureLoaded();
-    const clinic = clinicRegistry.getClinicById(clinicId);
-    if (!clinic) {
-      return res.status(404).json({ success: false, message: "Clinic not found." });
-    }
-
-    let keyToTest = "";
-    if (typeof calendly_api_key === "string" && !calendly_api_key.includes("••••") && calendly_api_key.trim() !== "") {
-      keyToTest = calendly_api_key.trim();
-    } else {
-      keyToTest = clinic.calendly_api_key || "";
-    }
-
-    if (!keyToTest) {
-      return res.status(400).json({ success: false, message: "No Calendly API key provided or found to test." });
-    }
-
-    const testResp = await fetch("https://api.calendly.com/users/me", {
-      headers: {
-        Authorization: `Bearer ${keyToTest}`,
-        "Content-Type": "application/json"
-      },
-      signal: AbortSignal.timeout(5000)
-    });
-
-    if (!testResp.ok) {
-      const errText = await testResp.text();
-      let errorMsg = `Calendly API error (HTTP ${testResp.status})`;
-      try {
-        const parsed = JSON.parse(errText);
-        if (parsed.message) errorMsg = parsed.message;
-      } catch {}
-      return res.status(testResp.status).json({
-        success: false,
-        message: errorMsg
-      });
-    }
-
-    const userData: any = await testResp.json();
-    const resource = userData.resource || {};
-
-    return res.json({
-      success: true,
-      message: "Calendly API connection verified successfully!",
-      user: {
-        name: resource.name || "Calendly User",
-        email: resource.email || "",
-        scheduling_url: resource.scheduling_url || "",
-        avatar_url: resource.avatar_url || null,
-        uri: resource.uri || ""
-      }
-    });
-  } catch (err: any) {
-    console.error(`[CALENDLY TEST ERROR]`, err);
-    return res.status(500).json({
-      success: false,
-      message: err.message || "Failed to reach Calendly API. Check internet connection or key."
-    });
-  }
-});
-*/
 
 /**
  * Trigger manual or client-side sync with Vobiz CDR API
@@ -854,9 +997,14 @@ app.post("/api/admin/clinics", verifyAdminAuth, async (req, res) => {
       .map((d: any) => ({
         name: d.name.replace(/[0-9]/g, '').slice(0, 50).trim(),
         specialization: (d.specialization || "Specialist").toString().replace(/[0-9]/g, '').slice(0, 50).trim() || "Specialist",
-        timings: (d.timings || "10:00 AM - 7:00 PM").toString().slice(0, 50).trim()
+        timings: (d.timings || "10:00 AM - 7:00 PM").toString().slice(0, 100).trim(),
+        working_days: cleanWorkingDays(d.working_days)
       }))
       .filter((d: any) => d.name.length >= 3);
+
+    if (new Set(cleanDoctors.map((d: any) => normalizeName(d.name))).size !== cleanDoctors.length) {
+      return res.status(400).json({ success: false, message: "Each doctor must have a unique name." });
+    }
 
     // Services: strip digits, max 50 chars
     const cleanServices = (Array.isArray(services) ? services : [])

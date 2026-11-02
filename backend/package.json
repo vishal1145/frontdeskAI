@@ -10,7 +10,8 @@
     "start:livekit": "PATH=\"$HOME/.nvm/versions/node/v20.20.2/bin:$PATH\" tsx src/agent/livekitVoiceAgent.ts start",
     "api": "PATH=\"$HOME/.nvm/versions/node/v20.20.2/bin:$PATH\" tsx src/server/apiServer.ts",
     "test": "tsx scripts/test_livekit_end_to_end.ts",
-    "db:check": "tsx scripts/check_database.ts"
+    "db:check": "tsx scripts/check_database.ts",
+    "db:migrate-doctor-slots": "tsx scripts/migrate_doctor_slots.ts"
   },
   "keywords": [
     "ai-receptionist",

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import Lenis from 'lenis';
 import { gsap, ScrollTrigger } from '../motion/core';
 
@@ -12,9 +12,21 @@ const outsideMotionScope = (el) => !el.closest('[data-motion-scope]');
 const pick = (selector) => gsap.utils.toArray(selector).filter(outsideMotionScope);
 
 export default function CustomCursorAndInteractions({ activePage = 'home' }) {
-  const curRef = useRef(null);
-  const ringRef = useRef(null);
-  const isNormalCursor = activePage === 'login' || activePage === 'portal' || activePage === 'admin' || activePage === 'admin-create';
+  const isNormalCursor =
+    activePage === 'login' ||
+    activePage === 'portal' ||
+    activePage === 'dashboard' ||
+    activePage === 'appointments' ||
+    activePage === 'doctors' ||
+    activePage === 'doctors-services' ||
+    activePage === 'calendar' ||
+    activePage === 'profile' ||
+    activePage === 'admin' ||
+    activePage === 'admin-create' ||
+    (typeof window !== 'undefined' && (
+      window.location.pathname.includes('/portal') ||
+      window.location.pathname.includes('/admin')
+    ));
 
   useEffect(() => {
     if (isNormalCursor) {
@@ -53,32 +65,6 @@ export default function CustomCursorAndInteractions({ activePage = 'home' }) {
     }
 
     const ctx = gsap.context(() => {
-      // 2. Custom Cursor Tracking
-      const cur = curRef.current;
-      const ring = ringRef.current;
-      if (cur && ring) {
-        let mouseX = window.innerWidth / 2;
-        let mouseY = window.innerHeight / 2;
-        let ringX = mouseX;
-        let ringY = mouseY;
-
-        on(window, 'mousemove', (e) => {
-          mouseX = e.clientX;
-          mouseY = e.clientY;
-          cur.style.transform = `translate3d(${mouseX - 4}px, ${mouseY - 4}px, 0)`;
-        });
-
-        const ticker = () => {
-          ringX += (mouseX - ringX) * 0.16;
-          ringY += (mouseY - ringY) * 0.16;
-          const rW = ring.offsetWidth / 2;
-          const rH = ring.offsetHeight / 2;
-          ring.style.transform = `translate3d(${ringX - rW}px, ${ringY - rH}px, 0)`;
-        };
-        gsap.ticker.add(ticker);
-        cleanups.push(() => gsap.ticker.remove(ticker));
-      }
-
       // 3. Character Flip Helper for Pill Buttons (.pill, .bf-btn) — only rewrites raw text nodes
       document.querySelectorAll('.pill, .bf-btn').forEach((b) => {
         if (b.querySelector('.bf')) return;
@@ -242,14 +228,5 @@ export default function CustomCursorAndInteractions({ activePage = 'home' }) {
     };
   }, [activePage]);
 
-  if (isNormalCursor) {
-    return null;
-  }
-
-  return (
-    <>
-      <div ref={curRef} className="cur" aria-hidden="true" />
-      <div ref={ringRef} className="cur-ring" aria-hidden="true" />
-    </>
-  );
+  return null;
 }

@@ -216,7 +216,7 @@ export default defineAgent({
       parameters: z.object({
         date: z.string().describe("Target date, e.g. tomorrow, today, 2026-10-18"),
         time_range: z.string().optional().describe("Preferred time range, e.g. evening, morning, 6:00 PM"),
-        doctor_name: z.string().optional().describe("Doctor name if requested by patient"),
+        doctor_name: z.string().optional().describe("Exact doctor name once the caller has chosen one"),
         service_type: z.string().optional().describe("Service type e.g. Root Canal Treatment, Consultation")
       }),
       execute: async (args) => {
@@ -241,7 +241,7 @@ export default defineAgent({
         patient_phone: z.string().optional().describe("Patient 10-digit phone number if provided"),
         slot_iso_timestamp: z.string().describe("ISO timestamp of the chosen slot"),
         service_type: z.string().describe("Reason for visit e.g. General Consultation, Root Canal Treatment"),
-        doctor_name: z.string().optional().describe("Doctor name if selected")
+        doctor_name: z.string().optional().describe("Exact doctor_name returned with the chosen slot")
       }),
       execute: async (args) => {
         console.log(`[LIVEKIT TOOL] book_appointment:`, args);
@@ -251,22 +251,24 @@ export default defineAgent({
           patient_phone: resolvedPhone,
           slot_iso_timestamp: args.slot_iso_timestamp,
           service_type: args.service_type,
-          doctor_name: args.doctor_name || clinic.doctors[0]?.name,
+          doctor_name: args.doctor_name,
           clinic_id: clinic.clinic_id
         });
 
         // Trigger WhatsApp & SMS notification asynchronously
-        dispatchPostCallNotifications({
-          patientName: args.patient_name,
-          patientPhone: resolvedPhone,
-          doctorName: args.doctor_name || clinic.doctors[0]?.name,
-          clinicName: clinic.clinic_name,
-          clinicAddress: clinic.address,
-          slotIsoTimestamp: args.slot_iso_timestamp,
-          displayTime: "Scheduled Appointment",
-          bookingId: result.booking_id || "BK-PENDING",
-          deviceType: "smartphone"
-        }).catch((err) => console.error("[LIVEKIT POST-CALL DISPATCH ERROR]", err.message));
+        if (result.status === "confirmed") {
+          dispatchPostCallNotifications({
+            patientName: args.patient_name,
+            patientPhone: resolvedPhone,
+            doctorName: result.doctor_name,
+            clinicName: clinic.clinic_name,
+            clinicAddress: clinic.address,
+            slotIsoTimestamp: args.slot_iso_timestamp,
+            displayTime: "Scheduled Appointment",
+            bookingId: result.booking_id || "BK-PENDING",
+            deviceType: "smartphone"
+          }).catch((err) => console.error("[LIVEKIT POST-CALL DISPATCH ERROR]", err.message));
+        }
 
         return JSON.stringify(result);
       }
@@ -460,16 +462,13 @@ export default defineAgent({
     };
 
     const doctorsListText = (clinic.doctors && clinic.doctors.length > 0)
-      ? clinic.doctors.map((d: any) => `  * ${d.name || "Doctor"} (${getDoctorSpecialties(d)}) - Timings: ${d.timings || clinic.working_hours}`).join("\n")
+      ? clinic.doctors.map((d: any) => `  * ${d.name || "Doctor"} (${getDoctorSpecialties(d)}) - Timings: ${d.timings || clinic.working_hours} - Services: ${d.services?.length ? d.services.join(", ") : "All services"}`).join("\n")
       : `  * General Consultant & Specialist - Timings: ${clinic.working_hours}`;
 
     const doctorsSummaryHindi = (clinic.doctors && clinic.doctors.length > 0)
-      ? clinic.doctors.map((d: any) => `${d.name || "Doctor"} (${getDoctorSpecialties(d)})`).join(" aur ")
+      ? clinic.doctors.map((d: any) => `${d.name || "Doctor"} (${getDoctorSpecialties(d)}), timings ${d.timings || clinic.working_hours}`).join(" aur ")
       : "Doctor";
 
-    const primaryDoctor = clinic.doctors?.[0] || { name: "Doctor", timings: clinic.working_hours };
-    const primaryDoctorSpecialty = getDoctorSpecialties(primaryDoctor);
-    const primaryDoctorTimings = primaryDoctor.timings || clinic.working_hours;
 
     const servicesListText = (clinic.services && clinic.services.length > 0)
       ? clinic.services.map((s: any) => `  * ${typeof s === "string" ? s : (s?.name || String(s))}`).join("\n")
@@ -509,8 +508,8 @@ ${servicesListText}
      In English: "Our clinic is located at ${clinic.address}. Would you like to book an appointment?"
 3. DOCTOR & TIMINGS:
    - If caller asks "Doctor kab milenge?", "Doctor ka naam kya hai?", "Specialist kaun hain?":
-     In Hindi: "Hamare yahan ${doctorsSummaryHindi} uplabdh hain, timings: ${primaryDoctorTimings}. Kya main appointment check karoon?"
-     In English: "Our doctor is ${primaryDoctor.name} (${primaryDoctorSpecialty}), available during ${primaryDoctorTimings}. Would you like an appointment?"
+     In Hindi: "Hamare yahan ${doctorsSummaryHindi} uplabdh hain. Kya main appointment check karoon?"
+     In English: "Our doctors are ${doctorsSummaryHindi.replace(/ aur /g, " and ")}. Would you like an appointment?"
 4. CLINIC WORKING HOURS:
    - If caller asks "Clinic kab khulta hai?", "Timings kya hain?":
      In Hindi: "Clinic ${clinic.working_hours} khula rehta hai."
@@ -579,6 +578,12 @@ ${servicesListText}
   - DO NOT repeat previous unconfirmed topics or previous treatments!
 
 # APPOINTMENT BOOKING PROCESS & DYNAMIC SLOTS
+0. Choosing the Doctor:
+   - Each doctor handles only the services listed next to their name above. Pass the caller's reason as service_type in 'checkAvailability'.
+   - If 'checkAvailability' returns needs_doctor_selection=true, ask: "Aap kis doctor se milna chahenge, [Doctor 1] ya [Doctor 2]?" Then call 'checkAvailability' again with that doctor_name.
+   - If the caller has no preference, use the first doctor from eligible_doctors.
+   - Always pass the doctor_name of the chosen slot in 'bookAppointment'.
+   - If 'bookAppointment' returns status 'failed', speak its error_message in the caller's language and help them choose again. Never say the appointment is confirmed.
 1. Identifying Date & Time:
    - If caller asks "aaj konsa slot khali hai" or mentions "aaj": Call 'checkAvailability' with date="today".
    - If caller asks "kal konsa slot khali hai" or mentions "kal" / "kl": Call 'checkAvailability' with date="tomorrow".

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Loader2, Download, MicOff, Volume2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { colors } from '../../design-tokens.js';
 
 // Module-level reference to ensure only ONE audio plays across the entire dashboard
 let globalActiveAudio = null;
@@ -152,7 +153,7 @@ export default function CallAudioPlayer({ log, clinicId }) {
   // If call was too short or unanswered, show subtle muted indicator
   if (isMissedOrBusy) {
     return (
-      <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 text-slate-500 border border-slate-200/80 text-[11px] font-medium" title="No audio recorded for short/unanswered call">
+      <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 text-slate-500 border border-slate-200/80 text-11 font-medium" title="No audio recorded for short/unanswered call">
         <MicOff className="w-3 h-3 text-slate-400" />
         <span>No Audio</span>
       </div>
@@ -187,7 +188,7 @@ export default function CallAudioPlayer({ log, clinicId }) {
       </button>
 
       {/* Track & Time */}
-      <div className="flex-1 flex items-center gap-2 min-w-0 text-[10px] font-mono font-medium text-slate-600 tabular-nums">
+      <div className="flex-1 flex items-center gap-2 min-w-0 text-10 font-mono font-medium text-slate-600 tabular-nums">
         <span className="shrink-0">{formatTime(currentTime)}</span>
 
         {/* Progress Slider: played portion filled in blue, thumb only on hover */}
@@ -199,7 +200,7 @@ export default function CallAudioPlayer({ log, clinicId }) {
           value={currentTime}
           onChange={handleSeek}
           style={{
-            background: `linear-gradient(to right, #2563EB ${Math.min(100, (currentTime / (duration || 1)) * 100)}%, #E2E8F0 0)`,
+            background: `linear-gradient(to right, ${colors.tint.blue[33]} ${Math.min(100, (currentTime / (duration || 1)) * 100)}%, ${colors.slate[200]} 0)`,
           }}
           className="flex-1 min-w-0 h-1 rounded-full appearance-none cursor-pointer
             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:opacity-0 hover:[&::-webkit-slider-thumb]:opacity-100 focus-visible:[&::-webkit-slider-thumb]:opacity-100

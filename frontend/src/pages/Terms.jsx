@@ -41,19 +41,19 @@ export default function Terms({ setActivePage }) {
   ];
 
   return (
-    <div className="w-full pt-10 sm:pt-16 lg:pt-20 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 sm:space-y-12">
+    <div className="w-full pt-8 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 sm:space-y-12">
       
       {/* Top Header */}
       <div className="border-b border-blue-900/10 pb-8 sm:pb-12" data-fade>
         <div className="space-y-5 max-w-4xl">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide-140 text-blue-700">
             <FileText className="w-3.5 h-3.5 shrink-0" />
             <span>Legal Agreement &amp; Service Terms</span>
           </div>
           <h1 className="hero-title-clamp text-ink">
             Terms &amp; Conditions of Service
           </h1>
-          <p className="text-sm sm:text-[0.95rem] text-ink-muted leading-relaxed">
+          <p className="text-sm sm:text-15-2 text-ink-muted leading-relaxed">
             Effective Date: October 2026 • Please read these terms carefully before deploying FrontDesk AI for your business
           </p>
         </div>
@@ -61,7 +61,7 @@ export default function Terms({ setActivePage }) {
 
       {/* Mobile Horizontal Quick Clause Navigation Pills (Zero Screen Overlap) */}
       <div className="lg:hidden w-full space-y-2">
-        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted flex items-center gap-1.5 px-1">
+        <div className="text-xs font-semibold uppercase tracking-wide-120 text-ink-muted flex items-center gap-1.5 px-1">
           <Scale className="w-3.5 h-3.5 text-blue-600" />
           <span>Quick Jump:</span>
         </div>
@@ -91,7 +91,7 @@ export default function Terms({ setActivePage }) {
         {/* Left Sticky Clause Navigator */}
         <div className="hidden lg:block lg:col-span-4 sticky top-28 space-y-4">
           <div className="glass p-4 space-y-2">
-            <div className="px-2 pt-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted flex items-center gap-2">
+            <div className="px-2 pt-1 pb-2 text-11 font-semibold uppercase tracking-wide-140 text-ink-muted flex items-center gap-2">
               <Scale className="w-4 h-4 text-blue-600" />
               <span>Clause Navigator</span>
             </div>
@@ -100,7 +100,7 @@ export default function Terms({ setActivePage }) {
                 <button
                   key={c.id}
                   onClick={() => scrollToClause(c.id)}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-[13px] font-medium transition-all flex items-center justify-between ${
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-13 font-medium transition-all flex items-center justify-between ${
                     activeClause === c.id
                       ? 'btn-brand'
                       : 'text-ink-soft hover:text-ink hover:bg-white/80'
@@ -112,22 +112,22 @@ export default function Terms({ setActivePage }) {
             </nav>
           </div>
 
-          <div className="rounded-[1.5rem] p-5 bg-amber-50/80 ring-1 ring-amber-200/80 text-[13px] text-amber-950 space-y-2">
+          <div className="rounded-24 p-5 bg-amber-50/80 ring-1 ring-amber-200/80 text-13 text-amber-950 space-y-2">
             <div className="font-bold flex items-center gap-2 text-amber-900">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
               <span>Urgent Request Protocol</span>
             </div>
-            <p className="text-amber-800 leading-relaxed text-[13px]">
+            <p className="text-amber-800 leading-relaxed text-13">
               FrontDesk AI includes automated triage recognition to actively transfer high-priority or urgent callers to designated business personnel.
             </p>
           </div>
         </div>
 
         {/* Right Content Column */}
-        <div className="lg:col-span-8 space-y-5 text-[0.95rem] sm:text-base text-ink-soft leading-relaxed font-normal prose-legal">
+        <div className="lg:col-span-8 space-y-5 text-15-2 sm:text-base text-ink-soft leading-relaxed font-normal prose-legal">
           
           {/* EMERGENCY DISCLAIMER */}
-          <div id="disclaimer" className="scroll-mt-28 p-6 sm:p-8 md:p-10 rounded-[1.75rem] bg-amber-50/90 ring-1 ring-amber-300/70 text-amber-950 space-y-4 shadow-[0_18px_38px_-22px_rgba(180,83,9,0.35)] relative overflow-hidden">
+          <div id="disclaimer" className="scroll-mt-28 p-6 sm:p-8 md:p-10 rounded-28 bg-amber-50/90 ring-1 ring-amber-300/70 text-amber-950 space-y-4 shadow-[0_18px_38px_-22px_theme(colors.accent.amber.hover_/_0.35)] relative overflow-hidden">
             <div className="flex items-center gap-2.5 font-extrabold text-amber-950 text-sm sm:text-base md:text-lg">
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/20">
                 <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -135,12 +135,12 @@ export default function Terms({ setActivePage }) {
               <span>IMPORTANT SERVICE &amp; URGENT REQUEST DISCLAIMER</span>
             </div>
             
-            <p className="text-sm sm:text-[0.95rem] leading-relaxed text-amber-900">
+            <p className="text-sm sm:text-15-2 leading-relaxed text-amber-900">
               FrontDesk AI is an <strong>administrative automated receptionist and appointment scheduling system</strong>. It is <strong>NOT an emergency response service or replacement for professional human judgment in critical life situations</strong>. FrontDesk AI does not provide emergency medical intervention or specialized statutory advisories over the telephone.
             </p>
             
             <div className="p-4 rounded-2xl bg-white/80 ring-1 ring-amber-200 text-sm leading-relaxed font-semibold text-amber-950 flex flex-col xs:flex-row items-start gap-2.5 sm:gap-3">
-              <span className="px-2.5 py-1 rounded bg-amber-600 text-white font-mono font-bold text-[10px] shrink-0">
+              <span className="px-2.5 py-1 rounded bg-amber-600 text-white font-mono font-bold text-10 shrink-0">
                 DIAL 112
               </span>
               <p>
@@ -264,14 +264,14 @@ export default function Terms({ setActivePage }) {
           <div className="pt-8 border-t border-blue-900/10 flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-3">
             <button
               onClick={() => { setActivePage('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className="glass-pill inline-flex items-center justify-center gap-2 text-[13px] font-medium text-blue-700 hover:text-blue-800 px-4 py-2.5"
+              className="glass-pill inline-flex items-center justify-center gap-2 text-13 font-medium text-blue-700 hover:text-blue-800 px-4 py-2.5"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to FrontDesk AI Home</span>
             </button>
             <button
               onClick={() => { setActivePage('privacy'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className="pill btn-brand !min-h-[2.75rem] !text-[13px] active:scale-[0.98]"
+              className="pill btn-brand !min-h-[2.75rem] !text-13 active:scale-[0.98]"
             >
               <span>View Privacy Policy &rarr;</span>
             </button>

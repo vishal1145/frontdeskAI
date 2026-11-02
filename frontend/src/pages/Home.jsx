@@ -350,7 +350,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
             <div className="lg:col-span-5 relative flex justify-center" data-anim="from-left">
 
               {/* Engine Card */}
-              <div className="eng-card relative w-full max-w-[calc(100vw-2.5rem)] sm:max-w-sm rounded-[1.5rem] p-5 sm:p-6 pt-5 sm:pt-6 overflow-hidden panel-ink">
+              <div className="eng-card relative w-full max-w-[calc(100vw-2.5rem)] sm:max-w-sm rounded-24 p-5 sm:p-6 pt-5 sm:pt-6 overflow-hidden panel-ink">
 
                 {/* Voice core: globe with orbiting signals and live sound waves */}
                 <div className="eng-core" aria-hidden="true">
@@ -366,18 +366,18 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   </span>
 
                   <svg className="eng-orbits" viewBox="0 0 200 140" fill="none">
-                    <ellipse cx="100" cy="70" rx="92" ry="20" transform="rotate(-14 100 70)" stroke="#48E7FD" strokeOpacity="0.55" />
-                    <ellipse cx="100" cy="70" rx="86" ry="16" transform="rotate(12 100 70)" stroke="#7DD3FC" strokeOpacity="0.45" />
-                    <ellipse cx="100" cy="70" rx="70" ry="28" stroke="#2B8AF7" strokeOpacity="0.35" />
-                    <g className="eng-sparks" fill="#E0F7FF">
+                    <ellipse cx="100" cy="70" rx="92" ry="20" transform="rotate(-14 100 70)" stroke="var(--fd-rim)" strokeOpacity="0.55" />
+                    <ellipse cx="100" cy="70" rx="86" ry="16" transform="rotate(12 100 70)" stroke="var(--fd-color-tint-cyan-8)" strokeOpacity="0.45" />
+                    <ellipse cx="100" cy="70" rx="70" ry="28" stroke="var(--fd-brand-vivid)" strokeOpacity="0.35" />
+                    <g className="eng-sparks" fill="var(--fd-color-tint-cyan-3)">
                       <circle cx="22" cy="86" r="1.4" /><circle cx="176" cy="48" r="1.6" /><circle cx="44" cy="44" r="1" />
                       <circle cx="160" cy="98" r="1.2" /><circle cx="128" cy="24" r="1" /><circle cx="70" cy="116" r="1.1" />
                     </g>
-                    <circle className="eng-orbit-dot" r="2.6" fill="#A5F3FC">
+                    <circle className="eng-orbit-dot" r="2.6" fill="var(--fd-color-tint-cyan-4)">
                       <animateMotion dur="6s" repeatCount="indefinite" rotate="auto"
                         path="M8 70 a92 20 0 1 0 184 0 a92 20 0 1 0 -184 0" />
                     </circle>
-                    <circle className="eng-orbit-dot" r="2.2" fill="#60A5FA">
+                    <circle className="eng-orbit-dot" r="2.2" fill="var(--fd-color-tint-blue-28)">
                       <animateMotion dur="8s" begin="-3s" repeatCount="indefinite"
                         path="M186 70 a86 16 0 1 1 -172 0 a86 16 0 1 1 172 0" />
                     </circle>
@@ -385,13 +385,13 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
 
                   <span className="eng-globe">
                     <svg viewBox="0 0 100 100" fill="none">
-                      <circle cx="50" cy="50" r="46" stroke="#7DD3FC" strokeOpacity="0.7" />
-                      <path d="M4 50 H96 M10 30 H90 M10 70 H90 M22 14 H78 M22 86 H78" stroke="#7DD3FC" strokeOpacity="0.28" />
-                      <ellipse cx="50" cy="50" rx="46" ry="16" stroke="#7DD3FC" strokeOpacity="0.3" />
-                      <ellipse cx="50" cy="50" rx="16" ry="46" stroke="#7DD3FC" strokeOpacity="0.3" />
-                      <ellipse className="eng-meridian" cx="50" cy="50" rx="34" ry="46" stroke="#7DD3FC" strokeOpacity="0.32" />
-                      <ellipse className="eng-meridian eng-meridian--2" cx="50" cy="50" rx="34" ry="46" stroke="#7DD3FC" strokeOpacity="0.32" />
-                      <ellipse className="eng-meridian eng-meridian--3" cx="50" cy="50" rx="34" ry="46" stroke="#7DD3FC" strokeOpacity="0.32" />
+                      <circle cx="50" cy="50" r="46" stroke="var(--fd-color-tint-cyan-8)" strokeOpacity="0.7" />
+                      <path d="M4 50 H96 M10 30 H90 M10 70 H90 M22 14 H78 M22 86 H78" stroke="var(--fd-color-tint-cyan-8)" strokeOpacity="0.28" />
+                      <ellipse cx="50" cy="50" rx="46" ry="16" stroke="var(--fd-color-tint-cyan-8)" strokeOpacity="0.3" />
+                      <ellipse cx="50" cy="50" rx="16" ry="46" stroke="var(--fd-color-tint-cyan-8)" strokeOpacity="0.3" />
+                      <ellipse className="eng-meridian" cx="50" cy="50" rx="34" ry="46" stroke="var(--fd-color-tint-cyan-8)" strokeOpacity="0.32" />
+                      <ellipse className="eng-meridian eng-meridian--2" cx="50" cy="50" rx="34" ry="46" stroke="var(--fd-color-tint-cyan-8)" strokeOpacity="0.32" />
+                      <ellipse className="eng-meridian eng-meridian--3" cx="50" cy="50" rx="34" ry="46" stroke="var(--fd-color-tint-cyan-8)" strokeOpacity="0.32" />
                     </svg>
                     <span className="eng-globe-icon">
                       <PhoneForwarded className="w-6 h-6 sm:w-7 sm:h-7" />
@@ -401,7 +401,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
 
                 {/* Card Title & Content */}
                 <div className="text-center space-y-2 mb-6">
-                  <span className="eng-label text-[11px] font-mono uppercase font-semibold tracking-wider text-cyan-300">
+                  <span className="eng-label text-11 font-mono uppercase font-semibold tracking-wider text-cyan-300">
                     AI Telephony Intelligence
                   </span>
                   <h3 className="text-xl sm:text-2xl font-medium text-white tracking-tight">
@@ -438,7 +438,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                 </div>
 
                 {/* Subtle Business Footer */}
-                <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
+                <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-11 text-slate-400">
                   <span>Zero Hardware Needed</span>
                   <span className="text-cyan-300 font-bold">100% Cloud</span>
                 </div>
@@ -447,14 +447,14 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
               {/* Rotating Circular Badge */}
               <div className="eng-badge absolute -top-6 right-0 sm:-top-9 sm:-right-4 lg:-right-10 w-28 h-28 xs:w-32 xs:h-32 sm:w-40 sm:h-40 flex items-center justify-center rounded-full p-1">
                 <svg className="w-full h-full animate-spin-slow" viewBox="0 0 160 160">
-                  <circle cx="80" cy="80" r="74" fill="none" stroke="#7DD3FC" strokeOpacity="0.55" strokeWidth="2.5" strokeDasharray="1 5" />
-                  <circle cx="80" cy="80" r="40" fill="none" stroke="#48E7FD" strokeOpacity="0.45" />
+                  <circle cx="80" cy="80" r="74" fill="none" stroke="var(--fd-color-tint-cyan-8)" strokeOpacity="0.55" strokeWidth="2.5" strokeDasharray="1 5" />
+                  <circle cx="80" cy="80" r="40" fill="none" stroke="var(--fd-rim)" strokeOpacity="0.45" />
                   <path
                     id="circlePathBadge"
                     d="M 80, 80 m -56, 0 a 56,56 0 1,1 112,0 a 56,56 0 1,1 -112,0"
                     fill="none"
                   />
-                  <text className="text-[9.5px] uppercase font-extrabold tracking-[0.24em] fill-white">
+                  <text className="text-9-5 uppercase font-extrabold tracking-wide-240 fill-white">
                     <textPath href="#circlePathBadge" startOffset="0%">
                       ✦ 24/7 BUSINESS TELEPHONY ✦ ENTERPRISE VOICE AI ✦
                     </textPath>
@@ -487,7 +487,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   <div className="w-5 h-5 rounded-full bg-white ring-1 ring-blue-200 text-blue-600 shadow-sm flex items-center justify-center shrink-0 mt-0.5">
                     <Check className="w-3 h-3 font-bold" />
                   </div>
-                  <span className="text-sm sm:text-[0.95rem] font-medium text-ink">
+                  <span className="text-sm sm:text-15-2 font-medium text-ink">
                     Smart call divert on busy or after-hours (zero hardware needed)
                   </span>
                 </div>
@@ -496,7 +496,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   <div className="w-5 h-5 rounded-full bg-white ring-1 ring-blue-200 text-blue-600 shadow-sm flex items-center justify-center shrink-0 mt-0.5">
                     <Check className="w-3 h-3 font-bold" />
                   </div>
-                  <span className="text-sm sm:text-[0.95rem] font-medium text-ink">
+                  <span className="text-sm sm:text-15-2 font-medium text-ink">
                     Instant appointment booking with WhatsApp confirmation slip
                   </span>
                 </div>
@@ -505,7 +505,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   <div className="w-5 h-5 rounded-full bg-white ring-1 ring-blue-200 text-blue-600 shadow-sm flex items-center justify-center shrink-0 mt-0.5">
                     <Check className="w-3 h-3 font-bold" />
                   </div>
-                  <span className="text-sm sm:text-[0.95rem] font-medium text-ink">
+                  <span className="text-sm sm:text-15-2 font-medium text-ink">
                     Live priority call transfer for urgent customer escalations
                   </span>
                 </div>
@@ -517,7 +517,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   <div className="font-display text-2xl sm:text-4xl font-medium tracking-tight text-ink" data-count="99.8" data-suffix="%">
                     99.8%
                   </div>
-                  <div className="text-[11px] sm:text-xs text-ink-muted font-medium">
+                  <div className="text-11 sm:text-xs text-ink-muted font-medium">
                     Telephony Uptime
                   </div>
                 </div>
@@ -526,7 +526,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   <div className="font-display text-2xl sm:text-4xl font-medium tracking-tight text-blue-600" data-count="45" data-suffix="%">
                     45%
                   </div>
-                  <div className="text-[11px] sm:text-xs text-ink-muted font-medium">
+                  <div className="text-11 sm:text-xs text-ink-muted font-medium">
                     Recovered Calls
                   </div>
                 </div>
@@ -535,7 +535,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   <div className="font-display text-2xl sm:text-4xl font-medium tracking-tight text-ink" data-count="15" data-suffix="s">
                     15s
                   </div>
-                  <div className="text-[11px] sm:text-xs text-ink-muted font-medium">
+                  <div className="text-11 sm:text-xs text-ink-muted font-medium">
                     Quick SIP Pickup
                   </div>
                 </div>
@@ -580,10 +580,10 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
              
               <div className="p-3 sm:p-4 glass space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted font-mono">
+                  <span className="text-11 font-semibold uppercase tracking-wider text-ink-muted font-mono">
                     Select Simulation:
                   </span>
-                  <span className="text-[10px] text-blue-700 font-semibold bg-white/80 ring-1 ring-blue-200 px-2 py-0.5 rounded-full">
+                  <span className="text-10 text-blue-700 font-semibold bg-white/80 ring-1 ring-blue-200 px-2 py-0.5 rounded-full">
                     Auto-plays in real time
                   </span>
                 </div>
@@ -619,7 +619,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-ink">&lt; 800ms Voice Latency</h4>
-                    <p className="text-[13px] text-ink-muted leading-snug mt-0.5">Natural conversational flow with zero awkward pauses.</p>
+                    <p className="text-13 text-ink-muted leading-snug mt-0.5">Natural conversational flow with zero awkward pauses.</p>
                   </div>
                 </div>
 
@@ -629,7 +629,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-ink">Atomic Concurrency Lock</h4>
-                    <p className="text-[13px] text-ink-muted leading-snug mt-0.5">Prevents duplicate bookings across concurrent caller lines.</p>
+                    <p className="text-13 text-ink-muted leading-snug mt-0.5">Prevents duplicate bookings across concurrent caller lines.</p>
                   </div>
                 </div>
 
@@ -639,7 +639,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-ink">Instant WhatsApp Confirmation</h4>
-                    <p className="text-[13px] text-ink-muted leading-snug mt-0.5">Booking slip and location details sent immediately to the caller.</p>
+                    <p className="text-13 text-ink-muted leading-snug mt-0.5">Booking slip and location details sent immediately to the caller.</p>
                   </div>
                 </div>
               </div>
@@ -669,16 +669,16 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   <div>
                     <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
                       <span className="text-emerald-600 font-semibold">WhatsApp Cloud</span>
-                      <span className="text-[10px] text-slate-400 font-normal">Just now</span>
+                      <span className="text-10 text-slate-400 font-normal">Just now</span>
                     </div>
-                    <p className="text-[11px] text-slate-600 leading-tight">
+                    <p className="text-11 text-slate-600 leading-tight">
                       Booking Confirmed! Reference #BK-8419 for Tomorrow 6:00 PM with Apex Solutions.
                     </p>
                   </div>
                 </div>
               )}
 
-              <div className="glass-solid !rounded-[1.75rem] overflow-hidden card-stagger tilt-card view-hover" data-motion="sim-window">
+              <div className="glass-solid !rounded-28 overflow-hidden card-stagger tilt-card view-hover" data-motion="sim-window">
 
                 {/* Window Header */}
                 <div className="bg-white/60 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-blue-900/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
@@ -694,8 +694,8 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-[0.95rem] text-ink">Live Inbound Telephony Simulator</h3>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold flex items-center gap-1">
+                        <h3 className="font-semibold text-15-2 text-ink">Live Inbound Telephony Simulator</h3>
+                        <span className="text-10 font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
                           CALL ACTIVE
                         </span>
@@ -710,7 +710,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center bg-ice-deep/70 p-1 rounded-2xl sm:rounded-full ring-1 ring-blue-900/10 w-full sm:w-auto gap-1">
                     <button
                       onClick={() => handleResetScenario('booking')}
-                      className={`flex-1 sm:flex-none px-3 py-1.5 rounded-xl sm:rounded-full text-[11px] sm:text-xs font-semibold transition-all text-center whitespace-nowrap ${activeScenario === 'booking'
+                      className={`flex-1 sm:flex-none px-3 py-1.5 rounded-xl sm:rounded-full text-11 sm:text-xs font-semibold transition-all text-center whitespace-nowrap ${activeScenario === 'booking'
                         ? 'bg-blue-600 text-white shadow-sm'
                         : 'text-slate-600 hover:text-slate-900'
                         }`}
@@ -719,7 +719,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                     </button>
                     <button
                       onClick={() => handleResetScenario('emergency')}
-                      className={`flex-1 sm:flex-none px-3 py-1.5 rounded-xl sm:rounded-full text-[11px] sm:text-xs font-semibold transition-all text-center whitespace-nowrap ${activeScenario === 'emergency'
+                      className={`flex-1 sm:flex-none px-3 py-1.5 rounded-xl sm:rounded-full text-11 sm:text-xs font-semibold transition-all text-center whitespace-nowrap ${activeScenario === 'emergency'
                         ? 'bg-amber-600 text-white shadow-sm'
                         : 'text-slate-600 hover:text-slate-900'
                         }`}
@@ -767,7 +767,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                       className={`animate-slide-up transition-all ${msg.role === 'tool'
                         ? 'p-3 sm:p-3.5 rounded-xl panel-ink text-blue-300 font-mono text-xs'
                         : msg.role === 'ai'
-                          ? 'p-3.5 sm:p-4 rounded-2xl rounded-tl-md bg-white ring-1 ring-blue-200 shadow-[0_10px_24px_-16px_rgba(23,76,150,0.45)] max-w-full sm:max-w-[88%]'
+                          ? 'p-3.5 sm:p-4 rounded-2xl rounded-tl-md bg-white ring-1 ring-blue-200 shadow-[0_10px_24px_-16px_theme(colors.blue.800_/_0.45)] max-w-full sm:max-w-[88%]'
                           : 'p-3.5 sm:p-4 rounded-2xl rounded-tr-md bg-blue-50/90 ring-1 ring-blue-900/10 max-w-full sm:max-w-[88%] ml-auto'
                         }`}
                     >
@@ -777,11 +777,11 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                             }`}>
                             {msg.speaker}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-medium">({msg.tag})</span>
+                          <span className="text-10 text-slate-400 font-medium">({msg.tag})</span>
                         </div>
 
                         {msg.status && (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 animate-pulse">
+                          <span className="text-10 uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 animate-pulse">
                             {msg.status}
                           </span>
                         )}
@@ -849,7 +849,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                 <p className="text-sm text-ink-soft leading-relaxed">
                   Callers dial your existing business number as listed on Google Maps, website, or ads.
                 </p>
-                <div className="glass-well px-3 py-2.5 text-[11px] font-mono text-ink-soft">
+                <div className="glass-well px-3 py-2.5 text-11 font-mono text-ink-soft">
                   Incoming: Main Office Line / SIM
                 </div>
               </div>
@@ -863,7 +863,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                 <p className="text-sm text-ink-soft leading-relaxed">
                   If line is busy or unanswered for 15 seconds, your telecom carrier auto-forwards the call.
                 </p>
-                <div className="glass-well px-3 py-2.5 text-[11px] font-mono text-ink-soft">
+                <div className="glass-well px-3 py-2.5 text-11 font-mono text-ink-soft">
                   Trigger: GSM Conditional Forward
                 </div>
               </div>
@@ -877,7 +877,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                 <p className="text-sm text-ink-soft leading-relaxed">
                   Voice AI answers with your custom company greeting and checks team availability live.
                 </p>
-                <div className="glass-well px-3 py-2.5 text-[11px] font-mono text-ink-soft">
+                <div className="glass-well px-3 py-2.5 text-11 font-mono text-ink-soft">
                   SIP Diversion &rarr; Team Roster Loaded
                 </div>
               </div>
@@ -891,7 +891,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                 <p className="text-sm text-ink-soft leading-relaxed">
                   Appointment is confirmed and caller receives instant WhatsApp details with location link.
                 </p>
-                <div className="glass-well px-3 py-2.5 text-[11px] font-mono text-ink-soft">
+                <div className="glass-well px-3 py-2.5 text-11 font-mono text-ink-soft">
                   Realtime: WhatsApp Cloud API
                 </div>
               </div>
@@ -1062,7 +1062,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
             </div>
 
             {/* Interactive Sliders & Live Results Dashboard (Full Width) */}
-            <div className="w-full glass-solid !rounded-[1.75rem] p-5 sm:p-8 space-y-6" data-anim="widget">
+            <div className="w-full glass-solid !rounded-28 p-5 sm:p-8 space-y-6" data-anim="widget">
 
               {/* Sliders Grid */}
               <div className="space-y-5" data-motion="roi-sliders">
@@ -1083,7 +1083,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                     onChange={(e) => setDailyCalls(Number(e.target.value))}
                     className="w-full accent-blue-600 bg-slate-100 h-2 rounded-lg cursor-pointer"
                   />
-                  <div className="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
+                  <div className="flex justify-between text-11 text-slate-400 mt-1 font-mono">
                     <span>20 calls</span>
                     <span>200 calls</span>
                   </div>
@@ -1106,7 +1106,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                     onChange={(e) => setMissedPercent(Number(e.target.value))}
                     className="w-full accent-blue-600 bg-slate-100 h-2 rounded-lg cursor-pointer"
                   />
-                  <div className="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
+                  <div className="flex justify-between text-11 text-slate-400 mt-1 font-mono">
                     <span>15% (Standard Flow)</span>
                     <span>60% (Peak Call Rush)</span>
                   </div>
@@ -1129,7 +1129,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                     onChange={(e) => setConsultFee(Number(e.target.value))}
                     className="w-full accent-blue-600 bg-slate-100 h-2 rounded-lg cursor-pointer"
                   />
-                  <div className="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
+                  <div className="flex justify-between text-11 text-slate-400 mt-1 font-mono">
                     <span>₹ 300</span>
                     <span>₹ 2,000</span>
                   </div>
@@ -1141,7 +1141,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                 className="p-5 sm:p-7 rounded-2xl text-center space-y-4 relative overflow-hidden panel-ink text-white"
                 data-motion="roi-result"
               >
-                <span className="text-[11px] uppercase font-semibold tracking-wider text-blue-300 block font-mono">
+                <span className="text-11 uppercase font-semibold tracking-wider text-blue-300 block font-mono">
                   Estimated Monthly Recovered Revenue
                 </span>
 
@@ -1153,15 +1153,15 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
 
                 <div className="pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 text-xs text-left">
                   <div className="p-3 rounded-xl panel-ink-well">
-                    <span className="text-slate-400 block text-[11px]">Monthly Missed Calls:</span>
+                    <span className="text-slate-400 block text-11">Monthly Missed Calls:</span>
                     <strong className="text-white font-mono text-sm"><AnimatedNumber value={monthlyMissedCalls} /> calls</strong>
                   </div>
                   <div className="p-3 rounded-xl panel-ink-well">
-                    <span className="text-slate-400 block text-[11px]">Customers Converted via AI:</span>
+                    <span className="text-slate-400 block text-11">Customers Converted via AI:</span>
                     <strong className="text-blue-300 font-mono text-sm"><AnimatedNumber value={recoveredCustomers} /> customers</strong>
                   </div>
                   <div className="p-3 rounded-xl panel-ink-well">
-                    <span className="text-slate-400 block text-[11px]">Projected Annual Revenue:</span>
+                    <span className="text-slate-400 block text-11">Projected Annual Revenue:</span>
                     <strong className="text-emerald-300 font-mono text-sm">₹<AnimatedNumber value={recoveredRevenue * 12} format={(n) => n.toLocaleString('en-IN')} /></strong>
                   </div>
                 </div>
@@ -1263,7 +1263,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                       <span key={i} aria-hidden="true">★</span>
                     ))}
                   </div>
-                  <p className="font-display text-[0.98rem] sm:text-lg text-ink leading-snug tracking-tight">
+                  <p className="font-display text-15-68 sm:text-lg text-ink leading-snug tracking-tight">
                     {t.text}
                   </p>
                   <div className="mt-auto pt-5 border-t border-blue-900/10 flex items-center gap-3">
@@ -1309,14 +1309,14 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                 >
                   <button
                     onClick={() => setOpenFaq(openFaq === idx ? -1 : idx)}
-                    className="w-full text-left px-5 sm:px-6 py-5 flex items-center justify-between font-display text-[0.98rem] sm:text-lg font-medium tracking-tight text-ink hover:text-blue-700 transition-colors gap-4"
+                    className="w-full text-left px-5 sm:px-6 py-5 flex items-center justify-between font-display text-15-68 sm:text-lg font-medium tracking-tight text-ink hover:text-blue-700 transition-colors gap-4"
                     aria-expanded={openFaq === idx}
                   >
                     <span>{faq.q}</span>
                     <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors duration-300 ${openFaq === idx ? 'btn-brand' : 'bg-white/80 ring-1 ring-blue-900/10 text-ink-muted'}`}><ChevronDown className={`w-4 h-4 transition-transform duration-300 ${openFaq === idx ? 'rotate-180' : ''}`} /></span>
                   </button>
                   {openFaq === idx && (
-                    <div className="px-5 sm:px-6 pb-6 text-sm sm:text-[0.95rem] text-ink-soft leading-relaxed border-t border-blue-900/10 pt-4 animate-slide-up">
+                    <div className="px-5 sm:px-6 pb-6 text-sm sm:text-15-2 text-ink-soft leading-relaxed border-t border-blue-900/10 pt-4 animate-slide-up">
                       {faq.a}
                     </div>
                   )}
@@ -1332,7 +1332,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
       <section data-motion="cta" className="section-y max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           data-motion="cta-band"
-          className="glass !rounded-[2.25rem] p-5 sm:p-7 lg:p-8 relative overflow-hidden"
+          className="glass !rounded-36 p-5 sm:p-7 lg:p-8 relative overflow-hidden"
         >
           {/* Subtle Background Glows */}
           <div className="absolute -top-32 -right-24 w-96 h-96 bg-cyan-200/50 rounded-full blur-3xl pointer-events-none"></div>
@@ -1352,7 +1352,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
               </p>
 
               {/* Trust badges */}
-              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-[13px] text-ink-soft pt-1" data-anim="badge-group">
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-13 text-ink-soft pt-1" data-anim="badge-group">
                 <div className="flex items-center gap-1.5 glass-pill px-3 py-1.5">
                   <Check className="w-3.5 h-3.5 text-emerald-600 font-bold" />
                   <span>Zero Hardware Needed</span>
@@ -1390,7 +1390,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
 
             {/* Right Column: Live Readiness Visual Console (~40%) */}
             <div className="lg:col-span-5">
-              <div className="tsx-console p-5 sm:p-6 rounded-[1.5rem] panel-ink space-y-4 text-left" data-anim="cta-console">
+              <div className="tsx-console p-5 sm:p-6 rounded-24 panel-ink space-y-4 text-left" data-anim="cta-console">
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-white/10 pb-3">
                   <span className="tsx-title text-white uppercase">Telephony Status</span>
                   <span className="tsx-ready">
@@ -1436,7 +1436,7 @@ FrontDesk AI answers calls naturally, books appointments, and confirms them on W
                 </div>
 
                 <div className="text-center">
-                  <span className="text-[11px] text-slate-300">
+                  <span className="text-11 text-slate-300">
                     Ready to route calls for your business today
                   </span>
                 </div>

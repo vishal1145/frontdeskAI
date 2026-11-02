@@ -2,8 +2,15 @@ import { FunctionDeclaration, Type } from "@google/genai";
 import { AvailabilityParams, AvailabilityResult, SlotOption } from "../types/index.js";
 import { slotLockManager } from "../services/slotLockManager.js";
 import { clinicRegistry, ClinicRegistration } from "../config/clinicRegistry.js";
-import { calendarService } from "../services/calendarService.js";
 import { dbService } from "../services/dbService.js";
+import {
+  doctorOffersService,
+  doctorSlotKey,
+  findDoctor,
+  generateDoctorSlots,
+  getEligibleDoctors,
+  todayInIst
+} from "../services/doctorScheduleService.js";
 
 export const checkAvailabilityDeclaration: FunctionDeclaration = {
   name: "check_availability",
@@ -40,33 +47,15 @@ export const checkAvailabilityDeclaration: FunctionDeclaration = {
 };
 
 /**
- * Helper to generate dynamic appointment slots for a given clinic schedule and doctor.
+ * Generates a doctor's slots from their timings and working days, using the clinic slot duration.
  */
 export function generateDynamicClinicSlots(
   targetDate: string,
   doctorName: string,
   clinic?: ClinicRegistration
 ): SlotOption[] {
-  // Clinical slot times spanning morning and evening shifts (Custom In-House Calendar Engine)
-  const slotConfigs = [
-    { time: "10:00 AM", isoHour: "10:00:00" },
-    { time: "10:30 AM", isoHour: "10:30:00" },
-    { time: "11:00 AM", isoHour: "11:00:00" },
-    { time: "11:30 AM", isoHour: "11:30:00" },
-    { time: "12:00 PM", isoHour: "12:00:00" },
-    { time: "12:30 PM", isoHour: "12:30:00" },
-    { time: "05:00 PM", isoHour: "17:00:00" },
-    { time: "05:30 PM", isoHour: "17:30:00" },
-    { time: "06:00 PM", isoHour: "18:00:00" },
-    { time: "06:30 PM", isoHour: "18:30:00" },
-    { time: "07:00 PM", isoHour: "19:00:00" },
-    { time: "07:30 PM", isoHour: "19:30:00" },
-    { time: "08:00 PM", isoHour: "20:00:00" }
-  ];
-
-  return slotConfigs.map((cfg) => ({
-    slot_iso: `${targetDate}T${cfg.isoHour}+05:30`,
-    display_time: cfg.time,
+  return generateDoctorSlots(targetDate, findDoctor(clinic, doctorName), clinic).map((slot) => ({
+    ...slot,
     doctor_name: doctorName,
     available: true
   }));
@@ -76,7 +65,7 @@ export function generateDynamicClinicSlots(
  * Checks available slots for target date, dynamically excluding locked/taken slots from DB & Google Calendar.
  */
 export async function executeCheckAvailability(params: AvailabilityParams & { clinic_id?: string }): Promise<AvailabilityResult> {
-  const { date, time_range, service_type = "General Checkup", doctor_name, clinic_id } = params;
+  const { date, time_range, service_type, doctor_name, clinic_id } = params;
 
   // Ensure registry is loaded
   await clinicRegistry.ensureLoaded();
@@ -86,18 +75,13 @@ export async function executeCheckAvailability(params: AvailabilityParams & { cl
 
   // Resolve target date string
   let targetDate = date.toLowerCase().trim();
-  const today = new Date();
 
   if (targetDate === "today" || targetDate === "aaj") {
-    targetDate = today.toISOString().split("T")[0];
+    targetDate = todayInIst();
   } else if (targetDate === "tomorrow" || targetDate === "kal" || targetDate === "kl") {
-    const tmr = new Date(today);
-    tmr.setDate(today.getDate() + 1);
-    targetDate = tmr.toISOString().split("T")[0];
+    targetDate = todayInIst(1);
   } else if (targetDate === "day after tomorrow" || targetDate === "parso") {
-    const dat = new Date(today);
-    dat.setDate(today.getDate() + 2);
-    targetDate = dat.toISOString().split("T")[0];
+    targetDate = todayInIst(2);
   }
 
   // 1. Feature Flag Check: If scheduling is turned OFF for this clinic, immediately decline with clear message
@@ -111,47 +95,54 @@ export async function executeCheckAvailability(params: AvailabilityParams & { cl
     };
   }
 
-  const defaultDoctor = clinic?.doctors?.[0]?.name || "Dr. Sharma";
-  const doctor = doctor_name || (service_type.toLowerCase().includes("dent")
-    ? (clinic?.doctors?.find(d => {
-        const specArr = Array.isArray(d?.specialties) ? d.specialties : [];
-        const specStr = typeof (d as any)?.specialization === "string" ? (d as any).specialization : "";
-        return specArr.some((s: string) => s.toLowerCase().includes("dent")) || specStr.toLowerCase().includes("dent");
-      })?.name || defaultDoctor)
-    : defaultDoctor);
+  // 2. Resolve which doctor this request is for
+  const noSlots = (notes: string, extra: Partial<AvailabilityResult> = {}): AvailabilityResult => ({
+    requested_date: targetDate,
+    is_available: false,
+    matching_slots: [],
+    alternative_slots: [],
+    notes,
+    ...extra
+  });
 
-  // 2. In-House Native Calendar Slot Generation
-  // NOTE: External Calendly API call preserved and commented out below as requested by user.
-  /*
-  // CALENDLY / EXTERNAL CALENDAR INTEGRATION (PRESERVED - COMMENTED OUT)
-  let rawSlots: SlotOption[] = [];
-  try {
-    const calendarPromise = calendarService.getLiveCalendarSlots(clinicId, targetDate, doctor);
-    const timeoutPromise = new Promise<{ provider: string; slots: SlotOption[] } | null>((resolve) =>
-      setTimeout(() => resolve(null), 1200)
-    );
-    const liveCalendarResult = await Promise.race([calendarPromise, timeoutPromise]);
-    if (liveCalendarResult && liveCalendarResult.slots && liveCalendarResult.slots.length > 0) {
-      rawSlots = liveCalendarResult.slots;
-    } else {
-      rawSlots = generateDynamicClinicSlots(targetDate, doctor, clinic);
-    }
-  } catch (err: any) {
-    console.warn(`[AVAILABILITY CALENDAR TIMEOUT/NOTICE] ${err.message}`);
-    rawSlots = generateDynamicClinicSlots(targetDate, doctor, clinic);
+  const hasDoctors = (clinic?.doctors?.length || 0) > 0;
+  const requestedDoctor = findDoctor(clinic, doctor_name);
+  const eligibleDoctors = getEligibleDoctors(clinic, service_type);
+  const eligibleNames = eligibleDoctors.map((d) => d.name);
+
+  if (doctor_name && hasDoctors && !requestedDoctor) {
+    return noSlots(`${doctor_name} is not registered at this clinic. Ask the caller to choose from: ${eligibleNames.join(", ")}.`, {
+      needs_doctor_selection: true,
+      eligible_doctors: eligibleNames
+    });
   }
-  */
+  if (requestedDoctor && !doctorOffersService(requestedDoctor, clinic, service_type)) {
+    return noSlots(
+      `${requestedDoctor.name} does not provide ${service_type}. ${eligibleNames.length > 0 ? `Offer: ${eligibleNames.join(", ")}.` : "Transfer the call to reception."}`,
+      { needs_doctor_selection: eligibleNames.length > 0, eligible_doctors: eligibleNames }
+    );
+  }
+  if (!requestedDoctor && hasDoctors && eligibleDoctors.length === 0) {
+    return noSlots(`${service_type} is not available with any doctor right now. Tell the caller politely and offer to transfer them to reception.`);
+  }
+  if (!requestedDoctor && eligibleDoctors.length > 1) {
+    return noSlots(
+      `More than one doctor is available. Ask the caller which doctor they prefer: ${eligibleNames.join(", ")}. If they have no preference, call checkAvailability again with doctor_name="${eligibleNames[0]}".`,
+      { needs_doctor_selection: true, eligible_doctors: eligibleNames }
+    );
+  }
+
+  const doctor = requestedDoctor?.name || eligibleNames[0] || doctor_name || "Clinic Doctor";
+
+  // 3. Generate this doctor's slots and drop past, locked and booked ones
   const rawSlots: SlotOption[] = generateDynamicClinicSlots(targetDate, doctor, clinic);
+  const dbBookedSlots = await dbService.getBookedDoctorSlotsFromDb(clinicId);
 
-  // 2. Fetch booked slots from DB
-  const dbBookedSlots = new Set(await dbService.getBookedSlotsFromDb(clinicId));
-
-  // 3. Dynamically check atomic lock manager state, DB state & past slots
   const now = new Date();
   const slots = rawSlots.map((s) => {
     const slotDate = new Date(s.slot_iso);
     const isPast = slotDate.getTime() < now.getTime();
-    if (isPast || slotLockManager.isLocked(clinicId, s.slot_iso) || dbBookedSlots.has(s.slot_iso)) {
+    if (isPast || slotLockManager.isLocked(clinicId, s.slot_iso, doctor) || dbBookedSlots.has(doctorSlotKey(s.slot_iso, doctor))) {
       return { ...s, available: false };
     }
     return s;
@@ -193,7 +184,7 @@ export async function executeCheckAvailability(params: AvailabilityParams & { cl
     matching_slots: matchingSlots,
     alternative_slots: alternativeSlots,
     notes: isAvailable
-      ? `Found ${matchingSlots.length} available slot(s) for ${targetDate} at ${clinicName}.`
-      : `Requested slot unavailable on ${targetDate} at ${clinicName}. Alternatives offered.`
+      ? `Found ${matchingSlots.length} available slot(s) with ${doctor} for ${targetDate} at ${clinicName}. Pass doctor_name="${doctor}" when booking.`
+      : `No matching slot with ${doctor} on ${targetDate} at ${clinicName}. ${rawSlots.length === 0 ? "This doctor is not working on this day." : "Alternatives offered."}`
   };
 }

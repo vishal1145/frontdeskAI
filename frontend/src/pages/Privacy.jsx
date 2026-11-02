@@ -42,19 +42,19 @@ export default function Privacy({ setActivePage }) {
   ];
 
   return (
-    <div className="w-full pt-10 sm:pt-16 lg:pt-20 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 sm:space-y-12">
+    <div className="w-full pt-8 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 sm:space-y-12">
       
       {/* Top Header & Trust Status */}
       <div className="border-b border-blue-900/10 pb-8 sm:pb-12" data-fade>
         <div className="space-y-5 max-w-4xl">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide-140 text-blue-700">
             <Lock className="w-3.5 h-3.5 shrink-0" />
             <span>Customer Data Protection &amp; Trust</span>
           </div>
           <h1 className="hero-title-clamp text-ink">
             Privacy Policy
           </h1>
-          <p className="text-sm sm:text-[0.95rem] text-ink-muted leading-relaxed">
+          <p className="text-sm sm:text-15-2 text-ink-muted leading-relaxed">
             Last Updated: October 2026 • Compliant with Indian Digital Personal Data Protection (DPDP) Act 2023 &amp; Data Security Guidelines
           </p>
         </div>
@@ -62,7 +62,7 @@ export default function Privacy({ setActivePage }) {
 
       {/* Mobile Horizontal Quick Navigation Pills (Zero Screen Overlap) */}
       <div className="lg:hidden w-full space-y-2">
-        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted flex items-center gap-1.5 px-1">
+        <div className="text-xs font-semibold uppercase tracking-wide-120 text-ink-muted flex items-center gap-1.5 px-1">
           <FileText className="w-3.5 h-3.5 text-blue-600" />
           <span>Quick Jump:</span>
         </div>
@@ -92,7 +92,7 @@ export default function Privacy({ setActivePage }) {
         {/* Left Sticky Table of Contents on Desktop */}
         <div className="hidden lg:block lg:col-span-4 sticky top-28 space-y-4">
           <div className="glass p-4 space-y-2">
-            <div className="px-2 pt-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted flex items-center gap-2">
+            <div className="px-2 pt-1 pb-2 text-11 font-semibold uppercase tracking-wide-140 text-ink-muted flex items-center gap-2">
               <FileText className="w-4 h-4 text-blue-600" />
               <span>Table of Contents</span>
             </div>
@@ -101,7 +101,7 @@ export default function Privacy({ setActivePage }) {
                 <button
                   key={sec.id}
                   onClick={() => scrollToSection(sec.id)}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-[13px] font-medium transition-all flex items-center justify-between ${
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-13 font-medium transition-all flex items-center justify-between ${
                     activeSection === sec.id
                       ? 'btn-brand'
                       : 'text-ink-soft hover:text-ink hover:bg-white/80'
@@ -113,7 +113,7 @@ export default function Privacy({ setActivePage }) {
             </nav>
           </div>
 
-          <div className="glass p-5 text-[13px] text-ink-soft space-y-2">
+          <div className="glass p-5 text-13 text-ink-soft space-y-2">
             <div className="font-bold text-blue-900 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-blue-600" />
               <span>Data Protection Officer</span>
@@ -132,7 +132,7 @@ export default function Privacy({ setActivePage }) {
         </div>
 
         {/* Right Content Column */}
-        <div className="lg:col-span-8 space-y-5 text-[0.95rem] sm:text-base text-ink-soft leading-relaxed font-normal prose-legal">
+        <div className="lg:col-span-8 space-y-5 text-15-2 sm:text-base text-ink-soft leading-relaxed font-normal prose-legal">
           
           {/* Section 1 */}
           <section id="overview" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
@@ -169,7 +169,7 @@ export default function Privacy({ setActivePage }) {
             
             <div className="grid grid-cols-1 gap-3 pt-1">
               <div className="glass-well p-4 sm:p-5">
-                <strong className="text-ink font-semibold block text-sm sm:text-[0.95rem] mb-1">
+                <strong className="text-ink font-semibold block text-sm sm:text-15-2 mb-1">
                   Caller Phone Number:
                 </strong>
                 <p className="text-sm text-ink-soft leading-relaxed">
@@ -178,7 +178,7 @@ export default function Privacy({ setActivePage }) {
               </div>
 
               <div className="glass-well p-4 sm:p-5">
-                <strong className="text-ink font-semibold block text-sm sm:text-[0.95rem] mb-1">
+                <strong className="text-ink font-semibold block text-sm sm:text-15-2 mb-1">
                   Audio Stream &amp; Live Voice:
                 </strong>
                 <p className="text-sm text-ink-soft leading-relaxed">
@@ -187,7 +187,7 @@ export default function Privacy({ setActivePage }) {
               </div>
 
               <div className="glass-well p-4 sm:p-5">
-                <strong className="text-ink font-semibold block text-sm sm:text-[0.95rem] mb-1">
+                <strong className="text-ink font-semibold block text-sm sm:text-15-2 mb-1">
                   Call Transcripts:
                 </strong>
                 <p className="text-sm text-ink-soft leading-relaxed">
@@ -196,7 +196,7 @@ export default function Privacy({ setActivePage }) {
               </div>
 
               <div className="glass-well p-4 sm:p-5">
-                <strong className="text-ink font-semibold block text-sm sm:text-[0.95rem] mb-1">
+                <strong className="text-ink font-semibold block text-sm sm:text-15-2 mb-1">
                   Appointment Records:
                 </strong>
                 <p className="text-sm text-ink-soft leading-relaxed">
@@ -219,7 +219,7 @@ export default function Privacy({ setActivePage }) {
               Under the provisions of the <strong className="text-ink font-semibold">Digital Personal Data Protection (DPDP) Act 2023</strong>:
             </p>
             
-            <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/80 ring-1 ring-blue-200 space-y-2.5 text-sm sm:text-[0.95rem]">
+            <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/80 ring-1 ring-blue-200 space-y-2.5 text-sm sm:text-15-2">
               <div className="flex items-center gap-2 text-blue-900 font-bold">
                 <CheckCircle className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>Zero LLM Training Guarantee</span>
@@ -258,7 +258,7 @@ export default function Privacy({ setActivePage }) {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm pt-1">
               <div className="glass-well p-4 sm:p-5 space-y-2">
-                <div className="flex items-center gap-2 text-ink font-semibold text-[0.95rem]">
+                <div className="flex items-center gap-2 text-ink font-semibold text-15-2">
                   <PhoneCall className="w-4 h-4 text-blue-600 shrink-0" />
                   <span>Telephony Gateway</span>
                 </div>
@@ -268,7 +268,7 @@ export default function Privacy({ setActivePage }) {
               </div>
 
               <div className="glass-well p-4 sm:p-5 space-y-2">
-                <div className="flex items-center gap-2 text-ink font-semibold text-[0.95rem]">
+                <div className="flex items-center gap-2 text-ink font-semibold text-15-2">
                   <Cpu className="w-4 h-4 text-blue-600 shrink-0" />
                   <span>Inference Engine</span>
                 </div>
@@ -278,7 +278,7 @@ export default function Privacy({ setActivePage }) {
               </div>
 
               <div className="glass-well p-4 sm:p-5 space-y-2">
-                <div className="flex items-center gap-2 text-ink font-semibold text-[0.95rem]">
+                <div className="flex items-center gap-2 text-ink font-semibold text-15-2">
                   <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>Notification Gateway</span>
                 </div>
@@ -288,7 +288,7 @@ export default function Privacy({ setActivePage }) {
               </div>
 
               <div className="glass-well p-4 sm:p-5 space-y-2">
-                <div className="flex items-center gap-2 text-ink font-semibold text-[0.95rem]">
+                <div className="flex items-center gap-2 text-ink font-semibold text-15-2">
                   <Database className="w-4 h-4 text-indigo-600 shrink-0" />
                   <span>Database</span>
                 </div>
@@ -321,14 +321,14 @@ export default function Privacy({ setActivePage }) {
           <div className="pt-8 border-t border-blue-900/10 flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-3">
             <button
               onClick={() => { setActivePage('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className="glass-pill inline-flex items-center justify-center gap-2 text-[13px] font-medium text-blue-700 hover:text-blue-800 px-4 py-2.5"
+              className="glass-pill inline-flex items-center justify-center gap-2 text-13 font-medium text-blue-700 hover:text-blue-800 px-4 py-2.5"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to FrontDesk AI Home</span>
             </button>
             <button
               onClick={() => { setActivePage('terms'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className="pill btn-brand !min-h-[2.75rem] !text-[13px] active:scale-[0.98]"
+              className="pill btn-brand !min-h-[2.75rem] !text-13 active:scale-[0.98]"
             >
               <span>View Terms of Service &rarr;</span>
             </button>
