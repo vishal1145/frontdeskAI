@@ -542,7 +542,7 @@ export default function CreateBusiness({ setActivePage }) {
         <form onSubmit={handleCreateClinic} className="grid grid-cols-1 lg:grid-cols-[15.5rem_minmax(0,1fr)] lg:gap-x-8 lg:gap-y-0 gap-5 mt-5 sm:mt-6">
           {/* Section index & sidebar actions */}
           <aside className="min-w-0 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:self-start lg:sticky lg:top-[calc(4.25rem+1.5rem)] adm-rise" style={{ '--i': 2 }} aria-label="Form sections">
-            <ol className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:p-s-9-6 lg:overflow-visible lg:rounded-20 lg:bg-white/70 lg:shadow-[inset_0_0_0_1px_theme(colors.white_/_0.9),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)]">
+            <ol className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:p-s-9-6 lg:overflow-visible lg:rounded-14 lg:bg-white/70 lg:shadow-[inset_0_0_0_1px_theme(colors.white_/_0.9),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)]">
               {SECTIONS.map((s, i) => (
                 <li key={s.id}>
                   <button
@@ -568,7 +568,7 @@ export default function CreateBusiness({ setActivePage }) {
             </ol>
 
             {/* Action buttons */}
-            <div className="flex flex-col gap-2 mt-3 p-3.5 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-[0_4px_16px_-4px_theme(colors.blue.800_/_0.1)]">
+            <div className="flex flex-col gap-2 mt-3 p-3.5 rounded-14 bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-[0_4px_16px_-4px_theme(colors.blue.800_/_0.1)]">
               <button
                 type="submit"
                 disabled={submitting}
@@ -599,7 +599,7 @@ export default function CreateBusiness({ setActivePage }) {
           {/* Form sections */}
           <div className="grid gap-5 min-w-0 lg:col-start-2">
           {/* Section 1: Basic Clinic Info */}
-          <div className="relative p-6 sm:px-8 sm:py-7 rounded-24 bg-white/[0.86] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.95),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] scroll-mt-24 space-y-4" id="biz-details">
+          <div className="relative p-6 sm:px-8 sm:py-7 rounded-14 bg-white/[0.86] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.95),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] scroll-mt-24 space-y-4" id="biz-details">
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-15 font-semibold text-slate-800 tracking-tight">
                 Business Details
@@ -818,7 +818,7 @@ export default function CreateBusiness({ setActivePage }) {
 
           {/* Section 2: Working Hours */}
           <div
-            className="relative p-6 sm:px-8 sm:py-7 rounded-24 bg-white/[0.86] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.95),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] scroll-mt-24 space-y-4"
+            className="relative p-6 sm:px-8 sm:py-7 rounded-14 bg-white/[0.86] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.95),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] scroll-mt-24 space-y-4"
             id="biz-location"
             style={{ zIndex: (showDateCalendar || showTimePicker) ? 35 : 2 }}
           >
@@ -1119,7 +1119,7 @@ export default function CreateBusiness({ setActivePage }) {
 
           {/* Section 3: Doctors & Services */}
           <div
-            className="relative p-6 sm:px-8 sm:py-7 rounded-24 bg-white/[0.86] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.95),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] scroll-mt-24 space-y-4"
+            className="relative p-6 sm:px-8 sm:py-7 rounded-14 bg-white/[0.86] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.95),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] scroll-mt-24 space-y-4"
             id="biz-doctors"
             style={{ zIndex: activeDocTimePickerIndex !== null ? 35 : 1 }}
           >

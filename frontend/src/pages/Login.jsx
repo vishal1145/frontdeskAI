@@ -120,7 +120,7 @@ export default function Login({ setActivePage, onLoginSuccess }) {
                 </label>
 
                 <div className={`relative rounded-xl border transition-all ${error ? 'border-rose-300 ring-2 ring-rose-500/20' : 'border-slate-300/80 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/15'}`}>
-                  <div className="absolute inset-y-1.5 left-0 flex items-center px-3.5 border-r border-slate-200 text-sm font-semibold text-slate-700 pointer-events-none">
+                  <div className="absolute inset-y-1.5 left-0 flex items-center px-3 border-r border-slate-200 text-sm font-semibold text-slate-700 pointer-events-none">
                     +91
                   </div>
 
@@ -135,7 +135,7 @@ export default function Login({ setActivePage, onLoginSuccess }) {
                       if (error) setError('');
                     }}
                     placeholder="98765 43210"
-                    className="w-full h-12 pl-16 pr-4 rounded-xl text-sm font-medium text-ink placeholder:text-slate-400 focus:outline-none bg-white"
+                    className="w-full h-10 pl-14 pr-3.5 rounded-xl text-sm font-medium text-ink placeholder:text-slate-400 focus:outline-none bg-white"
                     aria-invalid={error ? 'true' : undefined}
                     aria-describedby="clinic-mobile-hint"
                     autoFocus
@@ -149,7 +149,7 @@ export default function Login({ setActivePage, onLoginSuccess }) {
                 </label>
 
                 <div className={`relative rounded-xl border transition-all ${error && !password.trim() ? 'border-rose-300 ring-2 ring-rose-500/20' : 'border-slate-300/80 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/15'}`}>
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <Lock className="w-4 h-4" />
                   </div>
 
@@ -162,14 +162,14 @@ export default function Login({ setActivePage, onLoginSuccess }) {
                       if (error) setError('');
                     }}
                     placeholder="Enter your portal password"
-                    className="w-full h-12 pl-10 pr-11 rounded-xl text-sm font-medium text-ink placeholder:text-slate-400 focus:outline-none bg-white"
+                    className="w-full h-10 pl-9 pr-10 rounded-xl text-sm font-medium text-ink placeholder:text-slate-400 focus:outline-none bg-white"
                     aria-invalid={error ? 'true' : undefined}
                   />
 
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     tabIndex={-1}
                   >
@@ -198,7 +198,7 @@ export default function Login({ setActivePage, onLoginSuccess }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 px-5 rounded-xl font-semibold text-sm text-white bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 active:translate-y-px transition-all shadow-[inset_0_1px_0_theme(colors.white_/_0.2),0_6px_16px_-8px_theme(colors.blue.600_/_0.6)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="w-full h-10 px-4 rounded-xl font-semibold text-sm text-white bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 active:translate-y-px transition-all shadow-[inset_0_1px_0_theme(colors.white_/_0.2),0_6px_16px_-8px_theme(colors.blue.600_/_0.6)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {loading ? (
                   <>
