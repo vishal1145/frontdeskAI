@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { 
   Calendar, Menu, X, ArrowRight, Building2, ShieldCheck, 
   Settings, Users, LogOut, ChevronDown, LayoutDashboard, 
-  Plus, User, CalendarCheck, Stethoscope 
+  Plus, User, CalendarCheck, Stethoscope, Pill 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import BrandLogo from './BrandLogo';
+import { ProfileIcon } from './ProfileIcon';
 
 export default function Navbar({ activePage, setActivePage, clinicUser, isSuperAdmin, onClinicLogout }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -58,10 +59,12 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
   const isClinicPage = ['portal', 'dashboard', 'appointments', 'doctors', 'doctors-services', 'calendar', 'profile'].includes(activePage);
   const isPortalOrLogin = activePage === 'login' || isClinicPage || activePage === 'admin' || activePage === 'admin-create';
 
+  const isMedical = clinicUser?.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(clinicUser?.clinic_name || '');
+
   const clinicNavItems = [
     { id: 'dashboard', label: 'Dashboard' },
-    { id: 'appointments', label: 'Appointments' },
-    { id: 'doctors-services', label: 'Doctors & Services' },
+    { id: 'appointments', label: isMedical ? 'Medicine Orders' : 'Appointments' },
+    { id: 'doctors-services', label: isMedical ? 'Pharmacist & Products' : 'Doctors & Services' },
     { id: 'calendar', label: 'Calendar' },
     { id: 'profile', label: 'Profile' },
   ];
@@ -214,7 +217,12 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
                   }`}
                   aria-expanded={clinicDropdownOpen}
                 >
-                  <Building2 className="w-3.5 h-3.5" />
+                  <ProfileIcon
+                    icon={clinicUser.profile_icon}
+                    isMedical={isMedical}
+                    containerClassName="w-4 h-4 rounded-md shrink-0"
+                    iconClassName="w-2.5 h-2.5"
+                  />
                   <span>{clinicUser.clinic_name?.split(' ')[0] || 'Clinic'} Portal</span>
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${clinicDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -250,7 +258,7 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
                         }`}
                       >
                         <CalendarCheck className="w-4 h-4 text-slate-500" />
-                        <span>Appointments</span>
+                        <span>{isMedical ? 'Medicine Orders' : 'Appointments'}</span>
                       </button>
 
                       <button
@@ -262,8 +270,12 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
                           isClinicTabActive('doctors-services') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
                         }`}
                       >
-                        <Stethoscope className="w-4 h-4 text-slate-500" />
-                        <span>Doctors &amp; Services</span>
+                        {isMedical ? (
+                          <Pill className="w-4 h-4 text-slate-500" />
+                        ) : (
+                          <Stethoscope className="w-4 h-4 text-slate-500" />
+                        )}
+                        <span>{isMedical ? 'Pharmacist & Products' : 'Doctors & Services'}</span>
                       </button>
 
                       <button

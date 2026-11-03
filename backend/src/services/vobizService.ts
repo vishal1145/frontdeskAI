@@ -215,7 +215,11 @@ export class VobizTelephonyService {
           // 2. Check if caller phone matches a registered clinic's contact/virtual phone
           const callerClinic = clinicRegistry.getClinicByPhone(callerPhone);
           if (callerClinic && callerClinic.clinic_id !== defaultClinicId) {
-            resolvedClinicId = callerClinic.clinic_id;
+            const clinicCreatedAt = callerClinic.created_at ? new Date(callerClinic.created_at).getTime() : 0;
+            // Only attribute if call occurred after this clinic was registered
+            if (clinicCreatedAt === 0 || callTime >= clinicCreatedAt - 60000) {
+              resolvedClinicId = callerClinic.clinic_id;
+            }
           } else {
             // 3. Check transcript map if matches within 3 mins for active AI calls
             const matchedTranscript = transcriptMap.find(
@@ -235,6 +239,15 @@ export class VobizTelephonyService {
             } else if (destinationClinic) {
               resolvedClinicId = destinationClinic.clinic_id;
             }
+          }
+        }
+
+        // Never assign historical calls that happened before this business was created
+        const targetBusiness = clinicRegistry.getClinicById(resolvedClinicId);
+        if (targetBusiness && targetBusiness.created_at) {
+          const createdAtTime = new Date(targetBusiness.created_at).getTime();
+          if (callTime < createdAtTime - 60000) {
+            continue;
           }
         }
 

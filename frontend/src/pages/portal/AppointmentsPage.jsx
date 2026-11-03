@@ -3,11 +3,13 @@ import { Calendar, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useClinic } from '../../context/ClinicContext';
 
 export default function AppointmentsPage() {
-  const { appointments, dateFilteredAppointments } = useClinic();
+  const { clinic, appointments, dateFilteredAppointments } = useClinic();
   const [apptsPage, setApptsPage] = useState(1);
   const rowsPerPage = 10;
 
-  // Pagination calculation for Appointments (10 rows per page)
+  const isMedical = clinic?.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic?.clinic_name || '');
+
+  // Pagination calculation for Appointments / Orders (10 rows per page)
   const totalApptsPages = Math.ceil(dateFilteredAppointments.length / rowsPerPage) || 1;
   const currentApptsPage = Math.min(apptsPage, totalApptsPages);
   const startApptsIdx = (currentApptsPage - 1) * rowsPerPage;
@@ -30,16 +32,20 @@ export default function AppointmentsPage() {
     <section
       className="cx-panel-enter bg-white border border-slate-900/[0.09] rounded-14 shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)]"
       role="region"
-      aria-label="Appointments"
+      aria-label={isMedical ? "Medicine Orders" : "Appointments"}
     >
       <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 px-5 py-4 sm:px-6 sm:py-4.5 border-b border-slate-900/[0.09]">
         <div>
-          <h2 className="text-base font-semibold tracking-tight-10 text-ink">Appointments Booked by Voice AI</h2>
-          <p className="mt-0.5 text-13 text-ink-muted">Directly synchronized into clinic database</p>
+          <h2 className="text-base font-semibold tracking-tight-10 text-ink">
+            {isMedical ? 'Medicine Orders Noted by Voice AI' : 'Appointments Booked by Voice AI'}
+          </h2>
+          <p className="mt-0.5 text-13 text-ink-muted">
+            {isMedical ? 'Directly recorded in medical store database' : 'Directly synchronized into clinic database'}
+          </p>
         </div>
         <div className="flex items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 h-6 px-2.5 border border-blue-200 rounded-full text-xs font-semibold leading-none whitespace-nowrap text-blue-700 bg-blue-50">
-            {appointments.length} Total Booked
+            {appointments.length} Total {isMedical ? 'Orders' : 'Booked'}
           </span>
         </div>
       </div>
@@ -49,9 +55,13 @@ export default function AppointmentsPage() {
           <div className="grid place-items-center w-12 h-12 mx-auto mb-3.5 rounded-xl text-slate-400 bg-tint-blue-15">
             <Calendar className="w-5 h-5" />
           </div>
-          <p className="text-15 font-semibold text-ink">No appointments booked yet.</p>
+          <p className="text-15 font-semibold text-ink">
+            {isMedical ? 'No medicine orders noted yet.' : 'No appointments booked yet.'}
+          </p>
           <p className="max-w-[26rem] mx-auto mt-1.5 text-13 text-ink-muted">
-            Appointments scheduled by patients during AI calls will appear here immediately.
+            {isMedical
+              ? 'Medicine orders and pickup inquiries taken during AI calls will appear here immediately.'
+              : 'Appointments scheduled by patients during AI calls will appear here immediately.'}
           </p>
         </div>
       ) : (
@@ -60,11 +70,19 @@ export default function AppointmentsPage() {
             <table className="w-full min-w-[46rem] border-separate border-spacing-0 text-left text-13">
               <thead>
                 <tr>
-                  <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">Doctor &amp; Service</th>
-                  <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">Patient Name</th>
+                  <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">
+                    {isMedical ? 'Type & Address' : 'Doctor & Service'}
+                  </th>
+                  <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">
+                    {isMedical ? 'Customer Name' : 'Patient Name'}
+                  </th>
                   <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">Phone</th>
-                  <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">Booking ID</th>
-                  <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">Slot Time</th>
+                  <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">
+                    {isMedical ? 'Order ID' : 'Booking ID'}
+                  </th>
+                  <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">
+                    {isMedical ? 'Delivery Mode' : 'Slot Time'}
+                  </th>
                   <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09] text-right">Status</th>
                 </tr>
               </thead>

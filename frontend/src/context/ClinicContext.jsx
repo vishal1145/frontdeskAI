@@ -95,7 +95,7 @@ export function ClinicProvider({ clinicUser, onLogout, setActivePage, children }
     if (calendarSelectedDate) {
       await fetchCalendarSlots(calendarSelectedDate, selectedDoctorFilter);
     }
-    toast.success('Clinic data refreshed successfully!');
+    toast.success('Data refreshed successfully!');
   };
 
   const formatIsoDate = (d) => {

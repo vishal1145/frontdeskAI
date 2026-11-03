@@ -3,6 +3,9 @@ import ReactCalendar from 'react-calendar';
 import { Building2, ShieldCheck, Pencil, Check, X, Loader2, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useClinic } from '../../context/ClinicContext';
+import CustomSelect from '../../components/CustomSelect';
+import { ProfileIcon } from '../../components/ProfileIcon';
+import ProfileIconModal from '../../components/ProfileIconModal';
 
 const RECEPTIONIST_OPTIONS = [
   'Neha',
@@ -58,8 +61,12 @@ export default function ProfilePage() {
     receptionist_name: '',
     address: '',
     working_hours: '',
-    slot_duration_minutes: 30
+    slot_duration_minutes: 30,
+    profile_icon: ''
   });
+
+  // Icon Modal State
+  const [showIconModal, setShowIconModal] = useState(false);
 
   // Calendar Schedule Modal State for Working Hours
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -70,7 +77,7 @@ export default function ProfilePage() {
 
   // Prevent background scroll while modal is open
   useEffect(() => {
-    if (!showCalendarModal) return;
+    if (!showCalendarModal && !showIconModal) return;
 
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -78,7 +85,7 @@ export default function ProfilePage() {
     return () => {
       document.body.style.overflow = originalOverflow;
     };
-  }, [showCalendarModal]);
+  }, [showCalendarModal, showIconModal]);
 
   const parsePhoneTo10 = (phoneStr) => {
     let raw = (phoneStr || '').replace(/[^0-9]/g, '');
@@ -96,12 +103,15 @@ export default function ProfilePage() {
         receptionist_name: clinic.receptionist_name || 'Neha',
         address: (clinic.address || '').slice(0, 200),
         working_hours: clinic.working_hours || 'Monday to Saturday, 10:00 AM - 08:00 PM',
-        slot_duration_minutes: Number(clinic.slot_duration_minutes) || 30
+        slot_duration_minutes: Number(clinic.slot_duration_minutes) || 30,
+        profile_icon: clinic.profile_icon || (isMedical ? 'pill:emerald' : 'building:blue')
       });
     }
   }, [clinic]);
 
   if (!clinic) return null;
+
+  const isMedical = clinic?.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic?.clinic_name || '');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -162,11 +172,13 @@ export default function ProfilePage() {
         receptionist_name: clinic.receptionist_name || 'Neha',
         address: (clinic.address || '').slice(0, 200),
         working_hours: clinic.working_hours || 'Monday to Saturday, 10:00 AM - 08:00 PM',
-        slot_duration_minutes: Number(clinic.slot_duration_minutes) || 30
+        slot_duration_minutes: Number(clinic.slot_duration_minutes) || 30,
+        profile_icon: clinic.profile_icon || (isMedical ? 'pill:emerald' : 'building:blue')
       });
     }
     setIsEditing(false);
     setShowCalendarModal(false);
+    setShowIconModal(false);
   };
 
   const handleSave = async (e) => {
@@ -175,19 +187,19 @@ export default function ProfilePage() {
     // 1. Clinic Name Validation: No numbers, min 3, max 50
     const trimmedName = formData.clinic_name.trim();
     if (!trimmedName) {
-      toast.error('Clinic Name is required');
+      toast.error(isMedical ? 'Store / Pharmacy Name is required' : 'Clinic Name is required');
       return;
     }
     if (/[0-9]/.test(trimmedName)) {
-      toast.error('Clinic Name cannot contain numbers');
+      toast.error(isMedical ? 'Store / Pharmacy Name cannot contain numbers' : 'Clinic Name cannot contain numbers');
       return;
     }
     if (trimmedName.length < 3) {
-      toast.error('Clinic Name must be at least 3 characters');
+      toast.error(isMedical ? 'Store / Pharmacy Name must be at least 3 characters' : 'Clinic Name must be at least 3 characters');
       return;
     }
     if (trimmedName.length > 50) {
-      toast.error('Clinic Name cannot exceed 50 characters');
+      toast.error(isMedical ? 'Store / Pharmacy Name cannot exceed 50 characters' : 'Clinic Name cannot exceed 50 characters');
       return;
     }
 
@@ -205,11 +217,11 @@ export default function ProfilePage() {
     // 3. Full Clinic Address Validation: min 3 (if provided), max 200
     const trimmedAddress = formData.address.trim();
     if (trimmedAddress && trimmedAddress.length < 3) {
-      toast.error('Full Clinic Address must be at least 3 characters');
+      toast.error(isMedical ? 'Store Address must be at least 3 characters' : 'Full Clinic Address must be at least 3 characters');
       return;
     }
     if (trimmedAddress.length > 200) {
-      toast.error('Full Clinic Address cannot exceed 200 characters');
+      toast.error(isMedical ? 'Store Address cannot exceed 200 characters' : 'Full Clinic Address cannot exceed 200 characters');
       return;
     }
 
@@ -219,7 +231,8 @@ export default function ProfilePage() {
         ...formData,
         clinic_name: trimmedName,
         contact_phone: `+91${phoneDigits}`,
-        address: trimmedAddress
+        address: trimmedAddress,
+        profile_icon: formData.profile_icon
       };
       const res = await fetch(`/api/clinics/${clinic.clinic_id}/profile`, {
         method: 'PUT',
@@ -241,7 +254,7 @@ export default function ProfilePage() {
         } catch (storageErr) {
           console.error(storageErr);
         }
-        toast.success(data.message || 'Clinic profile updated successfully!');
+        toast.success(data.message || (isMedical ? 'Pharmacy profile updated successfully!' : 'Clinic profile updated successfully!'));
         setIsEditing(false);
       } else {
         toast.error(data.message || 'Failed to update profile');
@@ -258,16 +271,49 @@ export default function ProfilePage() {
       <section
         className="cx-panel-enter bg-white border border-slate-900/[0.09] rounded-14 shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] overflow-hidden"
       role="region"
-      aria-label="Clinic Profile"
+      aria-label={isMedical ? "Pharmacy Profile" : "Clinic Profile"}
     >
       {/* Header */}
       <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3 bg-gradient-to-r from-blue-50/40 to-white">
         <div className="flex items-center gap-3">
-          <div className="grid place-items-center w-10 h-10 rounded-xl bg-blue-600 text-white shadow-xs">
-            <Building2 className="w-5 h-5" />
+          <div className="relative group">
+            <button
+              type="button"
+              onClick={() => setShowIconModal(true)}
+              className="relative block rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-transform active:scale-95 cursor-pointer"
+              title="Click to change profile icon or logo"
+              aria-label="Change profile icon"
+            >
+              <ProfileIcon
+                icon={isEditing ? formData.profile_icon : (clinic.profile_icon || (isMedical ? 'pill:emerald' : 'building:blue'))}
+                isMedical={isMedical}
+                containerClassName="w-10 h-10 rounded-xl shadow-xs"
+                iconClassName="w-5 h-5"
+                alt={clinic.clinic_name}
+              />
+              <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white border border-slate-200 text-blue-600 shadow-xs flex items-center justify-center transition-all ${
+                isEditing ? 'opacity-100 ring-2 ring-blue-500/20' : 'opacity-0 group-hover:opacity-100'
+              }`}>
+                <Pencil className="w-2.5 h-2.5" />
+              </span>
+            </button>
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">Clinic Profile</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                {isMedical ? 'Pharmacy / Store Profile' : 'Clinic Profile'}
+              </h2>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={() => setShowIconModal(true)}
+                  className="text-11 font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Pencil className="w-2.5 h-2.5" />
+                  Change Icon
+                </button>
+              )}
+            </div>
             <p className="text-xs text-slate-500">Business identity &amp; AI receptionist settings</p>
           </div>
         </div>
@@ -316,11 +362,11 @@ export default function ProfilePage() {
 
       {/* Profile Content */}
       <form onSubmit={handleSave} className="p-5 sm:p-6 space-y-4">
-        {/* Clinic Name */}
+        {/* Clinic / Store Name */}
         <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-100">
           <div className="flex items-center justify-between mb-1">
             <span className="text-11 font-semibold text-slate-400 uppercase tracking-wider block">
-              Clinic Name {isEditing && <span className="text-red-500">*</span>}
+              {isMedical ? 'Pharmacy / Store Name' : 'Clinic Name'} {isEditing && <span className="text-red-500">*</span>}
             </span>
             {isEditing && (
               <span className={`text-10 font-mono font-semibold ${formData.clinic_name.trim().length >= 3 ? 'text-emerald-600' : 'text-slate-400'}`}>
@@ -344,7 +390,7 @@ export default function ProfilePage() {
               maxLength={50}
               minLength={3}
               className="w-full mt-1 px-3.5 py-2 text-sm font-semibold text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs"
-              placeholder="Enter clinic name (letters only, min 3 - max 50 chars)"
+              placeholder={isMedical ? "Enter pharmacy / store name (letters only, min 3 - max 50 chars)" : "Enter clinic name (letters only, min 3 - max 50 chars)"}
               required
             />
           )}
@@ -405,30 +451,25 @@ export default function ProfilePage() {
             {!isEditing ? (
               <span className="text-sm font-semibold text-blue-700">{clinic.receptionist_name || 'Neha'}</span>
             ) : (
-              <select
-                name="receptionist_name"
+              <CustomSelect
                 value={formData.receptionist_name}
-                onChange={handleChange}
-                className="w-full mt-1 px-3.5 py-2 text-sm font-semibold text-blue-700 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs cursor-pointer"
-              >
-                {formData.receptionist_name && !RECEPTIONIST_OPTIONS.includes(formData.receptionist_name) && (
-                  <option value={formData.receptionist_name}>{formData.receptionist_name}</option>
-                )}
-                {RECEPTIONIST_OPTIONS.map((name) => (
-                  <option key={name} value={name}>
-                    {name === 'Neha' ? 'Neha (Recommended)' : name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setFormData({ ...formData, receptionist_name: val })}
+                options={RECEPTIONIST_OPTIONS.map((name) => ({
+                  value: name,
+                  label: name === 'Neha' ? 'Neha (Recommended)' : name
+                }))}
+                className="w-full mt-1 px-3.5 py-2 text-sm font-semibold text-blue-700 bg-white border border-slate-300 rounded-lg shadow-xs cursor-pointer flex items-center justify-between gap-2"
+                menuClassName="w-full"
+              />
             )}
           </div>
         </div>
 
-        {/* Full Clinic Address */}
+        {/* Full Clinic / Store Address */}
         <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-100">
           <div className="flex items-center justify-between mb-1">
             <span className="text-11 font-semibold text-slate-400 uppercase tracking-wider block">
-              Full Clinic Address
+              {isMedical ? 'Store Address' : 'Full Clinic Address'}
             </span>
             {isEditing && (
               <span className={`text-10 font-mono font-semibold ${formData.address.trim().length >= 3 ? 'text-emerald-600' : 'text-slate-400'}`}>
@@ -447,7 +488,7 @@ export default function ProfilePage() {
               maxLength={200}
               minLength={3}
               className="w-full mt-1 px-3.5 py-2 text-sm text-slate-800 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-xs"
-              placeholder="Enter full clinic address (min 3, max 200 characters)"
+              placeholder={isMedical ? "Enter full store address (min 3, max 200 characters)" : "Enter full clinic address (min 3, max 200 characters)"}
             />
           )}
         </div>
@@ -463,21 +504,13 @@ export default function ProfilePage() {
               <span className="text-sm text-slate-700">{clinic.working_hours || 'Mon-Sat: 09:00 AM - 08:00 PM'}</span>
             ) : (
               <div className="flex items-center gap-2 mt-1">
-                <select
-                  name="working_hours"
+                <CustomSelect
                   value={formData.working_hours}
-                  onChange={handleChange}
-                  className="flex-1 min-w-0 px-3.5 py-2 text-sm text-slate-800 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs cursor-pointer truncate"
-                >
-                  {formData.working_hours && !WORKING_HOURS_OPTIONS.includes(formData.working_hours) && (
-                    <option value={formData.working_hours}>{formData.working_hours}</option>
-                  )}
-                  {WORKING_HOURS_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setFormData({ ...formData, working_hours: val })}
+                  options={WORKING_HOURS_OPTIONS.map((opt) => ({ value: opt, label: opt }))}
+                  className="flex-1 min-w-0 px-3.5 py-2 text-sm text-slate-800 bg-white border border-slate-300 rounded-lg shadow-xs cursor-pointer flex items-center justify-between gap-2"
+                  menuClassName="w-full"
+                />
                 <button
                   type="button"
                   onClick={openCalendarModal}
@@ -493,38 +526,39 @@ export default function ProfilePage() {
 
           <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-100">
             <span className="text-11 font-semibold text-slate-400 uppercase tracking-wider block mb-1">
-              Slot Duration
+              {isMedical ? 'Order/Inquiry Slot Duration' : 'Slot Duration'}
             </span>
             {!isEditing ? (
-              <span className="text-sm text-slate-700 font-semibold">{clinic.slot_duration_minutes || 30} mins per patient</span>
+              <span className="text-sm text-slate-700 font-semibold">{clinic.slot_duration_minutes || 30} mins {isMedical ? 'per order' : 'per patient'}</span>
             ) : (
-              <select
-                name="slot_duration_minutes"
+              <CustomSelect
                 value={formData.slot_duration_minutes}
-                onChange={handleChange}
-                className="w-full mt-1 px-3.5 py-2 text-sm text-slate-800 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs"
-              >
-                <option value={15}>15 mins per patient</option>
-                <option value={20}>20 mins per patient</option>
-                <option value={30}>30 mins per patient</option>
-                <option value={45}>45 mins per patient</option>
-                <option value={60}>60 mins per patient</option>
-              </select>
+                onChange={(val) => setFormData({ ...formData, slot_duration_minutes: Number(val) })}
+                options={[
+                  { value: 15, label: `15 mins ${isMedical ? 'per order' : 'per patient'}` },
+                  { value: 20, label: `20 mins ${isMedical ? 'per order' : 'per patient'}` },
+                  { value: 30, label: `30 mins ${isMedical ? 'per order' : 'per patient'}` },
+                  { value: 45, label: `45 mins ${isMedical ? 'per order' : 'per patient'}` },
+                  { value: 60, label: `60 mins ${isMedical ? 'per order' : 'per patient'}` },
+                ]}
+                className="w-full mt-1 px-3.5 py-2 text-sm text-slate-800 bg-white border border-slate-300 rounded-lg shadow-xs cursor-pointer flex items-center justify-between gap-2"
+                menuClassName="w-full"
+              />
             )}
           </div>
         </div>
 
-        {/* Registered Doctors */}
+        {/* Registered Doctors / Staff */}
         {clinic.doctors && clinic.doctors.length > 0 && (
           <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-100">
             <span className="text-11 font-semibold text-slate-400 uppercase tracking-wider block mb-2">
-              Registered Doctors ({clinic.doctors.length})
+              {isMedical ? 'Registered Pharmacist & Staff' : 'Registered Doctors'} ({clinic.doctors.length})
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {clinic.doctors.map((d, dIdx) => (
                 <div key={dIdx} className="flex items-center justify-between text-xs text-slate-700 bg-white p-2.5 px-3 rounded-lg border border-slate-100">
                   <span className="font-semibold text-slate-900">{d.name}</span>
-                  <span className="text-slate-500">{d.specialization || d.specialties?.join(', ') || 'Specialist'}</span>
+                  <span className="text-slate-500">{d.specialization || d.specialties?.join(', ') || (isMedical ? 'Staff' : 'Specialist')}</span>
                 </div>
               ))}
             </div>
@@ -650,17 +684,16 @@ export default function ProfilePage() {
                 <span className="block text-11 font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Daily Working Timings:
                 </span>
-                <select
+                <CustomSelect
                   value={selectedTiming}
-                  onChange={(e) => setSelectedTiming(e.target.value)}
-                  className="w-full px-3 py-2 text-sm text-slate-800 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
-                >
-                  {COMMON_TIMING_OPTIONS.map((timeOpt) => (
-                    <option key={timeOpt} value={timeOpt}>
-                      {timeOpt}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedTiming}
+                  options={COMMON_TIMING_OPTIONS.map((timeOpt) => ({
+                    value: timeOpt,
+                    label: timeOpt
+                  }))}
+                  className="w-full px-3 py-2 text-sm text-slate-800 bg-white border border-slate-300 rounded-lg cursor-pointer shadow-xs flex items-center justify-between gap-2"
+                  menuClassName="w-full"
+                />
               </div>
 
               {/* Schedule Preview */}
@@ -695,6 +728,19 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Profile Icon Picker Modal */}
+      <ProfileIconModal
+        isOpen={showIconModal}
+        onClose={() => setShowIconModal(false)}
+        currentIcon={formData.profile_icon || clinic.profile_icon || (isMedical ? 'pill:emerald' : 'building:blue')}
+        isMedical={isMedical}
+        clinicName={formData.clinic_name || clinic.clinic_name}
+        onApply={(newIcon) => {
+          setFormData((prev) => ({ ...prev, profile_icon: newIcon }));
+          if (!isEditing) setIsEditing(true);
+        }}
+      />
     </>
   );
 }

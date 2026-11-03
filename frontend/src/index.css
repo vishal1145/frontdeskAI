@@ -1771,22 +1771,22 @@ button:hover .bf .ch,
   background: var(--cx-surface) !important;
   border: 1px solid var(--cx-border) !important;
   border-radius: var(--cx-radius) !important;
-  padding: theme('spacing.s-20') !important;
+  padding: 14px 16px !important;
   font-family: inherit !important;
   box-shadow: var(--cx-shadow) !important;
 }
 
 .cx-page .react-calendar__navigation {
   display: flex !important;
-  height: 44px !important;
-  margin-bottom: theme('spacing.s-16') !important;
+  height: 40px !important;
+  margin-bottom: 12px !important;
   align-items: center !important;
 }
 
 .cx-page .react-calendar__navigation button {
-  min-width: 44px !important;
+  min-width: 40px !important;
   background: none !important;
-  font-size: theme('fontSize.16') !important;
+  font-size: theme('fontSize.15') !important;
   font-weight: var(--fd-weight-semibold) !important;
   color: var(--cx-soft) !important;
   border-radius: theme('borderRadius.8') !important;
@@ -1799,20 +1799,38 @@ button:hover .bf .ch,
 }
 
 .cx-page .react-calendar__month-view__weekdays {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+  gap: 4px !important;
   text-align: center !important;
   text-transform: uppercase !important;
   font-weight: var(--fd-weight-semibold) !important;
-  font-size: theme('fontSize.12') !important;
+  font-size: 11px !important;
   color: theme('colors.ink.muted') !important;
-  padding-bottom: theme('spacing.s-8') !important;
+  padding-bottom: 8px !important;
+}
+
+.cx-page .react-calendar__month-view__weekdays__weekday {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
 }
 
 .cx-page .react-calendar__month-view__weekdays__weekday abbr {
   text-decoration: none !important;
 }
 
+.cx-page .react-calendar__month-view__days {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+  gap: 4px !important;
+}
+
 .cx-page .react-calendar__tile {
-  height: 48px !important;
+  max-width: none !important;
+  width: 100% !important;
+  height: 40px !important;
   padding: 0 !important;
   display: flex !important;
   flex-direction: column !important;
@@ -1820,7 +1838,7 @@ button:hover .bf .ch,
   justify-content: center !important;
   position: relative !important;
   border-radius: theme('borderRadius.10') !important;
-  font-size: theme('fontSize.14') !important;
+  font-size: 13px !important;
   font-weight: var(--fd-weight-medium) !important;
   color: theme('colors.slate.800') !important;
   transition: all 0.15s ease !important;
@@ -1829,6 +1847,13 @@ button:hover .bf .ch,
 .cx-page .react-calendar__tile:hover:not(:disabled) {
   background: theme('colors.tint.blue.8') !important;
   color: theme('colors.blue.800') !important;
+}
+
+.cx-page .react-calendar__tile:disabled {
+  background-color: theme('colors.slate.50') !important;
+  color: theme('colors.slate.400') !important;
+  cursor: not-allowed !important;
+  border-radius: theme('borderRadius.10') !important;
 }
 
 .cx-page .react-calendar__tile--now {

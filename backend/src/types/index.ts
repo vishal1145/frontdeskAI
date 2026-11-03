@@ -14,6 +14,10 @@ export interface ClinicConfig {
   working_hours: string;
   contact_phone: string;
   receptionist_name?: string;
+  business_type?: "clinic" | "medical_store";
+  delivery_available?: boolean;
+  min_delivery_order?: string;
+  profile_icon?: string;
   doctors: ClinicDoctor[];
   services: string[];
 }

@@ -51,6 +51,28 @@ export interface ClinicBillingSummary {
   rate_per_transfer: number;
 }
 
+export interface CallerProfileRecord {
+  isRepeatCaller: boolean;
+  customerName?: string;
+  savedAddress?: string;
+  lastOrder?: {
+    order_id: string;
+    medicines: string;
+    order_type: string;
+    delivery_address?: string;
+    status: string;
+    created_at: string;
+  };
+  lastAppointment?: {
+    booking_id: string;
+    doctor_name: string;
+    service_type: string;
+    display_time: string;
+    status: string;
+    created_at: string;
+  };
+}
+
 import pg from "pg";
 
 /**
@@ -161,8 +183,109 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_clinic_doctor_slot ON appointments (cli
       `);
       await this.pgPool.query(`
         ALTER TABLE clinics ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+        ALTER TABLE clinics ADD COLUMN IF NOT EXISTS business_type VARCHAR(32) DEFAULT 'clinic';
+        ALTER TABLE clinics ADD COLUMN IF NOT EXISTS delivery_available BOOLEAN DEFAULT true;
+        ALTER TABLE clinics ADD COLUMN IF NOT EXISTS min_delivery_order VARCHAR(64) DEFAULT 'None';
+        ALTER TABLE clinics ADD COLUMN IF NOT EXISTS profile_icon TEXT DEFAULT 'building';
       `);
-      console.log(`[PRODUCTION DB] Super Admin table, credentials & clinics schema verified in Supabase.`);
+
+      // 1. Dedicated Table for Medical Stores in Supabase
+      await this.pgPool.query(`
+        CREATE TABLE IF NOT EXISTS medical_stores (
+          store_id VARCHAR(64) PRIMARY KEY,
+          store_name VARCHAR(255) NOT NULL,
+          contact_phone VARCHAR(32) NOT NULL,
+          address TEXT NOT NULL,
+          working_hours VARCHAR(255) NOT NULL,
+          pharmacist_name VARCHAR(255) DEFAULT 'Pharmacist In-Charge',
+          delivery_available BOOLEAN DEFAULT true,
+          min_delivery_order VARCHAR(64) DEFAULT 'None',
+          receptionist_name VARCHAR(255) DEFAULT 'Neha',
+          password VARCHAR(255) DEFAULT '123456',
+          virtual_phone_numbers TEXT[] DEFAULT ARRAY['+918065355910'],
+          services JSONB DEFAULT '["Prescription Medicines", "OTC & First Aid", "Home Delivery", "Health Supplements"]'::jsonb,
+          is_active BOOLEAN DEFAULT true,
+          profile_icon TEXT DEFAULT 'pill',
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+        ALTER TABLE medical_stores ADD COLUMN IF NOT EXISTS profile_icon TEXT DEFAULT 'pill';
+      `);
+
+      // 2. Dedicated Table for Medical Orders in Supabase
+      await this.pgPool.query(`
+        CREATE TABLE IF NOT EXISTS medical_orders (
+          order_id VARCHAR(32) PRIMARY KEY,
+          store_id VARCHAR(64) NOT NULL REFERENCES medical_stores(store_id) ON DELETE CASCADE,
+          customer_name VARCHAR(255) NOT NULL,
+          customer_phone VARCHAR(32) NOT NULL,
+          medicines TEXT NOT NULL,
+          order_type VARCHAR(32) DEFAULT 'store_pickup',
+          delivery_address TEXT,
+          status VARCHAR(32) DEFAULT 'pending',
+          notes TEXT,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // 3. Relax call_logs constraint so both clinics and medical stores can record call logs
+      await this.pgPool.query(`
+        ALTER TABLE call_logs DROP CONSTRAINT IF EXISTS call_logs_clinic_id_fkey;
+      `);
+
+      // 4. Migrate any medical store out of clinics table into medical_stores
+      const medInClinics = await this.pgPool.query(
+        "SELECT * FROM clinics WHERE business_type = 'medical_store' OR clinic_name ILIKE '%medicos%' OR clinic_name ILIKE '%pharmacy%';"
+      );
+      for (const row of medInClinics.rows) {
+        const rawDocs = Array.isArray(row.doctors) ? row.doctors : (typeof row.doctors === 'string' ? JSON.parse(row.doctors) : []);
+        const pharmName = rawDocs[0]?.name || 'Pharmacist Rahul';
+        const rawSvcs = Array.isArray(row.services) ? row.services : (typeof row.services === 'string' ? JSON.parse(row.services) : []);
+        await this.pgPool.query(`
+          INSERT INTO medical_stores (
+            store_id, store_name, contact_phone, address, working_hours,
+            pharmacist_name, delivery_available, min_delivery_order,
+            receptionist_name, password, virtual_phone_numbers, services, is_active, created_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+          ) ON CONFLICT (store_id) DO UPDATE SET
+            store_name = EXCLUDED.store_name,
+            contact_phone = EXCLUDED.contact_phone,
+            address = EXCLUDED.address,
+            working_hours = EXCLUDED.working_hours,
+            pharmacist_name = EXCLUDED.pharmacist_name,
+            delivery_available = EXCLUDED.delivery_available,
+            min_delivery_order = EXCLUDED.min_delivery_order,
+            services = EXCLUDED.services,
+            is_active = EXCLUDED.is_active;
+        `, [
+          row.clinic_id,
+          row.clinic_name,
+          row.contact_phone,
+          row.address,
+          row.working_hours,
+          pharmName,
+          row.delivery_available !== false,
+          row.min_delivery_order || 'None',
+          row.receptionist_name || 'Neha',
+          row.password || '123456',
+          Array.isArray(row.virtual_phone_numbers) ? row.virtual_phone_numbers : [row.contact_phone],
+          JSON.stringify(rawSvcs),
+          row.is_active !== false,
+          row.created_at
+        ]);
+        await this.pgPool.query("DELETE FROM clinics WHERE clinic_id = $1;", [row.clinic_id]);
+        console.log(`[PRODUCTION DB] Migrated ${row.clinic_name} (${row.clinic_id}) into dedicated medical_stores table.`);
+      }
+
+      // 5. Purge mistakenly imported October test calls from newly created medical stores
+      await this.pgPool.query(`
+        DELETE FROM call_logs cl
+        USING medical_stores ms
+        WHERE cl.clinic_id = ms.store_id
+          AND cl.created_at < ms.created_at;
+      `);
+
+      console.log(`[PRODUCTION DB] Super Admin table, medical_stores & medical_orders schema verified in Supabase.`);
     } catch (err: any) {
       console.warn(`[SUPERADMIN INIT WARNING] ${err.message}`);
     }
@@ -640,7 +763,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_clinic_doctor_slot ON appointments (cli
     if (this.pgPool) {
       try {
         const res = await this.pgPool.query(
-          `SELECT clinic_id, clinic_name, address, working_hours, contact_phone, receptionist_name, virtual_phone_numbers, doctors, services, password, is_active
+          `SELECT clinic_id, clinic_name, address, working_hours, contact_phone, receptionist_name, virtual_phone_numbers, doctors, services, password, is_active, business_type, delivery_available, min_delivery_order
            FROM clinics 
            WHERE contact_phone LIKE $1 
               OR virtual_phone_numbers::text LIKE $1;`,
@@ -660,7 +783,38 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_clinic_doctor_slot ON appointments (cli
             virtual_phone_numbers: Array.isArray(row.virtual_phone_numbers) ? row.virtual_phone_numbers : [row.contact_phone],
             doctors: Array.isArray(row.doctors) ? row.doctors : (typeof row.doctors === "string" ? JSON.parse(row.doctors) : []),
             services: Array.isArray(row.services) ? row.services : (typeof row.services === "string" ? JSON.parse(row.services) : []),
-            is_active: row.is_active !== false
+            is_active: row.is_active !== false,
+            business_type: row.business_type || "clinic",
+            delivery_available: row.delivery_available !== false,
+            min_delivery_order: row.min_delivery_order || "None"
+          };
+        }
+
+        // Also check medical_stores dedicated table
+        const resMed = await this.pgPool.query(
+          `SELECT store_id, store_name, address, working_hours, contact_phone, receptionist_name, virtual_phone_numbers, pharmacist_name, services, password, is_active, delivery_available, min_delivery_order
+           FROM medical_stores
+           WHERE contact_phone LIKE $1 
+              OR virtual_phone_numbers::text LIKE $1;`,
+          [`%${last10}%`]
+        );
+        if (resMed.rows.length > 0) {
+          const row = resMed.rows[0];
+          return {
+            clinic_id: row.store_id,
+            clinic_name: row.store_name,
+            address: row.address,
+            working_hours: row.working_hours,
+            contact_phone: row.contact_phone,
+            password: row.password || "123456",
+            receptionist_name: row.receptionist_name || "Neha",
+            virtual_phone_numbers: Array.isArray(row.virtual_phone_numbers) ? row.virtual_phone_numbers : [row.contact_phone],
+            doctors: [{ name: row.pharmacist_name || "Pharmacist In-Charge", specialties: ["Pharmacist"], specialization: "Pharmacist", timings: row.working_hours }],
+            services: Array.isArray(row.services) ? row.services : (typeof row.services === "string" ? JSON.parse(row.services) : []),
+            is_active: row.is_active !== false,
+            business_type: "medical_store",
+            delivery_available: row.delivery_available !== false,
+            min_delivery_order: row.min_delivery_order || "None"
           };
         }
       } catch (err: any) {
@@ -686,7 +840,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_clinic_doctor_slot ON appointments (cli
   }
 
   /**
-   * Admin: Fetches all clinics with summary stats from PostgreSQL database.
+   * Admin: Fetches all clinics & medical stores with summary stats from PostgreSQL database.
    */
   public async getAllClinicsForAdmin(): Promise<any[]> {
     if (this.pgPool) {
@@ -706,11 +860,36 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_clinic_doctor_slot ON appointments (cli
             c.scheduling_enabled,
             c.slot_duration_minutes,
             c.is_active,
+            c.business_type,
+            c.delivery_available,
+            c.min_delivery_order,
             c.created_at,
             (SELECT COUNT(*) FROM appointments a WHERE a.clinic_id = c.clinic_id)::int as appointment_count,
             (SELECT COUNT(*) FROM call_logs cl WHERE cl.clinic_id = c.clinic_id)::int as call_count
           FROM clinics c
-          ORDER BY c.created_at DESC;
+          UNION ALL
+          SELECT 
+            ms.store_id as clinic_id,
+            ms.store_name as clinic_name,
+            ms.contact_phone,
+            ms.address,
+            ms.working_hours,
+            ms.receptionist_name,
+            ms.virtual_phone_numbers,
+            jsonb_build_array(jsonb_build_object('name', ms.pharmacist_name, 'specialties', jsonb_build_array('Pharmacist'), 'specialization', 'Pharmacist', 'timings', ms.working_hours)) as doctors,
+            ms.services,
+            ms.password,
+            false as scheduling_enabled,
+            0 as slot_duration_minutes,
+            ms.is_active,
+            'medical_store' as business_type,
+            ms.delivery_available,
+            ms.min_delivery_order,
+            ms.created_at,
+            (SELECT COUNT(*) FROM medical_orders mo WHERE mo.store_id = ms.store_id)::int as appointment_count,
+            (SELECT COUNT(*) FROM call_logs cl WHERE cl.clinic_id = ms.store_id)::int as call_count
+          FROM medical_stores ms
+          ORDER BY created_at DESC;
         `);
         return res.rows;
       } catch (err: any) {
@@ -722,7 +901,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_clinic_doctor_slot ON appointments (cli
   }
 
   /**
-   * Admin: Creates a new clinic record in the PostgreSQL database.
+   * Admin: Creates a new clinic or medical store record in the PostgreSQL database.
    */
   public async createClinicInDb(clinicData: {
     clinic_id: string;
@@ -738,31 +917,84 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_clinic_doctor_slot ON appointments (cli
     slot_duration_minutes?: number;
     scheduling_enabled?: boolean;
     is_active?: boolean;
+    business_type?: string;
+    delivery_available?: boolean;
+    min_delivery_order?: string;
   }): Promise<any> {
     if (!this.pgPool) {
       throw new Error("Database connection pool is not available.");
     }
 
-    // Check if phone number is already registered
+    // Check if phone number is already registered in either clinics or medical_stores
     const cleanDigits = clinicData.contact_phone.replace(/[^0-9]/g, '');
     const last10 = cleanDigits.slice(-10);
-    const existing = await this.pgPool.query(
+
+    const existingClinic = await this.pgPool.query(
       `SELECT clinic_id, clinic_name FROM clinics 
        WHERE contact_phone LIKE $1 OR virtual_phone_numbers::text LIKE $1;`,
       [`%${last10}%`]
     );
-
-    if (existing.rows.length > 0) {
-      throw new Error(`Mobile number ending with ${last10} is already registered to "${existing.rows[0].clinic_name}" (${existing.rows[0].clinic_id}).`);
+    if (existingClinic.rows.length > 0) {
+      throw new Error(`Mobile number ending with ${last10} is already registered to "${existingClinic.rows[0].clinic_name}" (${existingClinic.rows[0].clinic_id}).`);
     }
 
+    const existingStore = await this.pgPool.query(
+      `SELECT store_id, store_name FROM medical_stores 
+       WHERE contact_phone LIKE $1 OR virtual_phone_numbers::text LIKE $1;`,
+      [`%${last10}%`]
+    );
+    if (existingStore.rows.length > 0) {
+      throw new Error(`Mobile number ending with ${last10} is already registered to "${existingStore.rows[0].store_name}" (${existingStore.rows[0].store_id}).`);
+    }
+
+    // Insert into medical_stores if business_type is medical_store
+    if (clinicData.business_type === 'medical_store') {
+      const pharmName = clinicData.doctors?.[0]?.name || "Pharmacist In-Charge";
+      const res = await this.pgPool.query(
+        `INSERT INTO medical_stores (
+          store_id, store_name, contact_phone, address, working_hours,
+          pharmacist_name, delivery_available, min_delivery_order,
+          receptionist_name, password, virtual_phone_numbers, services, is_active, created_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13, NOW()
+        ) RETURNING store_id as clinic_id, store_name as clinic_name, contact_phone, address, working_hours,
+                    pharmacist_name, delivery_available, min_delivery_order, receptionist_name, password,
+                    virtual_phone_numbers, services, is_active, created_at;`,
+        [
+          clinicData.clinic_id,
+          clinicData.clinic_name.trim(),
+          clinicData.contact_phone.trim(),
+          clinicData.address.trim(),
+          clinicData.working_hours.trim(),
+          pharmName,
+          clinicData.delivery_available !== false,
+          clinicData.min_delivery_order || "None",
+          clinicData.receptionist_name?.trim() || "Neha",
+          clinicData.password?.trim() || "123456",
+          clinicData.virtual_phone_numbers && clinicData.virtual_phone_numbers.length > 0
+            ? clinicData.virtual_phone_numbers
+            : [clinicData.contact_phone.trim()],
+          JSON.stringify(clinicData.services || []),
+          clinicData.is_active !== false
+        ]
+      );
+      const row = res.rows[0];
+      return {
+        ...row,
+        business_type: "medical_store",
+        doctors: [{ name: row.pharmacist_name, specialties: ["Pharmacist"], specialization: "Pharmacist", timings: row.working_hours }]
+      };
+    }
+
+    // Otherwise insert into standard clinics table
     const res = await this.pgPool.query(
       `INSERT INTO clinics (
         clinic_id, clinic_name, contact_phone, address, working_hours,
         receptionist_name, virtual_phone_numbers, doctors, services,
-        slot_duration_minutes, scheduling_enabled, is_active, password, created_at
+        slot_duration_minutes, scheduling_enabled, is_active, password,
+        business_type, delivery_available, min_delivery_order, created_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10, $11, $12, $13, NOW()
+        $1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10, $11, $12, $13, $14, $15, $16, NOW()
       ) RETURNING *;`,
       [
         clinicData.clinic_id,
@@ -779,7 +1011,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_clinic_doctor_slot ON appointments (cli
         clinicData.slot_duration_minutes || 30,
         clinicData.scheduling_enabled !== false,
         clinicData.is_active !== false,
-        clinicData.password?.trim() || "123456"
+        clinicData.password?.trim() || "123456",
+        clinicData.business_type || "clinic",
+        clinicData.delivery_available !== false,
+        clinicData.min_delivery_order || "None"
       ]
     );
 
@@ -787,19 +1022,253 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_clinic_doctor_slot ON appointments (cli
   }
 
   /**
-   * Admin: Deletes a clinic record from database along with related appointments & call logs.
+   * Admin: Deletes a clinic or medical store record from database along with related appointments & call logs.
    */
   public async deleteClinicFromDb(clinicId: string): Promise<boolean> {
     if (!this.pgPool) return false;
     try {
       await this.pgPool.query(`DELETE FROM appointments WHERE clinic_id = $1;`, [clinicId]);
+      await this.pgPool.query(`DELETE FROM medical_orders WHERE store_id = $1;`, [clinicId]);
       await this.pgPool.query(`DELETE FROM call_logs WHERE clinic_id = $1;`, [clinicId]);
-      const res = await this.pgPool.query(`DELETE FROM clinics WHERE clinic_id = $1;`, [clinicId]);
-      return (res.rowCount ?? 0) > 0;
+      const res1 = await this.pgPool.query(`DELETE FROM clinics WHERE clinic_id = $1;`, [clinicId]);
+      const res2 = await this.pgPool.query(`DELETE FROM medical_stores WHERE store_id = $1;`, [clinicId]);
+      return (res1.rowCount ?? 0) > 0 || (res2.rowCount ?? 0) > 0;
     } catch (err: any) {
       console.error(`[ADMIN DELETE CLINIC ERROR] ${err.message}`);
       throw err;
     }
+  }
+
+  /**
+   * Records or updates a customer's medicine order or inquiry into the dedicated medical_orders table.
+   */
+  public async createMedicalOrderInDb(params: {
+    order_id?: string;
+    store_id: string;
+    customer_name: string;
+    customer_phone: string;
+    medicines: string;
+    order_type?: string;
+    delivery_address?: string;
+    notes?: string;
+  }): Promise<{ order_id: string; status: string }> {
+    const orderId = params.order_id || `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    if (this.pgPool) {
+      try {
+        if (params.order_id) {
+          const updateRes = await this.pgPool.query(
+            `UPDATE medical_orders
+             SET customer_name = $1, customer_phone = $2, medicines = $3, order_type = $4, delivery_address = $5, notes = $6
+             WHERE order_id = $7;`,
+            [
+              params.customer_name,
+              params.customer_phone,
+              params.medicines,
+              params.order_type || "store_pickup",
+              params.delivery_address || null,
+              params.notes || null,
+              params.order_id
+            ]
+          );
+          if (updateRes.rowCount && updateRes.rowCount > 0) {
+            return { order_id: orderId, status: "confirmed" };
+          }
+        }
+
+        await this.pgPool.query(
+          `INSERT INTO medical_orders (
+            order_id, store_id, customer_name, customer_phone, medicines, order_type, delivery_address, status, notes, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW());`,
+          [
+            orderId,
+            params.store_id,
+            params.customer_name,
+            params.customer_phone,
+            params.medicines,
+            params.order_type || "store_pickup",
+            params.delivery_address || null,
+            "pending",
+            params.notes || null
+          ]
+        );
+        return { order_id: orderId, status: "confirmed" };
+      } catch (err: any) {
+        console.error(`[CREATE/UPDATE MEDICAL ORDER DB ERROR] ${err.message}`);
+      }
+    }
+
+    return { order_id: orderId, status: "confirmed" };
+  }
+
+  /**
+   * Fetches all medicine orders for a given store from medical_orders table.
+   */
+  public async getMedicalOrdersForStore(storeId: string): Promise<any[]> {
+    if (this.pgPool) {
+      try {
+        const res = await this.pgPool.query(
+          `SELECT order_id, store_id, customer_name, customer_phone, medicines, order_type, delivery_address, status, notes, created_at
+           FROM medical_orders
+           WHERE store_id = $1
+           ORDER BY created_at DESC;`,
+          [storeId]
+        );
+        return res.rows;
+      } catch (err: any) {
+        console.error(`[FETCH MEDICAL ORDERS ERROR] ${err.message}`);
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Looks up past caller profile (name, last order, last appointment, saved address)
+   * across medical_orders and appointments for repeat caller recognition.
+   */
+  public async getCallerProfile(clinicId: string, phone: string, isMedicalStore: boolean): Promise<CallerProfileRecord> {
+    const cleanDigits = phone.replace(/[^0-9]/g, "").slice(-10);
+    if (!cleanDigits || cleanDigits.length < 10 || !this.pgPool) {
+      return { isRepeatCaller: false };
+    }
+
+    try {
+      const phonePattern = `%${cleanDigits}%`;
+
+      if (isMedicalStore) {
+        // 1. Check medical_orders for this store
+        const orderRes = await this.pgPool.query(
+          `SELECT order_id, customer_name, medicines, order_type, delivery_address, status, created_at
+           FROM medical_orders
+           WHERE store_id = $1 AND customer_phone LIKE $2
+           ORDER BY created_at DESC
+           LIMIT 1;`,
+          [clinicId, phonePattern]
+        );
+
+        if (orderRes.rows.length > 0) {
+          const row = orderRes.rows[0];
+          return {
+            isRepeatCaller: true,
+            customerName: row.customer_name,
+            savedAddress: row.delivery_address || undefined,
+            lastOrder: {
+              order_id: row.order_id,
+              medicines: row.medicines,
+              order_type: row.order_type,
+              delivery_address: row.delivery_address || undefined,
+              status: row.status,
+              created_at: new Date(row.created_at).toLocaleDateString("en-IN")
+            }
+          };
+        }
+
+        // Also check if they had booked under appointments for this clinicId
+        const storeApptRes = await this.pgPool.query(
+          `SELECT booking_id, patient_name, doctor_name, service_type, display_time, status, created_at
+           FROM appointments
+           WHERE clinic_id = $1 AND patient_phone LIKE $2
+           ORDER BY created_at DESC
+           LIMIT 1;`,
+          [clinicId, phonePattern]
+        );
+        if (storeApptRes.rows.length > 0) {
+          const row = storeApptRes.rows[0];
+          return {
+            isRepeatCaller: true,
+            customerName: row.patient_name,
+            lastAppointment: {
+              booking_id: row.booking_id,
+              doctor_name: row.doctor_name,
+              service_type: row.service_type,
+              display_time: row.display_time,
+              status: row.status,
+              created_at: new Date(row.created_at).toLocaleDateString("en-IN")
+            }
+          };
+        }
+      } else {
+        // 2. Check appointments for this clinic
+        const apptRes = await this.pgPool.query(
+          `SELECT booking_id, patient_name, doctor_name, service_type, display_time, status, created_at
+           FROM appointments
+           WHERE clinic_id = $1 AND patient_phone LIKE $2
+           ORDER BY created_at DESC
+           LIMIT 1;`,
+          [clinicId, phonePattern]
+        );
+
+        if (apptRes.rows.length > 0) {
+          const row = apptRes.rows[0];
+          return {
+            isRepeatCaller: true,
+            customerName: row.patient_name,
+            lastAppointment: {
+              booking_id: row.booking_id,
+              doctor_name: row.doctor_name,
+              service_type: row.service_type,
+              display_time: row.display_time,
+              status: row.status,
+              created_at: new Date(row.created_at).toLocaleDateString("en-IN")
+            }
+          };
+        }
+
+        // Also check if they had placed an order under medical_orders for this clinicId
+        const clinicOrderRes = await this.pgPool.query(
+          `SELECT order_id, customer_name, medicines, order_type, delivery_address, status, created_at
+           FROM medical_orders
+           WHERE store_id = $1 AND customer_phone LIKE $2
+           ORDER BY created_at DESC
+           LIMIT 1;`,
+          [clinicId, phonePattern]
+        );
+        if (clinicOrderRes.rows.length > 0) {
+          const row = clinicOrderRes.rows[0];
+          return {
+            isRepeatCaller: true,
+            customerName: row.customer_name,
+            savedAddress: row.delivery_address || undefined,
+            lastOrder: {
+              order_id: row.order_id,
+              medicines: row.medicines,
+              order_type: row.order_type,
+              delivery_address: row.delivery_address || undefined,
+              status: row.status,
+              created_at: new Date(row.created_at).toLocaleDateString("en-IN")
+            }
+          };
+        }
+      }
+
+      // 3. Fallback: Check if caller previously ordered or booked anywhere in FrontDesk AI
+      const fallbackOrderRes = await this.pgPool.query(
+        `SELECT customer_name, delivery_address FROM medical_orders WHERE customer_phone LIKE $1 ORDER BY created_at DESC LIMIT 1;`,
+        [phonePattern]
+      );
+      if (fallbackOrderRes.rows.length > 0 && fallbackOrderRes.rows[0].customer_name) {
+        return {
+          isRepeatCaller: true,
+          customerName: fallbackOrderRes.rows[0].customer_name,
+          savedAddress: fallbackOrderRes.rows[0].delivery_address || undefined
+        };
+      }
+
+      const fallbackApptRes = await this.pgPool.query(
+        `SELECT patient_name FROM appointments WHERE patient_phone LIKE $1 ORDER BY created_at DESC LIMIT 1;`,
+        [phonePattern]
+      );
+      if (fallbackApptRes.rows.length > 0 && fallbackApptRes.rows[0].patient_name) {
+        return {
+          isRepeatCaller: true,
+          customerName: fallbackApptRes.rows[0].patient_name
+        };
+      }
+    } catch (err: any) {
+      console.warn(`[REPEAT CALLER LOOKUP NOTICE] ${err.message}`);
+    }
+
+    return { isRepeatCaller: false };
   }
 }
 

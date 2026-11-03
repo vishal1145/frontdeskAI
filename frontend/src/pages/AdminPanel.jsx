@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import CustomSelect from '../components/CustomSelect';
 import {
   ShieldCheck,
   Lock,
@@ -40,6 +41,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
   const [clinics, setClinics] = useState([]);
   const [loadingClinics, setLoadingClinics] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [copiedId, setCopiedId] = useState(null);
 
   // Selected Clinic for View Details Modal
@@ -157,8 +159,37 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
     setTimeout(() => setCopiedId(null), 2500);
   };
 
+  // Helper to identify Pharmacy vs Clinic
+  const isPharmacyClinic = (c) =>
+    c?.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(c?.clinic_name || '');
+
+  // Helper to format working hours into days and time on separate lines
+  const formatWorkingHours = (raw) => {
+    if (!raw) return { days: 'Not specified', time: '' };
+    const text = String(raw).trim();
+    const timeStart = text.search(/\d{1,2}(?::\d{2})?\s*(?:AM|PM)/i);
+    if (timeStart > 0) {
+      return {
+        days: text.slice(0, timeStart).replace(/[\s,:]+$/, '').trim(),
+        time: text.slice(timeStart).trim()
+      };
+    }
+    if (text.includes(',')) {
+      const [days, ...rest] = text.split(',');
+      return {
+        days: days.trim(),
+        time: rest.join(',').trim()
+      };
+    }
+    return { days: text, time: '' };
+  };
+
   // Filter clinics
   const filteredClinics = clinics.filter(c => {
+    const isPharm = isPharmacyClinic(c);
+    if (typeFilter === 'pharmacy' && !isPharm) return false;
+    if (typeFilter === 'clinic' && isPharm) return false;
+
     const q = searchQuery.toLowerCase();
     return (
       c.clinic_name?.toLowerCase().includes(q) ||
@@ -179,123 +210,136 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
       {/* Main Content Area */}
       <div className="relative z-[1] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 space-y-8">
         {/* KPI Summary Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Admin metrics">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5" aria-label="Admin metrics">
           {/* Card 1: Registered Businesses */}
-          <div className="relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-blue-600 before:opacity-85 cx-enter" style={{ '--i': 1 }}>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold tracking-wide-40 uppercase text-slate-500">Registered Businesses</span>
-              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-blue-600 bg-blue-50">
-                <Building2 className="w-4 h-4" />
+          <div className="relative px-4 py-2.5 sm:px-5 sm:py-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-blue-600 before:opacity-85 cx-enter" style={{ '--i': 1 }}>
+            <div className="flex items-center justify-between gap-2.5">
+              <span className="text-11 font-semibold tracking-wide-40 uppercase text-slate-500">Registered Businesses</span>
+              <div className="grid place-items-center shrink-0 w-7 h-7 rounded-8 text-blue-600 bg-blue-50">
+                <Building2 className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 mt-3.5 text-30 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
+            <div className="flex items-baseline gap-1.5 mt-1.5 text-26 sm:text-28 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
               {clinics.length}
             </div>
-            <p className="mt-2.5 text-13 leading-ratio-140 text-slate-500">
+            <p className="mt-1 text-12 leading-ratio-140 text-slate-500 truncate">
               <span><strong className="font-semibold text-ink-soft">100% Dynamic</strong> &middot; Stored in Supabase</span>
             </p>
           </div>
 
           {/* Card 2: Total Calls Logged */}
-          <div className="relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-tint-blue-30 before:opacity-85 cx-enter" style={{ '--i': 2 }}>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold tracking-wide-40 uppercase text-slate-500">Total Calls Logged</span>
-              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-tint-blue-30 bg-tint-blue-9">
-                <Phone className="w-4 h-4" />
+          <div className="relative px-4 py-2.5 sm:px-5 sm:py-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-tint-blue-30 before:opacity-85 cx-enter" style={{ '--i': 2 }}>
+            <div className="flex items-center justify-between gap-2.5">
+              <span className="text-11 font-semibold tracking-wide-40 uppercase text-slate-500">Total Calls Logged</span>
+              <div className="grid place-items-center shrink-0 w-7 h-7 rounded-8 text-tint-blue-30 bg-tint-blue-9">
+                <Phone className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 mt-3.5 text-30 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
+            <div className="flex items-baseline gap-1.5 mt-1.5 text-26 sm:text-28 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
               {totalCalls}
             </div>
-            <p className="mt-2.5 text-13 leading-ratio-140 text-slate-500">
+            <p className="mt-1 text-12 leading-ratio-140 text-slate-500 truncate">
               <span>AI Handled &amp; Vobiz CDRs</span>
             </p>
           </div>
 
           {/* Card 3: Appointments Booked */}
-          <div className="relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-tint-green-7 before:opacity-85 cx-enter" style={{ '--i': 3 }}>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold tracking-wide-40 uppercase text-slate-500">Appointments Booked</span>
-              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-tint-green-7 bg-tint-green-2">
-                <Calendar className="w-4 h-4" />
+          <div className="relative px-4 py-2.5 sm:px-5 sm:py-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-tint-green-7 before:opacity-85 cx-enter" style={{ '--i': 3 }}>
+            <div className="flex items-center justify-between gap-2.5">
+              <span className="text-11 font-semibold tracking-wide-40 uppercase text-slate-500">Appointments Booked</span>
+              <div className="grid place-items-center shrink-0 w-7 h-7 rounded-8 text-tint-green-7 bg-tint-green-2">
+                <Calendar className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 mt-3.5 text-30 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
+            <div className="flex items-baseline gap-1.5 mt-1.5 text-26 sm:text-28 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
               {totalAppointments}
             </div>
-            <p className="mt-2.5 text-13 leading-ratio-140 text-slate-500">
+            <p className="mt-1 text-12 leading-ratio-140 text-slate-500 truncate">
               <span><strong className="font-semibold text-ink-soft">Atomic DB Locked</strong> Slots</span>
             </p>
           </div>
 
           {/* Card 4: Voice AI Engine */}
-          <div className="relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-accent-sapphire before:opacity-85 cx-enter" style={{ '--i': 4 }}>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold tracking-wide-40 uppercase text-slate-500">Voice AI Engine</span>
-              <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-accent-sapphire bg-accent-sapphire-light">
-                <Sparkles className="w-4 h-4" />
+          <div className="relative px-4 py-2.5 sm:px-5 sm:py-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] hover:border-slate-900/[0.16] transition-[border-color,box-shadow] duration-200 before:content-[''] before:absolute before:-top-px before:inset-x-5 before:h-0.5 before:rounded-b-2 before:bg-accent-sapphire before:opacity-85 cx-enter" style={{ '--i': 4 }}>
+            <div className="flex items-center justify-between gap-2.5">
+              <span className="text-11 font-semibold tracking-wide-40 uppercase text-slate-500">Voice AI Engine</span>
+              <div className="grid place-items-center shrink-0 w-7 h-7 rounded-8 text-accent-sapphire bg-accent-sapphire-light">
+                <Sparkles className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 mt-3.5 text-21-6 leading-snug font-semibold tracking-tight-25 text-ink">
+            <div className="flex items-baseline gap-1.5 mt-1.5 text-17 sm:text-18 font-semibold leading-snug tracking-tight-25 text-ink">
               Gemini 2.5 + LiveKit
             </div>
-            <p className="mt-2.5 text-13 leading-ratio-140 text-slate-500">
+            <p className="mt-1 text-12 leading-ratio-140 text-slate-500 truncate">
               <span><strong className="font-semibold text-ink-soft">Active &amp; Ready</strong> for incoming SIP calls</span>
             </p>
           </div>
         </section>
 
-        {/* Clinics Search and Action Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by business name, or address..."
-              className="w-full h-[2.875rem] pl-s-41-6 pr-s-15-2 rounded-full text-sm text-ink bg-white/85 border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
-            />
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0">
-            <button
-              onClick={() => setActivePage('admin-create')}
-              className="inline-flex items-center gap-2 pl-s-7-2 pr-s-17-6 h-10 rounded-full text-sm font-semibold whitespace-nowrap cursor-pointer text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[inset_0_1px_0_theme(colors.white_/_0.22),0_12px_26px_-12px_theme(colors.blue.600_/_0.75)] hover:not(:disabled):-translate-y-px hover:not(:disabled):shadow-[inset_0_1px_0_theme(colors.white_/_0.22),0_16px_30px_-12px_theme(colors.blue.600_/_0.85)] active:not(:disabled):translate-y-0 transition-all duration-200 group"
-            >
-              <span className="grid place-items-center w-[1.9rem] h-[1.9rem] rounded-full bg-white/[0.18] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.25)] transition-transform duration-350 ease-out group-hover:rotate-90" aria-hidden="true"><Plus className="w-4 h-4" /></span>
-              <span>Create New Business</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Clinics Table */}
-        {loadingClinics ? (
-          <div className="py-16 text-center space-y-3">
-            <RefreshCw className="w-7 h-7 text-blue-600 animate-spin mx-auto" />
-            <p className="text-sm text-slate-500">Loading businesses from PostgreSQL database...</p>
-          </div>
-        ) : filteredClinics.length === 0 ? (
-          <div className="py-16 text-center space-y-3">
-            <div className="grid place-items-center flex-none w-14 h-14 rounded-2xl text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[inset_0_1px_0_theme(colors.white_/_0.25),0_0_0_4px_theme(colors.blue.500_/_0.1),0_10px_22px_-10px_theme(colors.blue.600_/_0.7)] mx-auto">
-              <Building2 className="w-6 h-6" />
+        {/* Businesses Table Panel */}
+        <section
+          className="cx-panel-enter overflow-hidden bg-white border border-slate-900/[0.09] rounded-14 shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)]"
+          role="region"
+          aria-label="Businesses Management"
+        >
+          {/* Table Header Toolbar: Search, Type Filter & Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3.5 sm:px-6 sm:py-3.5 border-b border-slate-900/[0.09] bg-white">
+            <div className="relative flex-1 max-w-md group">
+              <Search className="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none transition-colors duration-150 group-focus-within:text-blue-700" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by business name, or address..."
+                className="w-full h-9 pl-9 pr-3.5 border border-slate-900/[0.16] rounded-10 bg-white text-13 text-ink placeholder-slate-400 transition-[border-color,box-shadow,background-color] duration-150 hover:border-slate-900/[0.26] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                aria-label="Search businesses"
+              />
             </div>
-            <div>
-              <h3 className="text-base font-semibold text-ink">No businesses found</h3>
-              <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-                {searchQuery ? 'No businesses match your search query.' : 'Click "Create New Business" above to register your first business!'}
+
+            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+              <CustomSelect
+                value={typeFilter}
+                onChange={setTypeFilter}
+                align="right"
+                options={[
+                  { value: 'all', label: 'All Businesses' },
+                  { value: 'clinic', label: 'Clinic' },
+                  { value: 'pharmacy', label: 'Pharmacy' },
+                ]}
+                className="h-9 px-3.5 border border-slate-900/[0.16] rounded-10 bg-white text-13 text-ink font-medium cursor-pointer shrink-0 transition-[border-color,box-shadow,background-color] duration-150 hover:border-slate-900/[0.26] focus:outline-none flex items-center justify-between gap-2.5"
+                menuClassName="w-44"
+                aria-label="Filter by business type"
+              />
+
+              <button
+                onClick={() => setActivePage('admin-create')}
+                className="inline-flex items-center justify-center gap-2 h-9 px-3.5 border border-slate-900/[0.16] rounded-10 text-13 font-semibold leading-none whitespace-nowrap cursor-pointer select-none text-white bg-blue-600 shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] hover:bg-blue-700 hover:border-blue-700 transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Create New Business</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Clinics Table */}
+          {loadingClinics ? (
+            <div className="py-16 text-center space-y-3">
+              <RefreshCw className="w-7 h-7 text-blue-600 animate-spin mx-auto" />
+              <p className="text-sm text-slate-500">Loading businesses from PostgreSQL database...</p>
+            </div>
+          ) : filteredClinics.length === 0 ? (
+            <div className="px-6 py-14 text-center">
+              <div className="grid place-items-center w-12 h-12 mx-auto mb-3.5 rounded-xl text-slate-400 bg-tint-blue-15">
+                <Building2 className="w-5 h-5 text-blue-600" />
+              </div>
+              <p className="text-15 font-semibold text-ink">No businesses found.</p>
+              <p className="max-w-[26rem] mx-auto mt-1.5 text-13 text-ink-muted">
+                {searchQuery || typeFilter !== 'all'
+                  ? 'No businesses match the current filters. Try resetting your search or type filter.'
+                  : 'Click "Create New Business" above to register your first business!'}
               </p>
             </div>
-            <button
-              onClick={() => setActivePage('admin-create')}
-              className="inline-flex items-center gap-2 pl-s-7-2 pr-s-17-6 h-10 rounded-full text-sm font-semibold whitespace-nowrap cursor-pointer text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[inset_0_1px_0_theme(colors.white_/_0.22),0_12px_26px_-12px_theme(colors.blue.600_/_0.75)] hover:not(:disabled):-translate-y-px hover:not(:disabled):shadow-[inset_0_1px_0_theme(colors.white_/_0.22),0_16px_30px_-12px_theme(colors.blue.600_/_0.85)] active:not(:disabled):translate-y-0 transition-all duration-200 group mx-auto"
-            >
-              <span className="grid place-items-center w-[1.9rem] h-[1.9rem] rounded-full bg-white/[0.18] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.25)] transition-transform duration-350 ease-out group-hover:rotate-90" aria-hidden="true"><Plus className="w-4 h-4" /></span>
-              <span>Create First Business</span>
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-24 bg-white/[0.72] backdrop-blur-[14px] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.9),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] adm-rise" style={{ '--i': 4 }}>
+          ) : (
             <div className="overflow-x-auto [overscroll-behavior-x:contain]">
               <table className="w-full min-w-[60rem] border-separate border-spacing-0 text-13">
                 <thead>
@@ -330,10 +374,21 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                               <span>{c.clinic_name}</span>
                               <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover/tr:text-blue-500 transition-colors shrink-0" />
                             </div>
-                            <span className="inline-flex items-center gap-1.5 flex-none py-s-4-8 px-s-11-2 rounded-full text-11 font-semibold text-blue-600 bg-gradient-to-b from-tint-blue-6 to-tint-blue-14 shadow-[inset_0_0_0_1px_theme(colors.blue.600_/_0.18)]">
-                              <UserCheck className="w-3 h-3" />
-                              AI: {c.receptionist_name || 'Neha'}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 flex-none py-0.5 px-2 rounded-full text-10 font-semibold text-blue-600 bg-gradient-to-b from-tint-blue-6 to-tint-blue-14 shadow-[inset_0_0_0_1px_theme(colors.blue.600_/_0.18)]">
+                                <UserCheck className="w-3 h-3" />
+                                AI: {c.receptionist_name || 'Neha'}
+                              </span>
+                              {c.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(c.clinic_name) ? (
+                                <span className="inline-flex items-center gap-1 py-0.5 px-2 rounded-full text-10 font-semibold text-purple-700 bg-purple-50 border border-purple-200">
+                                  💊 Pharmacy
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 py-0.5 px-2 rounded-full text-10 font-semibold text-sky-700 bg-sky-50 border border-sky-200">
+                                  🏥 Clinic
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </td>
 
@@ -351,14 +406,22 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
 
                         {/* Hours */}
                         <td className="px-s-13-6 py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-tint-blue-12/[0.55] transition-colors duration-200">
-                          <div className="text-xs min-w-[9rem] max-w-[12rem]">
-                            <div className="flex items-start gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                              <span className="text-slate-500 leading-relaxed font-medium" title={c.working_hours}>
-                                {c.working_hours}
-                              </span>
-                            </div>
-                          </div>
+                          {(() => {
+                            const hours = formatWorkingHours(c.working_hours);
+                            return (
+                              <div className="text-xs min-w-[9.5rem] max-w-[12rem]">
+                                <div className="flex items-start gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                  <div className="text-slate-500 leading-snug font-medium" title={c.working_hours}>
+                                    <div>{hours.days}</div>
+                                    {hours.time && (
+                                      <div className="whitespace-nowrap mt-0.5">{hours.time}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </td>
 
                         {/* Doctors */}
@@ -432,8 +495,8 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
+          )}
+        </section>
       </div>
 
       {/* View All Business Data Modal */}
@@ -465,6 +528,15 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                       <span className={`w-1.5 h-1.5 rounded-full ${selectedClinic.is_active !== false ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
                       {selectedClinic.is_active !== false ? 'Active & Enabled' : 'Disabled'}
                     </span>
+                    {selectedClinic.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(selectedClinic.clinic_name) ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                        💊 Medical Store / Pharmacy
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                        🏥 Healthcare Clinic
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
                     <span className="flex items-center gap-1 font-mono text-11 text-slate-400">
@@ -542,7 +614,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {/* Registered Phone */}
-                  <div className="p-4 rounded-xl border border-slate-200/80 bg-white">
+                  <div className="py-2.5 px-3.5 rounded-xl border border-slate-200/80 bg-white">
                     <span className="text-xs text-slate-500 block">Registered Mobile / Contact</span>
                     <span className="font-semibold text-slate-800 text-sm tracking-wide block truncate">
                       {selectedClinic.contact_phone}
@@ -550,7 +622,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                   </div>
 
                   {/* Virtual Inbound Number */}
-                  <div className="p-4 rounded-xl border border-slate-200/80 bg-white">
+                  <div className="py-2.5 px-3.5 rounded-xl border border-slate-200/80 bg-white">
                     <span className="text-xs text-slate-500 block">Virtual AI SIP Inbound Number</span>
                     <span className="font-semibold text-blue-600 text-sm tracking-wide block truncate font-mono">
                       {(Array.isArray(selectedClinic.virtual_phone_numbers) && selectedClinic.virtual_phone_numbers[0]) || '+91 8065355910'}
@@ -558,7 +630,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                   </div>
 
                   {/* Working Hours */}
-                  <div className="p-4 rounded-xl border border-slate-200/80 bg-white sm:col-span-2">
+                  <div className="py-2.5 px-3.5 rounded-xl border border-slate-200/80 bg-white sm:col-span-2">
                     <span className="text-xs text-slate-500 block">Working Hours</span>
                     <span className="font-medium text-slate-800 text-sm block truncate" title={selectedClinic.working_hours}>
                       {selectedClinic.working_hours || 'Not specified'}
@@ -573,7 +645,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                   <MapPin className="w-3.5 h-3.5 text-rose-500" />
                   Physical Address &amp; Location
                 </h3>
-                <div className="p-4 rounded-xl border border-slate-200/80 bg-white flex items-start gap-3">
+                <div className="py-2.5 px-3.5 rounded-xl border border-slate-200/80 bg-white flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                   <div className="text-sm text-slate-700 leading-relaxed" style={{ fontFamily: 'var(--fd-font-sans)' }}>
                     {selectedClinic.address || 'Address on file'}
@@ -592,7 +664,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                 {Array.isArray(selectedClinic.doctors) && selectedClinic.doctors.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {selectedClinic.doctors.map((doc, idx) => (
-                      <div key={idx} className="p-4 rounded-xl border border-slate-200/70 bg-slate-50/50 flex flex-col justify-between gap-2">
+                      <div key={idx} className="py-2.5 px-3.5 rounded-xl border border-slate-200/70 bg-slate-50/50 flex flex-col justify-between gap-2">
                         <div className="flex items-start gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
                             {doc.name ? doc.name.replace(/^(Dr\.\s*|Dr\s*)/i, '').charAt(0).toUpperCase() : 'D'}
@@ -612,7 +684,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                     ))}
                   </div>
                 ) : (
-                  <div className="p-4 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
+                  <div className="py-2.5 px-3.5 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
                     No specific doctors listed (General duty schedule applies).
                   </div>
                 )}

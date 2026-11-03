@@ -8,17 +8,21 @@ import {
   Clock,
   Eye,
   EyeOff,
+  Pill,
   Plus,
   RefreshCw,
+  Stethoscope,
   Trash2,
+  Truck,
   X,
 } from 'lucide-react';
 import ReactCalendar from 'react-calendar';
 import { fontSize } from '../../design-tokens.js';
 import { DoctorDaysField, DoctorTimingsField, parseTimingShifts, parseWorkingDays, splitTimings } from '../components/DoctorSchedulePicker';
+import CustomSelect from '../components/CustomSelect';
 
 const SECTIONS = [
-  { id: 'biz-details', label: 'Business & Account Details' },
+  { id: 'biz-details', label: 'Business Details' },
   { id: 'biz-location', label: 'Working Hours' },
   { id: 'biz-doctors', label: 'Doctors & Services' },
 ];
@@ -29,6 +33,9 @@ export default function CreateBusiness({ setActivePage }) {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
+    business_type: 'clinic',
+    delivery_available: true,
+    min_delivery_order: '₹200',
     clinic_name: '',
     contact_phone: '',
     password: '',
@@ -47,6 +54,38 @@ export default function CreateBusiness({ setActivePage }) {
       { name: 'Follow-up Checkup' }
     ]
   });
+
+  const handleBusinessTypeChange = (type) => {
+    if (type === 'medical_store') {
+      setFormData(prev => ({
+        ...prev,
+        business_type: 'medical_store',
+        clinic_name: prev.clinic_name && prev.clinic_name !== 'Apex Dental & Orthodontics' ? prev.clinic_name : 'Sanjivani Medicos & Pharmacy',
+        doctors: prev.doctors.length > 0 && prev.doctors[0].name !== 'Dr. Sharma' ? prev.doctors : [
+          { name: 'Pharmacist Rahul', specialization: 'Chief Pharmacist', timings: '09:00 AM - 10:00 PM' }
+        ],
+        services: prev.services.length > 0 && prev.services[0].name !== 'General Consultation' ? prev.services : [
+          { name: 'Prescription Medicines' },
+          { name: 'OTC & First Aid' },
+          { name: 'Home Delivery' },
+          { name: 'Health Supplements & Baby Care' }
+        ]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        business_type: 'clinic',
+        clinic_name: prev.clinic_name === 'Sanjivani Medicos & Pharmacy' ? '' : prev.clinic_name,
+        doctors: prev.doctors.length > 0 && prev.doctors[0].name !== 'Pharmacist Rahul' ? prev.doctors : [
+          { name: 'Dr. Sharma', specialization: 'Consultant Specialist', timings: '10:00 AM - 2:00 PM & 5:00 PM - 8:00 PM' }
+        ],
+        services: prev.services.length > 0 && prev.services[0].name !== 'Prescription Medicines' ? prev.services : [
+          { name: 'General Consultation' },
+          { name: 'Follow-up Checkup' }
+        ]
+      }));
+    }
+  };
 
   // Calendar & Time Popovers State
   const [showDateCalendar, setShowDateCalendar] = useState(false);
@@ -432,7 +471,10 @@ export default function CreateBusiness({ setActivePage }) {
         slot_duration_minutes: Number(formData.slot_duration_minutes) || 30,
         scheduling_enabled: formData.scheduling_enabled,
         doctors: cleanDoctors,
-        services: cleanServices
+        services: cleanServices,
+        business_type: formData.business_type || 'clinic',
+        delivery_available: formData.delivery_available !== false,
+        min_delivery_order: formData.min_delivery_order || 'None'
       };
 
       const res = await fetch('/api/admin/clinics', {
@@ -479,25 +521,25 @@ export default function CreateBusiness({ setActivePage }) {
   return (
     // data-motion-scope opts this tool page out of the marketing site's magnetic/tilt effects.
     <div className="relative min-h-[calc(100vh-4.25rem)] pb-20 text-ink before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-[32rem] before:z-0 before:bg-[radial-gradient(40rem_18rem_at_12%_0%,theme(colors.tint.cyan.6_/_0.45),transparent_70%),radial-gradient(36rem_20rem_at_92%_8%,theme(colors.blue.200_/_0.5),transparent_70%)] before:pointer-events-none" data-motion-scope="admin">
-      <div className="relative z-[1] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10">
+      <div className="relative z-[1] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-6">
 
         {/* Page header */}
-        <header className="flex items-center gap-4 adm-rise" style={{ '--i': 1 }}>
+        <header className="flex items-center gap-3 sm:gap-3.5 adm-rise" style={{ '--i': 1 }}>
           <button
             type="button"
             onClick={goToConsole}
-            className="grid place-items-center flex-none w-14 h-14 rounded-17-6 text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[inset_0_1px_0_theme(colors.white_/_0.25),0_0_0_4px_theme(colors.blue.500_/_0.1),0_10px_22px_-10px_theme(colors.blue.600_/_0.7)] hover:from-blue-600 hover:to-tint-blue-34 hover:shadow-[inset_0_1px_0_theme(colors.white_/_0.25),0_0_0_4px_theme(colors.blue.500_/_0.2),0_12px_24px_-8px_theme(colors.blue.600_/_0.8)] active:scale-95 transition-all duration-200 cursor-pointer group"
+            className="grid place-items-center flex-none w-10 h-10 rounded-12 text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[inset_0_1px_0_theme(colors.white_/_0.25),0_0_0_3px_theme(colors.blue.500_/_0.1),0_8px_16px_-6px_theme(colors.blue.600_/_0.7)] hover:from-blue-600 hover:to-tint-blue-34 hover:shadow-[inset_0_1px_0_theme(colors.white_/_0.25),0_0_0_3px_theme(colors.blue.500_/_0.2),0_10px_20px_-6px_theme(colors.blue.600_/_0.8)] active:scale-95 transition-all duration-200 cursor-pointer group"
             title="Back to Super Admin Console"
           >
-            <ArrowLeft className="w-6 h-6 transition-transform duration-200 group-hover:-translate-x-0.5" />
+            <ArrowLeft className="w-4.5 h-4.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
           </button>
           <div className="min-w-0">
-            <h1 className="text-fluid-2 font-semibold leading-ratio-115 tracking-tight-25 text-ink" style={{ fontSize: `calc(${fontSize['fluid-2']} - 2px)` }}>Create New Business &amp; AI Agent</h1>
-            <div className="text-16-8 mt-s-3-2 text-slate-500" style={{ fontFamily: 'var(--fd-font-sans)' }}>Deploy a dedicated voice receptionist instantly to PostgreSQL &amp; LiveKit</div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-ink leading-tight">Create New Business &amp; AI Agent</h1>
+            <div className="text-xs sm:text-13 mt-0.5 text-slate-500" style={{ fontFamily: 'var(--fd-font-sans)' }}>Deploy a dedicated voice receptionist instantly to PostgreSQL &amp; LiveKit</div>
           </div>
         </header>
 
-        <form onSubmit={handleCreateClinic} className="grid grid-cols-1 lg:grid-cols-[15.5rem_minmax(0,1fr)] lg:gap-x-8 lg:gap-y-0 gap-5 mt-8">
+        <form onSubmit={handleCreateClinic} className="grid grid-cols-1 lg:grid-cols-[15.5rem_minmax(0,1fr)] lg:gap-x-8 lg:gap-y-0 gap-5 mt-5 sm:mt-6">
           {/* Section index & sidebar actions */}
           <aside className="min-w-0 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:self-start lg:sticky lg:top-[calc(4.25rem+1.5rem)] adm-rise" style={{ '--i': 2 }} aria-label="Form sections">
             <ol className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:p-s-9-6 lg:overflow-visible lg:rounded-20 lg:bg-white/70 lg:shadow-[inset_0_0_0_1px_theme(colors.white_/_0.9),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)]">
@@ -558,15 +600,70 @@ export default function CreateBusiness({ setActivePage }) {
           <div className="grid gap-5 min-w-0 lg:col-start-2">
           {/* Section 1: Basic Clinic Info */}
           <div className="relative p-6 sm:px-8 sm:py-7 rounded-24 bg-white/[0.86] shadow-[inset_0_0_0_1px_theme(colors.white_/_0.95),0_0_0_1px_theme(colors.slate.900_/_0.08),0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_18px_40px_-26px_theme(colors.blue.800_/_0.35)] scroll-mt-24 space-y-4" id="biz-details">
-            <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-wide-80 uppercase text-blue-600 before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-tint-blue-28 before:to-blue-600 before:shadow-[0_0_0_3px_theme(colors.blue.500_/_0.12)]">
-              <span>1. Business &amp; Account Details</span>
-            </h4>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-15 font-semibold text-slate-800 tracking-tight">
+                Business Details
+              </h3>
+              <div className="flex items-center gap-2">
+                <label htmlFor="business-category-select" className="text-xs font-medium text-slate-500 hidden sm:inline">
+                 Business Category:
+                </label>
+                <CustomSelect
+                  id="business-category-select"
+                  value={formData.business_type === 'medical_store' ? 'medical_store' : 'clinic'}
+                  onChange={handleBusinessTypeChange}
+                  align="right"
+                  options={[
+                    { value: 'clinic', label: 'Clinic' },
+                    { value: 'medical_store', label: 'Pharmacy' },
+                  ]}
+                  className="h-9 px-3 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-300 shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] hover:border-blue-400 cursor-pointer transition-all duration-200 flex items-center justify-between gap-2.5"
+                  menuClassName="w-36"
+                />
+              </div>
+            </div>
+
+            {/* Medical Store Delivery Options */}
+            {formData.business_type === 'medical_store' && (
+              <div className="p-3.5 rounded-16 bg-gradient-to-r from-indigo-50/80 to-blue-50/50 border border-indigo-200/70 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="grid place-items-center w-8 h-8 rounded-xl bg-indigo-600 text-white shadow-sm">
+                    <Truck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-slate-800">Home Delivery Service</div>
+                    <div className="text-11 text-slate-500">AI receptionist offers local delivery &amp; notes customer address</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.delivery_available}
+                      onChange={(e) => setFormData({ ...formData, delivery_available: e.target.checked })}
+                      className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                    />
+                    <span className="font-medium text-slate-700">Available</span>
+                  </label>
+                  {formData.delivery_available && (
+                    <input
+                      type="text"
+                      value={formData.min_delivery_order}
+                      onChange={(e) => setFormData({ ...formData, min_delivery_order: e.target.value })}
+                      placeholder="Min order e.g. ₹200"
+                      className="w-28 h-7 px-2 rounded-lg text-xs font-mono bg-white border border-slate-300 text-slate-700 focus:outline-none focus:border-indigo-500"
+                      title="Minimum order value for free or local home delivery"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block mb-1 text-13 font-medium text-ink-soft">
-                    Business Name <span className="text-rose-500">*</span>
+                    {formData.business_type === 'medical_store' ? 'Medical Store Name' : 'Business Name'} <span className="text-rose-500">*</span>
                   </label>
                   <span className={`text-11 font-mono font-semibold ${formData.clinic_name.length > 45 ? 'text-amber-600' : 'text-slate-400'}`}>
                     {formData.clinic_name.length}/50
@@ -582,8 +679,8 @@ export default function CreateBusiness({ setActivePage }) {
                     const clean = e.target.value.replace(/[0-9]/g, '').slice(0, 50);
                     setFormData({ ...formData, clinic_name: clean });
                   }}
-                  placeholder="e.g. Apex Dental & Orthodontics"
-                  className="w-full h-[2.875rem] px-s-15-2 rounded-14 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                  placeholder={formData.business_type === 'medical_store' ? 'e.g. Sanjivani Medicos & Pharmacy' : 'e.g. Apex Dental & Orthodontics'}
+                  className="w-full h-[2.4rem] px-3.5 rounded-12 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                 />
               </div>
 
@@ -610,7 +707,7 @@ export default function CreateBusiness({ setActivePage }) {
                       setFormData({ ...formData, contact_phone: digitsOnly });
                     }}
                     placeholder="9876543210"
-                    className="w-full h-[2.875rem] pl-11 pr-s-15-2 rounded-14 text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                    className="w-full h-[2.4rem] pl-10 pr-3.5 rounded-12 text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                   />
                 </div>
               </div>
@@ -637,7 +734,7 @@ export default function CreateBusiness({ setActivePage }) {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="e.g. Strong@2025"
-                    className="w-full h-[2.875rem] pl-s-15-2 pr-10 rounded-14 text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                    className="w-full h-[2.4rem] pl-3.5 pr-10 rounded-12 text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                   />
                   <button
                     type="button"
@@ -678,18 +775,20 @@ export default function CreateBusiness({ setActivePage }) {
                     6 Names Available
                   </span>
                 </div>
-                <select
+                <CustomSelect
                   value={formData.receptionist_name}
-                  onChange={(e) => setFormData({ ...formData, receptionist_name: e.target.value })}
-                  className="w-full h-[2.875rem] px-s-15-2 rounded-14 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200 cursor-pointer"
-                >
-                  <option value="Neha">Neha (Recommended)</option>
-                  <option value="Pooja">Pooja</option>
-                  <option value="Priya">Priya</option>
-                  <option value="Shivani">Shivani</option>
-                  <option value="Riya">Riya</option>
-                  <option value="Aditi">Aditi</option>
-                </select>
+                  onChange={(val) => setFormData({ ...formData, receptionist_name: val })}
+                  options={[
+                    { value: 'Neha', label: 'Neha (Recommended)' },
+                    { value: 'Pooja', label: 'Pooja' },
+                    { value: 'Priya', label: 'Priya' },
+                    { value: 'Shivani', label: 'Shivani' },
+                    { value: 'Riya', label: 'Riya' },
+                    { value: 'Aditi', label: 'Aditi' },
+                  ]}
+                  className="w-full h-[2.4rem] px-3.5 rounded-12 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] hover:border-slate-900/[0.24] flex items-center justify-between gap-2 transition-[border-color,box-shadow] duration-200 cursor-pointer"
+                  menuClassName="w-full"
+                />
                 <span className="block mt-1 text-11 text-slate-500">Choose which AI voice receptionist greets callers on live phone calls</span>
               </div>
             </div>
@@ -711,7 +810,7 @@ export default function CreateBusiness({ setActivePage }) {
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value.slice(0, 200) })}
                 placeholder="e.g. Suite 204, Metro Plaza, Sector 18, Noida 201301"
-                className="w-full h-[2.875rem] px-s-15-2 rounded-14 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                className="w-full h-[2.4rem] px-3.5 rounded-12 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
               />
               <span className="block mt-1 text-11 text-slate-500">AI Receptionist quotes this when callers ask for directions or location</span>
             </div>
@@ -723,9 +822,9 @@ export default function CreateBusiness({ setActivePage }) {
             id="biz-location"
             style={{ zIndex: (showDateCalendar || showTimePicker) ? 35 : 2 }}
           >
-            <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-wide-80 uppercase text-blue-600 before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-tint-blue-28 before:to-blue-600 before:shadow-[0_0_0_3px_theme(colors.blue.500_/_0.12)]">
-              <span>2. Working Hours</span>
-            </h4>
+            <h3 className="text-15 font-semibold text-slate-800 tracking-tight">
+              Working Hours
+            </h3>
 
             {/* Working Hours divided into 2 fields: Date & Day, and Time (both with Calendar) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -753,7 +852,7 @@ export default function CreateBusiness({ setActivePage }) {
                       }));
                     }}
                     placeholder="e.g. Monday to Saturday"
-                    className="w-full h-[2.875rem] pl-s-15-2 pr-10 rounded-14 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                    className="w-full h-[2.4rem] pl-3.5 pr-10 rounded-12 text-sm text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                   />
                   <button
                     type="button"
@@ -892,7 +991,7 @@ export default function CreateBusiness({ setActivePage }) {
                       }));
                     }}
                     placeholder="e.g. 09:00 AM - 08:00 PM"
-                    className="w-full h-[2.875rem] pl-s-15-2 pr-10 rounded-14 text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                    className="w-full h-[2.4rem] pl-3.5 pr-10 rounded-12 text-sm font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                   />
                   <button
                     type="button"
@@ -1025,16 +1124,16 @@ export default function CreateBusiness({ setActivePage }) {
             style={{ zIndex: activeDocTimePickerIndex !== null ? 35 : 1 }}
           >
             <div className="flex items-center justify-between gap-3">
-              <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-wide-80 uppercase text-blue-600 before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-tint-blue-28 before:to-blue-600 before:shadow-[0_0_0_3px_theme(colors.blue.500_/_0.12)]">
-                <span>3. Doctors &amp; Services</span>
-              </h4>
+              <h3 className="text-15 font-semibold text-slate-800 tracking-tight">
+                {formData.business_type === 'medical_store' ? 'Pharmacist Staff & Offerings' : 'Doctors & Services'}
+              </h3>
               <button
                 type="button"
                 onClick={addDoctorRow}
                 className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold text-blue-600 bg-tint-blue-10 shadow-[inset_0_0_0_1px_theme(colors.blue.600_/_0.18)] hover:text-white hover:bg-blue-600 transition-colors duration-200 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Doctor</span>
+                <span>{formData.business_type === 'medical_store' ? 'Add Staff / Pharmacist' : 'Add Doctor'}</span>
               </button>
             </div>
 
@@ -1056,7 +1155,7 @@ export default function CreateBusiness({ setActivePage }) {
                       value={doc.name}
                       onChange={(e) => updateDoctorRow(idx, 'name', e.target.value.replace(/[0-9]/g, '').slice(0, 50))}
                       placeholder="Doctor Name (e.g. Dr. Rajesh)"
-                      className="w-full h-[2.4rem] px-s-15-2 rounded-11-2 text-13 text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                      className="w-full h-[2.4rem] px-3.5 rounded-11-2 text-13 text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                     />
                     <input
                       type="text"
@@ -1065,7 +1164,7 @@ export default function CreateBusiness({ setActivePage }) {
                       value={doc.specialization}
                       onChange={(e) => updateDoctorRow(idx, 'specialization', e.target.value.replace(/[0-9]/g, '').slice(0, 50))}
                       placeholder="Specialty (e.g. Dentist)"
-                      className="w-full h-[2.4rem] px-s-15-2 rounded-11-2 text-13 text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                      className="w-full h-[2.4rem] px-3.5 rounded-11-2 text-13 text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                     />
                     <div className="relative flex items-center">
                       <input
@@ -1073,7 +1172,7 @@ export default function CreateBusiness({ setActivePage }) {
                         value={doc.timings}
                         onChange={(e) => updateDoctorRow(idx, 'timings', e.target.value)}
                         placeholder="e.g. 10:00 AM - 07:00 PM"
-                        className="w-full h-[2.4rem] pl-s-15-2 pr-8 rounded-11-2 text-xs font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
+                        className="w-full h-[2.4rem] pl-3.5 pr-8 rounded-11-2 text-xs font-mono text-ink bg-white border border-slate-900/[0.14] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04)] placeholder:text-slate-400 hover:border-slate-900/[0.24] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 transition-[border-color,box-shadow] duration-200"
                       />
                       <button
                         type="button"
@@ -1168,8 +1267,8 @@ export default function CreateBusiness({ setActivePage }) {
             </div>
 
             <div className="flex items-center justify-between gap-3 pt-2">
-              <h4 className="inline-flex items-center gap-2 text-xs font-bold tracking-wide-80 uppercase text-blue-600 before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-gradient-to-b before:from-tint-blue-28 before:to-blue-600 before:shadow-[0_0_0_3px_theme(colors.blue.500_/_0.12)]">
-                <span>Services &amp; Treatments</span>
+              <h4 className="text-13 font-semibold text-slate-700">
+                {formData.business_type === 'medical_store' ? 'Medicine Categories & Offerings' : 'Services & Treatments'}
               </h4>
               <button
                 type="button"
@@ -1177,7 +1276,7 @@ export default function CreateBusiness({ setActivePage }) {
                 className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold text-blue-600 bg-tint-blue-10 shadow-[inset_0_0_0_1px_theme(colors.blue.600_/_0.18)] hover:text-white hover:bg-blue-600 transition-colors duration-200 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Service</span>
+                <span>{formData.business_type === 'medical_store' ? 'Add Category' : 'Add Service'}</span>
               </button>
             </div>
 

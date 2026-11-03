@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Stethoscope,
+  Pill,
   User,
   FileText,
   CheckCircle2,
@@ -37,6 +38,8 @@ const WORKING_HOURS_OPTIONS = [
 
 export default function DoctorsServicesPage() {
   const { clinic, setClinic, appointments } = useClinic();
+
+  const isMedical = clinic?.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic?.clinic_name || '');
 
   // Doctors State
   const [doctorModalOpen, setDoctorModalOpen] = useState(false);
@@ -137,12 +140,12 @@ export default function DoctorsServicesPage() {
     if (e) e.preventDefault();
     const cleanName = doctorForm.name.replace(/[0-9]/g, '').trim();
     if (!cleanName || cleanName.length < 3) {
-      toast.error('Doctor Name must be at least 3 characters and cannot contain numbers.');
+      toast.error(isMedical ? 'Pharmacist / Staff Name must be at least 3 characters and cannot contain numbers.' : 'Doctor Name must be at least 3 characters and cannot contain numbers.');
       return;
     }
-    const cleanSpec = doctorForm.specialization.replace(/[0-9]/g, '').trim() || 'Specialist';
+    const cleanSpec = doctorForm.specialization.replace(/[0-9]/g, '').trim() || (isMedical ? 'Staff' : 'Specialist');
     if (cleanSpec.length < 3) {
-      toast.error('Specialization must be at least 3 characters.');
+      toast.error(isMedical ? 'Role / Qualification must be at least 3 characters.' : 'Specialization must be at least 3 characters.');
       return;
     }
     if (timingShifts.some((shift, i) => shift.start >= shift.end || (i > 0 && shift.start < timingShifts[i - 1].end))) {
@@ -187,13 +190,13 @@ export default function DoctorsServicesPage() {
           doctors: data.clinic.doctors || currentDoctors
         }));
         syncClinicAuth({ doctors: data.clinic.doctors || currentDoctors });
-        toast.success(editingDoctorIndex !== null ? 'Doctor updated successfully!' : 'Doctor added successfully!');
+        toast.success(editingDoctorIndex !== null ? (isMedical ? 'Staff updated successfully!' : 'Doctor updated successfully!') : (isMedical ? 'Pharmacist / Staff added successfully!' : 'Doctor added successfully!'));
         setDoctorModalOpen(false);
       } else {
-        toast.error(data.message || 'Failed to save doctor.');
+        toast.error(data.message || (isMedical ? 'Failed to save staff.' : 'Failed to save doctor.'));
       }
     } catch (err) {
-      toast.error('Network error saving doctor.');
+      toast.error(isMedical ? 'Network error saving staff.' : 'Network error saving doctor.');
     } finally {
       setSavingDoctor(false);
     }
@@ -218,13 +221,13 @@ export default function DoctorsServicesPage() {
           doctors: data.clinic.doctors || currentDoctors
         }));
         syncClinicAuth({ doctors: data.clinic.doctors || currentDoctors });
-        toast.success(`Dr. ${name} deleted successfully!`);
+        toast.success(isMedical ? `${name} removed successfully!` : `Dr. ${name} deleted successfully!`);
         setDoctorToDelete(null);
       } else {
-        toast.error(data.message || 'Failed to delete doctor.');
+        toast.error(data.message || (isMedical ? 'Failed to delete staff.' : 'Failed to delete doctor.'));
       }
     } catch (err) {
-      toast.error('Network error deleting doctor.');
+      toast.error(isMedical ? 'Network error deleting staff.' : 'Network error deleting doctor.');
     } finally {
       setDeletingDoctor(false);
     }
@@ -234,11 +237,11 @@ export default function DoctorsServicesPage() {
   const handleAddService = async () => {
     const clean = newServiceName.replace(/[0-9]/g, '').trim();
     if (!clean || clean.length < 3) {
-      toast.error('Service name must be at least 3 characters and cannot contain numbers.');
+      toast.error(isMedical ? 'Product / Service name must be at least 3 characters and cannot contain numbers.' : 'Service name must be at least 3 characters and cannot contain numbers.');
       return;
     }
     if ((clinic.services || []).some((s) => s.toLowerCase() === clean.toLowerCase())) {
-      toast.error('This service already exists in your offerings.');
+      toast.error(isMedical ? 'This product / service already exists in your offerings.' : 'This service already exists in your offerings.');
       return;
     }
 
@@ -257,14 +260,14 @@ export default function DoctorsServicesPage() {
           services: data.clinic.services || currentServices
         }));
         syncClinicAuth({ services: data.clinic.services || currentServices });
-        toast.success(`Service "${clean}" added successfully!`);
+        toast.success(isMedical ? `Product / Service "${clean}" added successfully!` : `Service "${clean}" added successfully!`);
         setNewServiceName('');
         setIsAddingService(false);
       } else {
-        toast.error(data.message || 'Failed to add service.');
+        toast.error(data.message || (isMedical ? 'Failed to add product / service.' : 'Failed to add service.'));
       }
     } catch (err) {
-      toast.error('Network error adding service.');
+      toast.error(isMedical ? 'Network error adding product / service.' : 'Network error adding service.');
     } finally {
       setSavingService(false);
     }
@@ -273,7 +276,7 @@ export default function DoctorsServicesPage() {
   const handleSaveEditService = async (index) => {
     const clean = editingServiceName.replace(/[0-9]/g, '').trim();
     if (!clean || clean.length < 3) {
-      toast.error('Service name must be at least 3 characters and cannot contain numbers.');
+      toast.error(isMedical ? 'Product / Service name must be at least 3 characters and cannot contain numbers.' : 'Service name must be at least 3 characters and cannot contain numbers.');
       return;
     }
 
@@ -300,13 +303,13 @@ export default function DoctorsServicesPage() {
           doctors: data.clinic.doctors || currentDoctors
         }));
         syncClinicAuth({ services: data.clinic.services || currentServices, doctors: data.clinic.doctors || currentDoctors });
-        toast.success('Service updated successfully!');
+        toast.success(isMedical ? 'Product / Service updated successfully!' : 'Service updated successfully!');
         setEditingServiceIndex(null);
       } else {
-        toast.error(data.message || 'Failed to update service.');
+        toast.error(data.message || (isMedical ? 'Failed to update product / service.' : 'Failed to update service.'));
       }
     } catch (err) {
-      toast.error('Network error updating service.');
+      toast.error(isMedical ? 'Network error updating product / service.' : 'Network error updating service.');
     } finally {
       setSavingService(false);
     }
@@ -332,13 +335,13 @@ export default function DoctorsServicesPage() {
           doctors: data.clinic.doctors || prev.doctors
         }));
         syncClinicAuth({ services: data.clinic.services || currentServices, doctors: data.clinic.doctors || clinic.doctors });
-        toast.success(`Service "${name}" removed successfully!`);
+        toast.success(isMedical ? `Product / Service "${name}" removed successfully!` : `Service "${name}" removed successfully!`);
         setServiceToDelete(null);
       } else {
-        toast.error(data.message || 'Failed to remove service.');
+        toast.error(data.message || (isMedical ? 'Failed to remove product / service.' : 'Failed to remove service.'));
       }
     } catch (err) {
-      toast.error('Network error removing service.');
+      toast.error(isMedical ? 'Network error removing product / service.' : 'Network error removing service.');
     } finally {
       setDeletingService(false);
     }
@@ -347,15 +350,17 @@ export default function DoctorsServicesPage() {
   return (
     <>
       <section className="space-y-6 cx-panel-enter" role="region" aria-label="Doctors and Services">
-      {/* ─── Doctors Section ───────────────────────────────────────────────── */}
+      {/* ─── Doctors / Pharmacist Section ──────────────────────────────────── */}
       <div className="bg-white border border-slate-900/[0.09] rounded-14 shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 px-5 py-4 sm:px-6 sm:py-4.5 border-b border-slate-900/[0.09] bg-gradient-to-r from-blue-50/40 to-white">
           <div>
             <h2 className="text-18 font-semibold tracking-tight-10 text-ink flex items-center gap-2">
-              <Stethoscope className="w-5 h-5 text-blue-600" />
-              Registered Clinic Doctors
+              {isMedical ? <Pill className="w-5 h-5 text-blue-600" /> : <Stethoscope className="w-5 h-5 text-blue-600" />}
+              {isMedical ? 'Registered Pharmacist & Staff' : 'Registered Clinic Doctors'}
             </h2>
-            <p className="mt-0.5 text-13 text-ink-muted">Dynamic doctor profiles loaded from database</p>
+            <p className="mt-0.5 text-13 text-ink-muted">
+              {isMedical ? 'Pharmacist and staff profiles loaded from database' : 'Dynamic doctor profiles loaded from database'}
+            </p>
           </div>
           <div className="flex items-center gap-2.5">
             <button
@@ -364,7 +369,7 @@ export default function DoctorsServicesPage() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
-              Add Doctor
+              {isMedical ? 'Add Pharmacist / Staff' : 'Add Doctor'}
             </button>
           </div>
         </div>
@@ -384,7 +389,7 @@ export default function DoctorsServicesPage() {
                   <button
                     type="button"
                     onClick={() => handleOpenEditDoctor(doc, idx)}
-                    title="Edit Doctor Details"
+                    title={isMedical ? "Edit Staff Details" : "Edit Doctor Details"}
                     className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200 rounded-lg transition-colors cursor-pointer"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -392,7 +397,7 @@ export default function DoctorsServicesPage() {
                   <button
                     type="button"
                     onClick={() => setDoctorToDelete({ index: idx, name: doc.name })}
-                    title="Delete Doctor"
+                    title={isMedical ? "Delete Staff" : "Delete Doctor"}
                     className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-lg transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -406,7 +411,7 @@ export default function DoctorsServicesPage() {
               <div className="flex flex-wrap gap-1.5 mt-3.5 pt-3.5 border-t border-slate-200/70">
                 {[
                   ...(Array.isArray(doc.specialties) ? doc.specialties : []),
-                  ...(doc.services?.length > 0 ? doc.services : ['All services'])
+                  ...(doc.services?.length > 0 ? doc.services : (isMedical ? ['All products & services'] : ['All services']))
                 ].map((chip, chipIdx) => (
                   <span
                     key={chipIdx}
@@ -420,30 +425,34 @@ export default function DoctorsServicesPage() {
           ))}
           {(!clinic.doctors || clinic.doctors.length === 0) && (
             <div className="col-span-full p-8 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-              <Stethoscope className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm font-medium text-slate-600">No doctors registered yet.</p>
+              {isMedical ? <Pill className="w-8 h-8 text-slate-300 mx-auto mb-2" /> : <Stethoscope className="w-8 h-8 text-slate-300 mx-auto mb-2" />}
+              <p className="text-sm font-medium text-slate-600">{isMedical ? 'No pharmacist or staff registered yet.' : 'No doctors registered yet.'}</p>
               <button
                 type="button"
                 onClick={handleOpenAddDoctor}
                 className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-xs cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Add Your First Doctor
+                {isMedical ? 'Add Your First Pharmacist' : 'Add Your First Doctor'}
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* ─── Services Section ──────────────────────────────────────────────── */}
+      {/* ─── Services / Products Section ───────────────────────────────────── */}
       <div className="bg-white border border-slate-900/[0.09] rounded-14 shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 px-5 py-4 sm:px-6 sm:py-4.5 border-b border-slate-900/[0.09] bg-gradient-to-r from-blue-50/40 to-white">
           <div>
             <h2 className="text-18 font-semibold tracking-tight-10 text-ink flex items-center gap-2">
               <FileText className="w-5 h-5 text-blue-600" />
-              Offered Clinical Services &amp; Procedures
+              {isMedical ? 'Offered Pharmacy Products & Services' : 'Offered Clinical Services & Procedures'}
             </h2>
-            <p className="mt-0.5 text-13 text-ink-muted">Services recognized by AI receptionist for patient slot bookings</p>
+            <p className="mt-0.5 text-13 text-ink-muted">
+              {isMedical
+                ? 'Categories & services recognized by AI receptionist for customer inquiries & orders'
+                : 'Services recognized by AI receptionist for patient slot bookings'}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {!isAddingService ? (
@@ -453,7 +462,7 @@ export default function DoctorsServicesPage() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Add Service
+                {isMedical ? 'Add Product / Service' : 'Add Service'}
               </button>
             ) : (
               <div className="flex items-center gap-1.5">
@@ -471,7 +480,7 @@ export default function DoctorsServicesPage() {
                   }}
                   maxLength={50}
                   autoFocus
-                  placeholder="Service name (min 3 chars)"
+                  placeholder={isMedical ? "Product / category name (min 3 chars)" : "Service name (min 3 chars)"}
                   className="px-3 py-1.5 text-xs font-medium text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 sm:w-56 shadow-xs"
                 />
                 <button
@@ -517,14 +526,14 @@ export default function DoctorsServicesPage() {
                   maxLength={50}
                   autoFocus
                   className="px-2 py-1 text-xs font-semibold text-slate-900 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 w-44"
-                  placeholder="Service name (min 3 chars)"
+                  placeholder={isMedical ? "Product / service name (min 3 chars)" : "Service name (min 3 chars)"}
                 />
                 <button
                   type="button"
                   onClick={() => handleSaveEditService(srvIdx)}
                   disabled={savingService}
                   className="p-1 text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors cursor-pointer"
-                  title="Save Service"
+                  title={isMedical ? "Save Product / Service" : "Save Service"}
                 >
                   {savingService ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                 </button>
@@ -552,7 +561,7 @@ export default function DoctorsServicesPage() {
                       setEditingServiceIndex(srvIdx);
                       setEditingServiceName(srv);
                     }}
-                    title="Edit Service"
+                    title={isMedical ? "Edit Product / Service" : "Edit Service"}
                     className="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-100/70 rounded transition-colors cursor-pointer"
                   >
                     <Pencil className="w-3 h-3" />
@@ -560,7 +569,7 @@ export default function DoctorsServicesPage() {
                   <button
                     type="button"
                     onClick={() => setServiceToDelete({ index: srvIdx, name: srv })}
-                    title="Delete Service"
+                    title={isMedical ? "Delete Product / Service" : "Delete Service"}
                     className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3 h-3" />
@@ -572,7 +581,9 @@ export default function DoctorsServicesPage() {
           {(!clinic.services || clinic.services.length === 0) && (
             <div className="w-full p-6 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
               <FileText className="w-6 h-6 text-slate-300 mx-auto mb-1.5" />
-              <p className="text-xs font-medium text-slate-600">No clinical services configured yet.</p>
+              <p className="text-xs font-medium text-slate-600">
+                {isMedical ? 'No pharmacy products or services configured yet.' : 'No clinical services configured yet.'}
+              </p>
             </div>
           )}
         </div>
@@ -617,7 +628,7 @@ export default function DoctorsServicesPage() {
             className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-full min-h-0 adm-calendar-widget"
             role="dialog"
             aria-modal="true"
-            aria-label={editingDoctorIndex !== null ? 'Edit Doctor Profile' : 'Add New Doctor'}
+            aria-label={editingDoctorIndex !== null ? (isMedical ? 'Edit Pharmacist / Staff Profile' : 'Edit Doctor Profile') : (isMedical ? 'Add New Pharmacist / Staff' : 'Add New Doctor')}
             data-lenis-prevent="true"
             onWheel={(e) => {
               if (modalScrollRef.current && e.target !== modalScrollRef.current && !modalScrollRef.current.contains(e.target)) {
@@ -629,13 +640,15 @@ export default function DoctorsServicesPage() {
             <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="grid place-items-center w-7 h-7 rounded-lg bg-blue-100 text-blue-600">
-                  <Stethoscope className="w-4 h-4" />
+                  {isMedical ? <Pill className="w-4 h-4" /> : <Stethoscope className="w-4 h-4" />}
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
-                    {editingDoctorIndex !== null ? 'Edit Doctor Profile' : 'Add New Doctor'}
+                    {editingDoctorIndex !== null ? (isMedical ? 'Edit Pharmacist Profile' : 'Edit Doctor Profile') : (isMedical ? 'Add New Pharmacist / Staff' : 'Add New Doctor')}
                   </h3>
-                  <span className="block text-11 text-slate-500">Update doctor details &amp; on-call schedule</span>
+                  <span className="block text-11 text-slate-500">
+                    {isMedical ? 'Update pharmacist details & duty schedule' : 'Update doctor details & on-call schedule'}
+                  </span>
                 </div>
               </div>
               <button
@@ -663,7 +676,7 @@ export default function DoctorsServicesPage() {
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="text-11 font-semibold text-slate-400 uppercase tracking-wider block">
-                          Doctor Name <span className="text-red-500">*</span>
+                          {isMedical ? 'Pharmacist / Staff Name' : 'Doctor Name'} <span className="text-red-500">*</span>
                         </label>
                         <span className={`text-10 font-mono font-semibold ${doctorForm.name.trim().length >= 3 ? 'text-emerald-600' : 'text-slate-400'}`}>
                           {doctorForm.name.length}/50 chars (no numbers)
@@ -678,7 +691,7 @@ export default function DoctorsServicesPage() {
                         }}
                         maxLength={50}
                         minLength={3}
-                        placeholder="e.g. Dr. Rajesh Sharma"
+                        placeholder={isMedical ? "e.g. Pharmacist Rahul" : "e.g. Dr. Rajesh Sharma"}
                         className="w-full px-3 py-1.5 text-sm text-slate-800 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs"
                         required
                       />
@@ -688,7 +701,7 @@ export default function DoctorsServicesPage() {
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="text-11 font-semibold text-slate-400 uppercase tracking-wider block">
-                          Specialization / Specialties <span className="text-red-500">*</span>
+                          {isMedical ? 'Role / Qualification' : 'Specialization / Specialties'} <span className="text-red-500">*</span>
                         </label>
                         <span className={`text-10 font-mono font-semibold ${doctorForm.specialization.trim().length >= 3 ? 'text-emerald-600' : 'text-slate-400'}`}>
                           {doctorForm.specialization.length}/50 chars
@@ -703,11 +716,13 @@ export default function DoctorsServicesPage() {
                         }}
                         maxLength={50}
                         minLength={3}
-                        placeholder="e.g. Dentist, Implantologist"
+                        placeholder={isMedical ? "e.g. Pharmacist, B.Pharm, Store Manager" : "e.g. Dentist, Implantologist"}
                         className="w-full px-3 py-1.5 text-sm text-slate-800 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-xs"
                         required
                       />
-                      <span className="text-10 text-slate-400 mt-0.5 block">Separate multiple specialties with comma</span>
+                      <span className="text-10 text-slate-400 mt-0.5 block">
+                        {isMedical ? 'Separate multiple roles/tags with comma' : 'Separate multiple specialties with comma'}
+                      </span>
                     </div>
 
                     {/* Daily Timings Picker */}
@@ -717,7 +732,7 @@ export default function DoctorsServicesPage() {
                     {(clinic.services || []).length > 0 && (
                       <div>
                         <span className="block text-11 font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                          Services Offered:
+                          {isMedical ? 'Products / Categories Handled:' : 'Services Offered:'}
                         </span>
                         <div className="flex flex-wrap gap-1.5">
                           {clinic.services.map((service) => {
@@ -742,7 +757,9 @@ export default function DoctorsServicesPage() {
                           })}
                         </div>
                         <span className="text-10 text-slate-400 mt-0.5 block">
-                          {selectedServices.length === 0 ? 'None selected: this doctor handles all services' : `${selectedServices.length} selected`}
+                          {selectedServices.length === 0
+                            ? (isMedical ? 'None selected: handles all store products & services' : 'None selected: this doctor handles all services')
+                            : `${selectedServices.length} selected`}
                         </span>
                       </div>
                     )}
@@ -781,7 +798,7 @@ export default function DoctorsServicesPage() {
                   className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {savingDoctor ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  {editingDoctorIndex !== null ? 'Save Changes' : 'Add Doctor'}
+                  {editingDoctorIndex !== null ? 'Save Changes' : (isMedical ? 'Add Pharmacist' : 'Add Doctor')}
                 </button>
               </div>
             </form>
@@ -804,16 +821,16 @@ export default function DoctorsServicesPage() {
                 <Trash2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Delete Doctor</h3>
-                <p className="text-xs text-slate-500">Remove from clinic registry</p>
+                <h3 className="text-sm font-bold text-slate-900">{isMedical ? 'Delete Pharmacist / Staff' : 'Delete Doctor'}</h3>
+                <p className="text-xs text-slate-500">{isMedical ? 'Remove from store registry' : 'Remove from clinic registry'}</p>
               </div>
             </div>
             <p className="text-xs text-slate-600">
-              Are you sure you want to remove <strong className="text-slate-900">{doctorToDelete.name}</strong>? This doctor will no longer be available for appointment bookings.
+              Are you sure you want to remove <strong className="text-slate-900">{doctorToDelete.name}</strong>? {isMedical ? 'This staff member will no longer be listed for customer inquiries.' : 'This doctor will no longer be available for appointment bookings.'}
             </p>
             {doctorUpcomingCount > 0 && (
               <p className="text-xs font-medium text-amber-900 bg-amber-50/80 p-2 rounded-lg border border-amber-200/60">
-                This doctor has {doctorUpcomingCount} upcoming appointment{doctorUpcomingCount > 1 ? 's' : ''}. They will stay booked under this name, so please reschedule or cancel them.
+                This {isMedical ? 'staff member' : 'doctor'} has {doctorUpcomingCount} upcoming {isMedical ? 'order/inquiry' : 'appointment'}{doctorUpcomingCount > 1 ? 's' : ''}. They will stay booked under this name, so please reschedule or cancel them.
               </p>
             )}
             <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
@@ -832,7 +849,7 @@ export default function DoctorsServicesPage() {
                 className="px-4 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
                 {deletingDoctor ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                Delete Doctor
+                {isMedical ? 'Delete Staff' : 'Delete Doctor'}
               </button>
             </div>
           </div>
@@ -853,12 +870,12 @@ export default function DoctorsServicesPage() {
                 <Trash2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Delete Service</h3>
-                <p className="text-xs text-slate-500">Remove from offerings</p>
+                <h3 className="text-sm font-bold text-slate-900">{isMedical ? 'Delete Product / Service' : 'Delete Service'}</h3>
+                <p className="text-xs text-slate-500">{isMedical ? 'Remove from offerings' : 'Remove from offerings'}</p>
               </div>
             </div>
             <p className="text-xs text-slate-600">
-              Are you sure you want to remove <strong className="text-slate-900">"{serviceToDelete.name}"</strong>? AI receptionist will no longer suggest this service.
+              Are you sure you want to remove <strong className="text-slate-900">"{serviceToDelete.name}"</strong>? AI receptionist will no longer suggest this {isMedical ? 'product / service' : 'service'}.
             </p>
             <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
               <button
@@ -876,7 +893,7 @@ export default function DoctorsServicesPage() {
                 className="px-4 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
                 {deletingService ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                Delete Service
+                {isMedical ? 'Delete Product / Service' : 'Delete Service'}
               </button>
             </div>
           </div>

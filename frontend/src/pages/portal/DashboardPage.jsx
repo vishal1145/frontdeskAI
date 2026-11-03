@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Phone, Clock, Calendar, CreditCard, Search, 
+import {
+  Phone, Clock, Calendar, CreditCard, Search,
   ArrowUpRight, AlertTriangle, ChevronLeft, ChevronRight,
-  RefreshCw, Download 
+  RefreshCw, Download
 } from 'lucide-react';
 import { useClinic } from '../../context/ClinicContext';
 import CallAudioPlayer from '../../components/CallAudioPlayer';
+import CustomSelect from '../../components/CustomSelect';
 
 export default function DashboardPage() {
   const {
@@ -30,7 +31,9 @@ export default function DashboardPage() {
   } = useClinic();
 
   const [callsPage, setCallsPage] = useState(1);
-  const rowsPerPage = 10;
+  const rowsPerPage = 20;
+
+  const isMedical = clinic?.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic?.clinic_name || '');
 
   // Filter call logs based on search query and date filter
   const filteredLogs = callLogs.filter((log) => {
@@ -38,8 +41,8 @@ export default function DashboardPage() {
     const status = String(log.call_status || '').toUpperCase();
     const isShortCall = duration <= 10 || status.includes('CANCEL');
     const dynamicTag = log.is_transferred
-      ? 'Forwarded to Doctor Reception'
-      : (status.includes('BUSY') ? 'Unanswered Busy' : (isShortCall ? 'Missed Short Call' : 'Patient Inquiry Handled by AI'));
+      ? (isMedical ? 'Forwarded to Pharmacist' : 'Forwarded to Doctor Reception')
+      : (status.includes('BUSY') ? 'Unanswered Busy' : (isShortCall ? 'Missed Short Call' : (isMedical ? 'Medicine Inquiry Handled by AI' : 'Patient Inquiry Handled by AI')));
 
     const matchesSearch =
       (log.caller_phone || '').includes(searchQuery) ||
@@ -85,22 +88,25 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 text-13 font-medium text-ink-muted flex-nowrap whitespace-nowrap">
           <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
           <span className="shrink-0">Date & Day:</span>
-          <select
+          <CustomSelect
             value={dateFilter}
-            onChange={(e) => {
-              setDateFilter(e.target.value);
-              if (e.target.value !== 'custom') setCustomDate('');
+            onChange={(val) => {
+              setDateFilter(val);
+              if (val !== 'custom') setCustomDate('');
             }}
-            className="appearance-none h-9 pl-3.5 pr-9 border border-slate-900/[0.16] rounded-10 bg-white text-13 text-ink font-medium cursor-pointer shrink-0 transition-[border-color,box-shadow,background-color] duration-150 hover:border-slate-900/[0.26] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2712%27%20height=%2712%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%2364748B%27%20stroke-width=%272.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27m6%209%206%206%206-6%27/%3E%3C/svg%3E')] bg-no-repeat bg-[right_0.75rem_center]"
+            align="right"
+            options={[
+              { value: 'all', label: 'All Dates & Days' },
+              { value: 'today', label: 'Today' },
+              { value: 'yesterday', label: 'Yesterday' },
+              { value: 'last7', label: 'Last 7 Days' },
+              { value: 'last30', label: 'Last 30 Days' },
+              { value: 'custom', label: 'Pick Specific Date...' },
+            ]}
+            className="h-9 px-3.5 border border-slate-900/[0.16] rounded-10 bg-white text-13 text-ink font-medium cursor-pointer shrink-0 transition-[border-color,box-shadow,background-color] duration-150 hover:border-slate-900/[0.26] focus:outline-none flex items-center justify-between gap-2.5"
+            menuClassName="w-48"
             aria-label="Filter call logs by date and day"
-          >
-            <option value="all">All Dates & Days</option>
-            <option value="today">Today</option>
-            <option value="yesterday">Yesterday</option>
-            <option value="last7">Last 7 Days</option>
-            <option value="last30">Last 30 Days</option>
-            <option value="custom">Pick Specific Date...</option>
-          </select>
+          />
 
           {dateFilter === 'custom' && (
             <input
@@ -115,84 +121,88 @@ export default function DashboardPage() {
       </div>
 
       {/* ─── Billing & Call Metrics KPI Cards ──────────────────── */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Clinic metrics">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5" aria-label="Clinic metrics">
 
         {/* KPI 1: Total Calls */}
         <div
-          className="cx-enter relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] transition-[border-color,box-shadow] duration-200 hover:border-slate-900/[0.16] before:content-[''] before:absolute before:-top-px before:left-5 before:right-5 before:h-[2px] before:rounded-b-2 before:opacity-85 before:bg-blue-700"
+          className="cx-enter relative px-4 py-2.5 sm:px-5 sm:py-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] transition-[border-color,box-shadow] duration-200 hover:border-slate-900/[0.16] before:content-[''] before:absolute before:-top-px before:left-5 before:right-5 before:h-[2px] before:rounded-b-2 before:opacity-85 before:bg-blue-700"
           style={{ '--i': 1 }}
         >
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold tracking-wide-40 uppercase text-ink-muted">Total Calls Received</span>
-            <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-blue-700 bg-blue-50">
-              <Phone className="w-4 h-4" />
+          <div className="flex items-center justify-between gap-2.5">
+            <span className="text-11 font-semibold tracking-wide-40 uppercase text-ink-muted">Total Calls Received</span>
+            <div className="grid place-items-center shrink-0 w-7 h-7 rounded-8 text-blue-700 bg-blue-50">
+              <Phone className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="flex items-baseline gap-1.5 mt-3.5 text-30 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
+          <div className="flex items-baseline gap-1.5 mt-1.5 text-26 sm:text-28 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
             {cardTotalCalls}
           </div>
-          <p className="mt-2.5 text-13 leading-ratio-140 text-ink-muted">
+          <p className="mt-1 text-12 text-ink-muted truncate">
             <span>Duration: <strong className="font-semibold text-ink-soft">{cardDurationFormatted}</strong></span>
           </p>
         </div>
 
         {/* KPI 2: Total Minutes */}
         <div
-          className="cx-enter relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] transition-[border-color,box-shadow] duration-200 hover:border-slate-900/[0.16] before:content-[''] before:absolute before:-top-px before:left-5 before:right-5 before:h-[2px] before:rounded-b-2 before:opacity-85 before:bg-tint-blue-30"
+          className="cx-enter relative px-4 py-2.5 sm:px-5 sm:py-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] transition-[border-color,box-shadow] duration-200 hover:border-slate-900/[0.16] before:content-[''] before:absolute before:-top-px before:left-5 before:right-5 before:h-[2px] before:rounded-b-2 before:opacity-85 before:bg-tint-blue-30"
           style={{ '--i': 2 }}
         >
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold tracking-wide-40 uppercase text-ink-muted">Total Minutes</span>
-            <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-tint-blue-30 bg-tint-blue-9">
-              <Clock className="w-4 h-4" />
+          <div className="flex items-center justify-between gap-2.5">
+            <span className="text-11 font-semibold tracking-wide-40 uppercase text-ink-muted">Total Minutes</span>
+            <div className="grid place-items-center shrink-0 w-7 h-7 rounded-8 text-tint-blue-30 bg-tint-blue-9">
+              <Clock className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="flex items-baseline gap-1.5 mt-3.5 text-30 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
+          <div className="flex items-baseline gap-1.5 mt-1.5 text-26 sm:text-28 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
             <span>{cardTotalMinutes}</span>
-            <span className="text-base font-semibold text-ink-muted">mins</span>
+            <span className="text-sm font-semibold text-ink-muted">mins</span>
           </div>
-          <p className="mt-2.5 text-13 leading-ratio-140 text-ink-muted">
+          <p className="mt-1 text-12 text-ink-muted truncate">
             Exact: {cardDurationFormatted} total call duration
           </p>
         </div>
 
         {/* KPI 3: Total Appointments Booked */}
         <div
-          className="cx-enter relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] transition-[border-color,box-shadow] duration-200 hover:border-slate-900/[0.16] before:content-[''] before:absolute before:-top-px before:left-5 before:right-5 before:h-[2px] before:rounded-b-2 before:opacity-85 before:bg-tint-green-7"
+          className="cx-enter relative px-4 py-2.5 sm:px-5 sm:py-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] transition-[border-color,box-shadow] duration-200 hover:border-slate-900/[0.16] before:content-[''] before:absolute before:-top-px before:left-5 before:right-5 before:h-[2px] before:rounded-b-2 before:opacity-85 before:bg-tint-green-7"
           style={{ '--i': 3 }}
         >
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold tracking-wide-40 uppercase text-ink-muted">Appointments Booked</span>
-            <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-tint-green-7 bg-tint-green-2">
-              <Calendar className="w-4 h-4" />
+          <div className="flex items-center justify-between gap-2.5">
+            <span className="text-11 font-semibold tracking-wide-40 uppercase text-ink-muted">
+              {isMedical ? 'Medicine Orders Booked' : 'Appointments Booked'}
+            </span>
+            <div className="grid place-items-center shrink-0 w-7 h-7 rounded-8 text-tint-green-7 bg-tint-green-2">
+              <Calendar className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="flex items-baseline gap-1.5 mt-3.5 text-30 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
+          <div className="flex items-baseline gap-1.5 mt-1.5 text-26 sm:text-28 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
             {cardTotalAppointments}
           </div>
-          <p className="mt-2.5 text-13 leading-ratio-140 text-ink-muted">
-            100% scheduled via Voice AI
+          <p className="mt-1 text-12 text-ink-muted truncate">
+            {isMedical ? 'Orders & pickup noted via Voice AI' : '100% scheduled via Voice AI'}
           </p>
         </div>
 
-        {/* KPI 4: Total Telephony & AI Bill */}
+        {/* KPI 4: Total Telephony & AI Bill (Commented out) */}
+        {/*
         <div
-          className="cx-enter relative p-set-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] transition-[border-color,box-shadow] duration-200 hover:border-slate-900/[0.16] before:content-[''] before:absolute before:-top-px before:left-5 before:right-5 before:h-[2px] before:rounded-b-2 before:opacity-85 before:bg-accent-sapphire"
+          className="cx-enter relative px-4 py-2.5 sm:px-5 sm:py-3 rounded-14 bg-white border border-slate-900/[0.09] shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)] transition-[border-color,box-shadow] duration-200 hover:border-slate-900/[0.16] before:content-[''] before:absolute before:-top-px before:left-5 before:right-5 before:h-[2px] before:rounded-b-2 before:opacity-85 before:bg-accent-sapphire"
           style={{ '--i': 4 }}
         >
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold tracking-wide-40 uppercase text-ink-muted">Current Bill Amount</span>
-            <div className="grid place-items-center shrink-0 w-8 h-8 rounded-9 text-accent-sapphire bg-accent-sapphire-light">
-              <CreditCard className="w-4 h-4" />
+          <div className="flex items-center justify-between gap-2.5">
+            <span className="text-11 font-semibold tracking-wide-40 uppercase text-ink-muted">Current Bill Amount</span>
+            <div className="grid place-items-center shrink-0 w-7 h-7 rounded-8 text-accent-sapphire bg-accent-sapphire-light">
+              <CreditCard className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="flex items-baseline gap-1.5 mt-3.5 text-30 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
+          <div className="flex items-baseline gap-1.5 mt-1.5 text-26 sm:text-28 font-semibold leading-none tracking-tight-25 tabular-nums text-ink">
             ₹{cardTotalBillInr}
           </div>
-          <p className="mt-2.5 text-13 leading-ratio-140 text-ink-muted">
+          <p className="mt-1 text-12 text-ink-muted truncate">
             Live Vobiz Carrier Telephony Actuals
           </p>
         </div>
+        */}
       </section>
 
       {/* ─── Call Logs Main Table Panel ───────────────────────────── */}
@@ -257,8 +267,8 @@ export default function DashboardPage() {
               <table className="w-full min-w-[56rem] border-separate border-spacing-0 text-left text-13">
                 <thead>
                   <tr>
-                    <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">Call ID</th>
                     <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">Caller</th>
+                    <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">Call ID</th>
                     <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">Duration</th>
                     <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">Cost (INR)</th>
                     <th className="px-4 py-2.5 sm:first:pl-6 sm:last:pr-6 text-11 font-semibold tracking-wide-60 uppercase whitespace-nowrap text-ink-muted bg-slate-50 border-b border-slate-900/[0.09]">Date / Time</th>
@@ -278,15 +288,15 @@ export default function DashboardPage() {
 
                     return (
                       <tr key={log.call_sid} className="transition-colors duration-100 hover:bg-tint-blue-2 last:[&>td]:border-b-0">
-                        {/* Call ID */}
-                        <td className="px-4 py-3 sm:first:pl-6 sm:last:pr-6 align-top border-b border-slate-900/[0.06] font-mono text-xs text-ink-muted">
-                          <span className="font-semibold text-blue-700">{log.call_sid.substring(0, 10)}...</span>
-                        </td>
-
                         {/* Caller */}
                         <td className="px-4 py-3 sm:first:pl-6 sm:last:pr-6 align-top border-b border-slate-900/[0.06] text-ink font-medium whitespace-nowrap">
                           <div className="font-semibold">{log.caller_phone || 'Anonymous'}</div>
                           <div className="text-11 text-slate-400 font-mono mt-0.5">To: {log.called_number}</div>
+                        </td>
+
+                        {/* Call ID */}
+                        <td className="px-4 py-3 sm:first:pl-6 sm:last:pr-6 align-top border-b border-slate-900/[0.06] font-mono text-xs text-ink-muted">
+                          <span className="font-semibold text-blue-700">{log.call_sid.substring(0, 10)}...</span>
                         </td>
 
                         {/* Duration */}
@@ -320,7 +330,7 @@ export default function DashboardPage() {
                           {log.is_transferred ? (
                             <span className="inline-flex items-center gap-1.5 h-6 px-2.5 border border-tint-amber-2 rounded-full text-xs font-semibold leading-none whitespace-nowrap text-tint-amber-5 bg-tint-amber-1">
                               <ArrowUpRight className="w-3 h-3 text-tint-amber-4" />
-                              Transfer to {log.transfer_destination || 'Doctor Phone'}
+                              Transfer to {log.transfer_destination || (isMedical ? 'Pharmacist Phone' : 'Doctor Phone')}
                             </span>
                           ) : isShortCall ? (
                             <span className="inline-flex items-center gap-1.5 h-6 px-2.5 border border-tint-rose-4 rounded-full text-xs font-semibold leading-none whitespace-nowrap text-tint-rose-8 bg-tint-rose-1">
@@ -385,8 +395,8 @@ export default function DashboardPage() {
                           onClick={() => setCallsPage(num)}
                           aria-current={currentCallsPage === num ? 'page' : undefined}
                           className={`min-w-[2rem] h-8 px-2 border rounded-lg text-xs font-semibold tabular-nums cursor-pointer transition-[background-color,border-color,color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 ${currentCallsPage === num
-                              ? 'text-white bg-blue-700 border-blue-700'
-                              : 'text-ink-soft bg-white border-slate-900/[0.16] hover:bg-slate-50 hover:border-slate-900/[0.26] hover:text-ink'
+                            ? 'text-white bg-blue-700 border-blue-700'
+                            : 'text-ink-soft bg-white border-slate-900/[0.16] hover:bg-slate-50 hover:border-slate-900/[0.26] hover:text-ink'
                             }`}
                         >
                           {num}

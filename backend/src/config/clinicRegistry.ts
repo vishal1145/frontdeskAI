@@ -12,6 +12,8 @@ export interface ClinicRegistration extends ClinicConfig {
   scheduling_enabled?: boolean;
   slot_duration_minutes?: number;
   is_active?: boolean;
+  created_at?: string;
+  profile_icon?: string;
 }
 
 /**
@@ -59,77 +61,128 @@ class ClinicRegistry {
   }
 
   /**
-   * Dynamically queries the Supabase 'clinics' table and synchronizes all active clinics into memory.
+   * Dynamically queries the Supabase 'clinics' & 'medical_stores' tables and synchronizes all active units into memory.
    */
   public async loadClinicsFromDb(): Promise<void> {
     if (!this.pgPool) return;
 
     try {
-      const res = await this.pgPool.query(
-        "SELECT clinic_id, clinic_name, address, working_hours, contact_phone, receptionist_name, virtual_phone_numbers, doctors, services, password, scheduling_enabled, slot_duration_minutes, is_active FROM clinics ORDER BY created_at ASC;"
+      const resClinics = await this.pgPool.query(
+        "SELECT clinic_id, clinic_name, address, working_hours, contact_phone, receptionist_name, virtual_phone_numbers, doctors, services, password, scheduling_enabled, slot_duration_minutes, is_active, business_type, delivery_available, min_delivery_order, profile_icon, created_at FROM clinics ORDER BY created_at ASC;"
+      );
+      const resStores = await this.pgPool.query(
+        "SELECT store_id, store_name, address, working_hours, contact_phone, receptionist_name, virtual_phone_numbers, pharmacist_name, services, password, is_active, delivery_available, min_delivery_order, profile_icon, created_at FROM medical_stores ORDER BY created_at ASC;"
       );
 
-      if (res.rows.length > 0) {
-        this.clinics.clear();
-        this.phoneMap.clear();
-        this.contactPhoneMap.clear();
-        for (const row of res.rows) {
-          const rawDoctors = row.doctors;
-          const parsedDoctors = Array.isArray(rawDoctors)
-            ? rawDoctors
-            : (typeof rawDoctors === "string" ? JSON.parse(rawDoctors) : []);
+      this.clinics.clear();
+      this.phoneMap.clear();
+      this.contactPhoneMap.clear();
 
-          const normalizedDoctors = parsedDoctors.map((doc: any) => {
-            if (typeof doc === "string") {
-              return { name: doc, specialties: ["Specialist"], specialization: "Specialist", timings: row.working_hours || "10:00 AM - 7:00 PM" };
-            }
-            const specList = Array.isArray(doc?.specialties) && doc.specialties.length > 0
-              ? doc.specialties
-              : (doc?.specialization ? [doc.specialization] : (doc?.specialty ? [doc.specialty] : ["Specialist"]));
-            return {
-              name: doc?.name || "Doctor",
-              specialties: specList,
-              specialization: doc?.specialization || specList.join(", "),
-              timings: doc?.timings || row.working_hours || "10:00 AM - 7:00 PM",
-              services: Array.isArray(doc?.services) ? doc.services : [],
-              working_days: cleanWorkingDays(doc?.working_days)
-            };
-          });
+      for (const row of resClinics.rows) {
+        const rawDoctors = row.doctors;
+        const parsedDoctors = Array.isArray(rawDoctors)
+          ? rawDoctors
+          : (typeof rawDoctors === "string" ? JSON.parse(rawDoctors) : []);
 
-          const rawServices = row.services;
-          const parsedServices = Array.isArray(rawServices)
-            ? rawServices
-            : (typeof rawServices === "string" ? JSON.parse(rawServices) : []);
-          const normalizedServices = parsedServices.map((s: any) => (typeof s === "string" ? s : (s?.name || String(s))));
-
-          const rawPhones = row.virtual_phone_numbers;
-          const parsedPhones = Array.isArray(rawPhones)
-            ? rawPhones
-            : (typeof rawPhones === "string" ? [rawPhones] : (row.contact_phone ? [row.contact_phone] : []));
-
-          const clinic: ClinicRegistration = {
-            clinic_id: row.clinic_id,
-            clinic_name: row.clinic_name,
-            address: row.address,
-            working_hours: row.working_hours,
-            contact_phone: row.contact_phone,
-            password: row.password || "123456",
-            receptionist_name: row.receptionist_name || "Neha",
-            virtual_phone_numbers: parsedPhones,
-            doctors: normalizedDoctors,
-            services: normalizedServices,
-            scheduling_enabled: row.scheduling_enabled !== false,
-            slot_duration_minutes: Number(row.slot_duration_minutes) || 30,
-            is_active: row.is_active !== false
+        const normalizedDoctors = parsedDoctors.map((doc: any) => {
+          if (typeof doc === "string") {
+            return { name: doc, specialties: ["Specialist"], specialization: "Specialist", timings: row.working_hours || "10:00 AM - 7:00 PM" };
+          }
+          const specList = Array.isArray(doc?.specialties) && doc.specialties.length > 0
+            ? doc.specialties
+            : (doc?.specialization ? [doc.specialization] : (doc?.specialty ? [doc.specialty] : ["Specialist"]));
+          return {
+            name: doc?.name || "Doctor",
+            specialties: specList,
+            specialization: doc?.specialization || specList.join(", "),
+            timings: doc?.timings || row.working_hours || "10:00 AM - 7:00 PM",
+            services: Array.isArray(doc?.services) ? doc.services : [],
+            working_days: cleanWorkingDays(doc?.working_days)
           };
+        });
 
-          this.registerClinic(clinic);
-        }
-        this.isLoaded = true;
-        console.log(`[DYNAMIC CLINIC REGISTRY] Successfully synchronized ${res.rows.length} clinics dynamically from Supabase database!`);
+        const rawServices = row.services;
+        const parsedServices = Array.isArray(rawServices)
+          ? rawServices
+          : (typeof rawServices === "string" ? JSON.parse(rawServices) : []);
+        const normalizedServices = parsedServices.map((s: any) => (typeof s === "string" ? s : (s?.name || String(s))));
+
+        const rawPhones = row.virtual_phone_numbers;
+        const parsedPhones = Array.isArray(rawPhones)
+          ? rawPhones
+          : (typeof rawPhones === "string" ? [rawPhones] : (row.contact_phone ? [row.contact_phone] : []));
+
+        const clinic: ClinicRegistration = {
+          clinic_id: row.clinic_id,
+          clinic_name: row.clinic_name,
+          address: row.address,
+          working_hours: row.working_hours,
+          contact_phone: row.contact_phone,
+          password: row.password || "123456",
+          receptionist_name: row.receptionist_name || "Neha",
+          virtual_phone_numbers: parsedPhones,
+          doctors: normalizedDoctors,
+          services: normalizedServices,
+          scheduling_enabled: row.scheduling_enabled !== false,
+          slot_duration_minutes: Number(row.slot_duration_minutes) || 30,
+          is_active: row.is_active !== false,
+          business_type: "clinic",
+          delivery_available: row.delivery_available !== false,
+          min_delivery_order: row.min_delivery_order || "None",
+          profile_icon: row.profile_icon || "building",
+          created_at: row.created_at ? new Date(row.created_at).toISOString() : undefined
+        };
+
+        this.registerClinic(clinic);
       }
+
+      for (const row of resStores.rows) {
+        const rawServices = row.services;
+        const parsedServices = Array.isArray(rawServices)
+          ? rawServices
+          : (typeof rawServices === "string" ? JSON.parse(rawServices) : []);
+        const normalizedServices = parsedServices.map((s: any) => (typeof s === "string" ? s : (s?.name || String(s))));
+
+        const rawPhones = row.virtual_phone_numbers;
+        const parsedPhones = Array.isArray(rawPhones)
+          ? rawPhones
+          : (typeof rawPhones === "string" ? [rawPhones] : (row.contact_phone ? [row.contact_phone] : []));
+
+        const pharmName = row.pharmacist_name || "Pharmacist In-Charge";
+        const store: ClinicRegistration = {
+          clinic_id: row.store_id,
+          clinic_name: row.store_name,
+          address: row.address,
+          working_hours: row.working_hours,
+          contact_phone: row.contact_phone,
+          password: row.password || "123456",
+          receptionist_name: row.receptionist_name || "Neha",
+          virtual_phone_numbers: parsedPhones,
+          doctors: [{
+            name: pharmName,
+            specialties: ["Pharmacist"],
+            specialization: "Pharmacist",
+            timings: row.working_hours || "10:00 AM - 8:00 PM",
+            services: normalizedServices
+          }],
+          services: normalizedServices,
+          scheduling_enabled: false,
+          slot_duration_minutes: 0,
+          is_active: row.is_active !== false,
+          business_type: "medical_store",
+          delivery_available: row.delivery_available !== false,
+          min_delivery_order: row.min_delivery_order || "None",
+          profile_icon: row.profile_icon || "pill",
+          created_at: row.created_at ? new Date(row.created_at).toISOString() : undefined
+        };
+
+        this.registerClinic(store);
+      }
+
+      this.isLoaded = true;
+      console.log(`[DYNAMIC CLINIC REGISTRY] Successfully synchronized ${resClinics.rows.length} clinics and ${resStores.rows.length} medical stores from Supabase!`);
     } catch (err: any) {
-      console.error(`[DYNAMIC CLINIC REGISTRY ERROR] Failed to load clinics from Supabase: ${err.message}`);
+      console.error(`[DYNAMIC CLINIC REGISTRY ERROR] Failed to load clinics & stores from Supabase: ${err.message}`);
     }
   }
 

@@ -131,7 +131,10 @@ app.post("/api/auth/login", async (req, res) => {
         virtual_phone_numbers: clinic.virtual_phone_numbers || [clinic.contact_phone],
         doctors: clinic.doctors,
         services: clinic.services,
-        is_active: clinic.is_active !== false
+        is_active: clinic.is_active !== false,
+        business_type: (clinic as any).business_type || "clinic",
+        delivery_available: (clinic as any).delivery_available !== false,
+        min_delivery_order: (clinic as any).min_delivery_order || "None"
       }
     });
   } catch (err: any) {
@@ -176,11 +179,26 @@ app.get("/api/clinics/:clinicId/dashboard", async (req, res) => {
     }
 
     // Parallel fetch for speed
-    const [callLogs, billingSummary, appointments] = await Promise.all([
+    const isMedical = clinic.business_type === "medical_store" || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic.clinic_name);
+    const [callLogs, billingSummary, appointments, medicalOrders] = await Promise.all([
       dbService.getCallLogsForClinic(clinicId),
       dbService.getBillingSummaryForClinic(clinicId),
-      dbService.getAppointmentsForClinic(clinicId)
+      dbService.getAppointmentsForClinic(clinicId),
+      isMedical ? dbService.getMedicalOrdersForStore(clinicId) : Promise.resolve([])
     ]);
+
+    const mappedAppointments = isMedical ? medicalOrders.map((o: any) => ({
+      booking_id: o.order_id,
+      clinic_id: o.store_id,
+      patient_name: o.customer_name,
+      patient_phone: o.customer_phone,
+      slot_iso_timestamp: o.created_at,
+      display_time: o.order_type === 'home_delivery' ? 'Home Delivery' : 'Store Pickup',
+      doctor_name: o.order_type === 'home_delivery' ? `Delivery: ${o.delivery_address || 'Address on Call'}` : 'Store Pickup',
+      service_type: o.medicines,
+      status: o.status,
+      created_at: o.created_at
+    })) : appointments;
 
     return res.json({
       success: true,
@@ -197,11 +215,16 @@ app.get("/api/clinics/:clinicId/dashboard", async (req, res) => {
         doctors: clinic.doctors,
         services: clinic.services,
         scheduling_enabled: clinic.scheduling_enabled !== false,
-        slot_duration_minutes: clinic.slot_duration_minutes || 30
+        slot_duration_minutes: clinic.slot_duration_minutes || 30,
+        business_type: clinic.business_type || (isMedical ? "medical_store" : "clinic"),
+        delivery_available: clinic.delivery_available !== false,
+        min_delivery_order: clinic.min_delivery_order || "None",
+        profile_icon: clinic.profile_icon || (isMedical ? "pill" : "building")
       },
       billing: billingSummary,
       call_logs: callLogs,
-      appointments: appointments
+      appointments: mappedAppointments,
+      medical_orders: medicalOrders
     });
   } catch (err: any) {
     console.error(`[CLINIC DASHBOARD API ERROR]`, err);
@@ -224,6 +247,7 @@ app.get("/api/clinics/:clinicId/calendar/slots", async (req, res) => {
     if (!clinic) {
       return res.status(404).json({ success: false, message: "Clinic not found." });
     }
+    const isMedical = clinic.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic.clinic_name);
 
     const isSchedulingEnabled = clinic.scheduling_enabled !== false;
     // One doctor when filtered, otherwise every doctor's own schedule
@@ -318,6 +342,7 @@ app.post("/api/clinics/:clinicId/calendar/toggle", async (req, res) => {
     if (!clinic) {
       return res.status(404).json({ success: false, message: "Clinic not found." });
     }
+    const isMedical = clinic.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic.clinic_name);
 
     const newStatus = Boolean(scheduling_enabled);
     const duration = Number(slot_duration_minutes) || clinic.slot_duration_minutes || 30;
@@ -377,10 +402,17 @@ app.post("/api/clinics/:clinicId/status", async (req, res) => {
 
     const pool = (clinicRegistry as any).pgPool;
     if (pool) {
-      await pool.query(
-        "UPDATE clinics SET is_active = $1 WHERE clinic_id = $2;",
-        [nextActiveStatus, clinicId]
-      );
+      if (clinic.business_type === 'medical_store') {
+        await pool.query(
+          "UPDATE medical_stores SET is_active = $1 WHERE store_id = $2;",
+          [nextActiveStatus, clinicId]
+        );
+      } else {
+        await pool.query(
+          "UPDATE clinics SET is_active = $1 WHERE clinic_id = $2;",
+          [nextActiveStatus, clinicId]
+        );
+      }
     }
 
     clinicRegistry.updateClinicActiveStatus(clinicId, nextActiveStatus);
@@ -425,7 +457,8 @@ const handleClinicProfileUpdate = async (req: express.Request, res: express.Resp
       password,
       doctors,
       services,
-      doctor_renames
+      doctor_renames,
+      profile_icon
     } = req.body;
 
     if (!clinicId) {
@@ -437,6 +470,7 @@ const handleClinicProfileUpdate = async (req: express.Request, res: express.Resp
     if (!clinic) {
       return res.status(404).json({ success: false, message: "Clinic not found." });
     }
+    const isMedical = clinic.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic.clinic_name);
 
     // Build dynamic UPDATE query
     const updates: Partial<ClinicRegistration> = {};
@@ -517,6 +551,12 @@ const handleClinicProfileUpdate = async (req: express.Request, res: express.Resp
       updates.password = password.trim();
     }
 
+    if (profile_icon !== undefined && typeof profile_icon === "string") {
+      setClauses.push(`profile_icon = $${paramIndex++}`);
+      values.push(profile_icon.trim());
+      updates.profile_icon = profile_icon.trim();
+    }
+
     if (doctors !== undefined && Array.isArray(doctors)) {
       for (const d of doctors) {
         if (!d || typeof d.name !== "string" || d.name.trim().length < 3) {
@@ -587,16 +627,27 @@ const handleClinicProfileUpdate = async (req: express.Request, res: express.Resp
       const pool = (clinicRegistry as any).pgPool;
       if (pool) {
         values.push(clinicId);
-        const query = `UPDATE clinics SET ${setClauses.join(", ")} WHERE clinic_id = $${paramIndex};`;
-        await pool.query(query, values);
+        if (clinic.business_type === 'medical_store') {
+          // medical_stores uses store_id and store_name
+          const medClauses = setClauses
+            .filter((c) => !c.startsWith("doctors ="))
+            .map((c) => c.replace(/\bclinic_name\b/g, "store_name"));
+          if (medClauses.length > 0) {
+            const query = `UPDATE medical_stores SET ${medClauses.join(", ")} WHERE store_id = $${paramIndex};`;
+            await pool.query(query, values);
+          }
+        } else {
+          const query = `UPDATE clinics SET ${setClauses.join(", ")} WHERE clinic_id = $${paramIndex};`;
+          await pool.query(query, values);
 
-        // Bookings are stored by doctor name, so a rename must carry them across
-        for (const rename of Array.isArray(doctor_renames) ? doctor_renames : []) {
-          if (rename?.from && rename?.to) {
-            await pool.query(
-              `UPDATE appointments SET doctor_name = $1 WHERE clinic_id = $2 AND doctor_name = $3 AND status <> 'cancelled'`,
-              [String(rename.to), clinicId, String(rename.from)]
-            );
+          // Bookings are stored by doctor name, so a rename must carry them across
+          for (const rename of Array.isArray(doctor_renames) ? doctor_renames : []) {
+            if (rename?.from && rename?.to) {
+              await pool.query(
+                `UPDATE appointments SET doctor_name = $1 WHERE clinic_id = $2 AND doctor_name = $3 AND status <> 'cancelled'`,
+                [String(rename.to), clinicId, String(rename.from)]
+              );
+            }
           }
         }
       }
@@ -621,7 +672,8 @@ const handleClinicProfileUpdate = async (req: express.Request, res: express.Resp
         doctors: updatedClinic?.doctors,
         services: updatedClinic?.services,
         scheduling_enabled: updatedClinic?.scheduling_enabled !== false,
-        slot_duration_minutes: updatedClinic?.slot_duration_minutes || 30
+        slot_duration_minutes: updatedClinic?.slot_duration_minutes || 30,
+        profile_icon: updatedClinic?.profile_icon || (isMedical ? "pill" : "building")
       }
     });
   } catch (err: any) {
@@ -656,6 +708,7 @@ app.post("/api/clinics/:clinicId/calendar/book", async (req, res) => {
     if (!clinic) {
       return res.status(404).json({ success: false, message: "Clinic not found." });
     }
+    const isMedical = clinic.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic.clinic_name);
 
     const selection = selectDoctorForBooking(clinic, {
       doctorName: doctor_name,
@@ -919,7 +972,10 @@ app.post("/api/admin/clinics", verifyAdminAuth, async (req, res) => {
       services,
       slot_duration_minutes,
       scheduling_enabled,
-      custom_clinic_id
+      custom_clinic_id,
+      business_type,
+      delivery_available,
+      min_delivery_order
     } = req.body;
 
     if (!clinic_name || typeof clinic_name !== "string" || !clinic_name.trim()) {
@@ -996,14 +1052,24 @@ app.post("/api/admin/clinics", verifyAdminAuth, async (req, res) => {
       .filter((d: any) => d && typeof d.name === "string" && d.name.trim().length >= 3)
       .map((d: any) => ({
         name: d.name.replace(/[0-9]/g, '').slice(0, 50).trim(),
-        specialization: (d.specialization || "Specialist").toString().replace(/[0-9]/g, '').slice(0, 50).trim() || "Specialist",
+        specialization: (d.specialization || (business_type === 'medical_store' ? "Pharmacist" : "Specialist")).toString().replace(/[0-9]/g, '').slice(0, 50).trim() || (business_type === 'medical_store' ? "Pharmacist" : "Specialist"),
         timings: (d.timings || "10:00 AM - 7:00 PM").toString().slice(0, 100).trim(),
         working_days: cleanWorkingDays(d.working_days)
       }))
       .filter((d: any) => d.name.length >= 3);
 
+    // Fallback for medical store if no pharmacist entered
+    if (cleanDoctors.length === 0 && (business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(cleanClinicName))) {
+      cleanDoctors.push({
+        name: "Pharmacist In-Charge",
+        specialization: "Chief Pharmacist",
+        timings: (working_hours || "10:00 AM - 10:00 PM").toString().slice(0, 100).trim(),
+        working_days: [1, 2, 3, 4, 5, 6]
+      });
+    }
+
     if (new Set(cleanDoctors.map((d: any) => normalizeName(d.name))).size !== cleanDoctors.length) {
-      return res.status(400).json({ success: false, message: "Each doctor must have a unique name." });
+      return res.status(400).json({ success: false, message: "Each doctor/staff must have a unique name." });
     }
 
     // Services: strip digits, max 50 chars
@@ -1013,6 +1079,11 @@ app.post("/api/admin/clinics", verifyAdminAuth, async (req, res) => {
         return str.replace(/[0-9]/g, '').slice(0, 50).trim();
       })
       .filter((s: string) => s.length >= 3);
+
+    // Fallback services for medical store
+    if (cleanServices.length === 0 && (business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(cleanClinicName))) {
+      cleanServices.push("Prescription Medicines", "OTC & First Aid", "Home Delivery", "Baby & Mother Care", "Health Supplements");
+    }
 
     // Generate unique clinic_id if not explicitly provided
     let clinicId = (custom_clinic_id || "").trim();
@@ -1024,6 +1095,8 @@ app.post("/api/admin/clinics", verifyAdminAuth, async (req, res) => {
         .slice(0, 25);
       clinicId = `clinic-${slug || 'frontdesk'}-${Math.random().toString(36).slice(2, 7)}`;
     }
+
+    const resolvedBusinessType = business_type || (/medical|pharmacy|chemist|medicos|dawa/i.test(cleanClinicName) ? "medical_store" : "clinic");
 
     const newClinic = await dbService.createClinicInDb({
       clinic_id: clinicId,
@@ -1039,7 +1112,10 @@ app.post("/api/admin/clinics", verifyAdminAuth, async (req, res) => {
       doctors: cleanDoctors,
       services: cleanServices,
       slot_duration_minutes: Number(slot_duration_minutes) || 30,
-      scheduling_enabled: scheduling_enabled !== false
+      scheduling_enabled: scheduling_enabled !== false,
+      business_type: resolvedBusinessType,
+      delivery_available: delivery_available !== false,
+      min_delivery_order: min_delivery_order || "None"
     });
 
     // Synchronize multi-tenant registry in memory immediately

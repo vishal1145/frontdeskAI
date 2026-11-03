@@ -175,6 +175,16 @@ export default defineAgent({
 
     console.log(`[LIVEKIT MULTI-TENANT] Active Clinic Context: ${clinic.clinic_name} (Receptionist: ${clinic.receptionist_name || "Neha"})`);
 
+    const isMedicalStore = (clinic as any).business_type === "medical_store" || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic.clinic_name);
+
+    // Repeat Caller Recognition: Query past orders / appointments for this caller phone
+    const callerProfile = await dbService.getCallerProfile(clinic.clinic_id, callerPhone, isMedicalStore);
+    if (callerProfile.isRepeatCaller && callerProfile.customerName) {
+      console.log(`\n⭐ [REPEAT CALLER RECOGNIZED] Phone: ${callerPhone} | Name: "${callerProfile.customerName}" | Clinic/Store: "${clinic.clinic_name}"`);
+    } else {
+      console.log(`\n👤 [NEW CALLER] Phone: ${callerPhone} | Clinic/Store: "${clinic.clinic_name}"`);
+    }
+
     let egressId: string | null = null;
 
     // Launch Dual-Side Audio Egress Recording if AWS S3 & LiveKit Egress is configured
@@ -237,7 +247,7 @@ export default defineAgent({
     const bookAppointmentTool = llm.tool({
       description: "Books the clinic appointment when patient confirms slot and name. Directly persists into clinic database.",
       parameters: z.object({
-        patient_name: z.string().describe("Patient full name"),
+        patient_name: z.string().optional().describe("Patient full name. If repeat patient name is already known from profile, this can be omitted"),
         patient_phone: z.string().optional().describe("Patient 10-digit phone number if provided"),
         slot_iso_timestamp: z.string().describe("ISO timestamp of the chosen slot"),
         service_type: z.string().describe("Reason for visit e.g. General Consultation, Root Canal Treatment"),
@@ -245,9 +255,13 @@ export default defineAgent({
       }),
       execute: async (args) => {
         console.log(`[LIVEKIT TOOL] book_appointment:`, args);
-        const resolvedPhone = args.patient_phone || callerPhone || clinic.contact_phone;
+        const isValidPhone = (p?: string) => Boolean(p && p.replace(/[^0-9]/g, "").length >= 10);
+        const resolvedPatientName = args.patient_name || callerProfile.customerName || "Patient";
+        const resolvedPhone = isValidPhone(args.patient_phone)
+          ? args.patient_phone!
+          : (isValidPhone(callerPhone) ? callerPhone : clinic.contact_phone);
         const result = await executeBookAppointment({
-          patient_name: args.patient_name,
+          patient_name: resolvedPatientName,
           patient_phone: resolvedPhone,
           slot_iso_timestamp: args.slot_iso_timestamp,
           service_type: args.service_type,
@@ -258,7 +272,7 @@ export default defineAgent({
         // Trigger WhatsApp & SMS notification asynchronously
         if (result.status === "confirmed") {
           dispatchPostCallNotifications({
-            patientName: args.patient_name,
+            patientName: resolvedPatientName,
             patientPhone: resolvedPhone,
             doctorName: result.doctor_name,
             clinicName: clinic.clinic_name,
@@ -271,6 +285,61 @@ export default defineAgent({
         }
 
         return JSON.stringify(result);
+      }
+    });
+
+    let activeMedicalOrderId: string | null = null;
+
+    const noteMedicineOrderTool = llm.tool({
+      description: "Notes down or updates a customer's medicine order or inquiry for store pickup or home delivery. Directly records or updates customer name, phone, medicines, order type (home_delivery or store_pickup), and delivery address. If the customer subsequently clarifies that they need home delivery instead of pickup or provides/changes their address, call this tool again to update the active order.",
+      parameters: z.object({
+        customer_name: z.string().optional().describe("Customer or patient full name. If repeat customer name is already known from profile, this can be omitted"),
+        customer_phone: z.string().optional().describe("Customer contact phone number"),
+        medicines_list: z.string().describe("List of medicines and quantities requested, e.g. 'Dolo 650 1 strip, Benadryl Syrup 1 bottle'"),
+        order_type: z.enum(["home_delivery", "store_pickup"]).describe("Whether the customer wants home delivery or in-store pickup"),
+        delivery_address: z.string().optional().describe("Delivery address if home delivery requested"),
+        notes: z.string().optional().describe("Doctor prescription details or special instructions")
+      }),
+      execute: async (args) => {
+        console.log(`[LIVEKIT TOOL] note_medicine_order:`, args);
+        const isValidPhone = (p?: string) => Boolean(p && p.replace(/[^0-9]/g, "").length >= 10);
+        const resolvedCustomerName = args.customer_name || callerProfile.customerName || "Customer";
+        const resolvedPhone = isValidPhone(args.customer_phone)
+          ? args.customer_phone!
+          : (isValidPhone(callerPhone) ? callerPhone : clinic.contact_phone);
+        const resolvedDeliveryAddress = args.delivery_address || (args.order_type === "home_delivery" ? callerProfile.savedAddress : undefined);
+        const nowIso = new Date().toISOString();
+        const displayType = args.order_type === "home_delivery" ? "Home Delivery" : "Store Pickup";
+        const result = await dbService.createMedicalOrderInDb({
+          order_id: activeMedicalOrderId || undefined,
+          store_id: clinic.clinic_id,
+          customer_name: resolvedCustomerName,
+          customer_phone: resolvedPhone,
+          medicines: args.medicines_list,
+          order_type: args.order_type,
+          delivery_address: resolvedDeliveryAddress,
+          notes: args.notes
+        });
+
+        activeMedicalOrderId = result.order_id;
+
+        dispatchPostCallNotifications({
+          patientName: resolvedCustomerName,
+          patientPhone: resolvedPhone,
+          doctorName: "Pharmacist Team",
+          clinicName: clinic.clinic_name,
+          clinicAddress: clinic.address,
+          slotIsoTimestamp: nowIso,
+          displayTime: displayType,
+          bookingId: result.order_id || "ORD-PENDING",
+          deviceType: "smartphone"
+        }).catch((err) => console.error("[LIVEKIT POST-ORDER DISPATCH ERROR]", err.message));
+
+        return JSON.stringify({
+          status: "confirmed",
+          order_id: result.order_id,
+          message: `Order noted successfully for ${resolvedCustomerName}. Type: ${displayType}. Medicines: ${args.medicines_list}.${args.order_type === "home_delivery" ? ` Delivery Address: ${resolvedDeliveryAddress || 'Provided'}.` : ''} Pharmacist will verify prescription and confirm stock.`
+        });
       }
     });
 
@@ -420,7 +489,7 @@ export default defineAgent({
 
     const endCallTool = llm.tool({
       description:
-        "Hangs up and disconnects the live phone call. Call this IMMEDIATELY after saying your warm farewell when the conversation has ended (e.g. caller says 'bye', 'thank you', 'dhanyawad', 'bas itna hi', 'theek hai', 'aur kuch nahi', OR after appointment confirmation when patient has no further questions).",
+        "Hangs up and disconnects the live phone call. Call this ONLY after saying your warm farewell when the conversation has completely ended and caller is saying goodbye (e.g. caller says 'bye', 'thank you', 'dhanyawad', 'bas itna hi', 'phone rakhta hoon', 'kuch nahi chahiye'). STRICT SAFETY: NEVER call this tool if the caller is correcting order or appointment details, clarifying address or delivery, asking another question, or if 'nahi' is used as an objection or correction (e.g. 'nahi address to pucha hi nahi', 'nahi ye galat hai', 'nahi suniye').",
       parameters: z.object({
         reason: z.string().describe("Reason for hanging up e.g. caller_farewell, appointment_confirmed, user_ended")
       }),
@@ -478,7 +547,99 @@ export default defineAgent({
       ? clinic.services.slice(0, 3).map((s: any) => (typeof s === "string" ? s : (s?.name || ""))).filter(Boolean).join(", ")
       : "General Consultation";
 
-    const systemInstructions = `
+    const deliveryPolicyText = (clinic as any).delivery_available !== false
+      ? `Home Delivery is AVAILABLE for local orders (Min Order: ${(clinic as any).min_delivery_order || "None"}).`
+      : `In-Store Pickup ONLY. Home delivery is currently not provided.`;
+
+    const callerContextText = callerProfile.isRepeatCaller && callerProfile.customerName
+      ? `
+# REPEAT CALLER IDENTIFIED (VIP RETURNING CUSTOMER/PATIENT):
+- Recognized Returning Caller: YES
+- Customer / Patient Name: ${callerProfile.customerName}
+- Caller Phone: ${callerPhone}
+${callerProfile.savedAddress ? `- Saved Delivery Address: "${callerProfile.savedAddress}"` : ""}
+${callerProfile.lastOrder ? `- Previous Order Record: ${callerProfile.lastOrder.medicines} (Status: ${callerProfile.lastOrder.status}, Type: ${callerProfile.lastOrder.order_type}, Date: ${callerProfile.lastOrder.created_at})` : ""}
+${callerProfile.lastAppointment ? `- Previous Appointment Record: Dr. ${callerProfile.lastAppointment.doctor_name} (${callerProfile.lastAppointment.display_time}, Status: ${callerProfile.lastAppointment.status})` : ""}
+
+CRITICAL RETURNING CALLER RULES:
+1. Address the caller respectfully by their name: "${callerProfile.customerName} ji".
+2. DO NOT ask for their name! You already know they are "${callerProfile.customerName}".
+3. If they ask about their past order or appointment: Give them the status directly from the record above.
+4. If placing an order or appointment: Proceed directly without asking for their name again.
+${callerProfile.savedAddress ? `5. For home delivery: Confirm their saved address ("Kya aapko pehle wale address '${callerProfile.savedAddress}' par hi delivery chahiye?"). If yes, do not make them re-say it!` : ""}
+`
+      : `
+# CALLER CONTEXT:
+- Returning Caller: NO (First-time or Unrecognized Caller)
+- Phone: ${callerPhone}
+- Ask for customer's full name when taking order or booking appointment.
+`;
+
+    const systemInstructions = isMedicalStore ? `
+# ROLE & IDENTITY (MEDICAL STORE / PHARMACY ASSISTANT)
+You are ${receptionistName}, the warm, polite, and highly efficient assistant at ${clinic.clinic_name} (a licensed Medical Store / Pharmacy).
+You are on a live telephone call with a customer who needs medicines, health products, or store information.
+
+# REAL-TIME DYNAMIC MEDICAL STORE CONTEXT
+- Current Date & Time: ${dateString}, ${timeString} (IST, Asia/Kolkata)
+- Store Name: ${clinic.clinic_name}
+- Store Address: ${clinic.address}
+- Working Hours: ${clinic.working_hours}
+- WhatsApp / Phone Number: ${clinic.contact_phone}
+- Home Delivery Policy: ${deliveryPolicyText}
+- Medicine Categories & Offerings:
+${servicesListText}
+
+${callerContextText}
+
+# CRITICAL WORKFLOW & BEHAVIOR RULES (MEDICAL STORE):
+1. MEDICINE INQUIRIES & ORDERS:
+   - When a caller asks if a medicine is available (e.g., "Dolo 650 hai?", "Cough syrup milega?"):
+     NEVER claim or guarantee exact stock without noting it. Ask for the quantity/strip needed.
+     Ask: "Ji bilkul, main note kar leti hoon. Aapko store se pick karna hai ya home delivery chahiye?"
+   - Determining Pickup vs Home Delivery:
+     * If Home Delivery is requested: You MUST ask for their full name, phone number, AND complete delivery address BEFORE finalizing the order!
+       Ask: "Ji bilkul! Home delivery ke liye kripya apna shubh naam aur delivery address bata dijiye."
+     * If In-Store Pickup is requested: Ask for their name and phone number.
+   - Once customer specifies name, medicine list, and delivery choice (including address if home delivery), call 'noteMedicineOrder'.
+   - Confirm to customer: "Maine aapka order note kar liya hai. Hamare pharmacist verify karke aapko update kar denge. Kya aapko aur kuch chahiye?"
+   - CORRECTION & CLARIFICATION HANDLING (STRICT):
+     * If customer says: "Nahi, address toh poocha hi nahi", "Nahi mujhe store pickup nahi home delivery chahiye", or provides/changes address:
+       DO NOT hang up! Say: "Oh, kripya apna delivery address bata dijiye, main abhi update kar deti hoon."
+       Immediately call 'noteMedicineOrder' with order_type='home_delivery' and the delivery_address!
+
+2. PRESCRIPTION / PARCHA (STRICT SAFETY):
+   - For antibiotics, Schedule H, sleeping pills, or restricted drugs:
+     Inform caller in Hindi: "Ji, doctor ka prescription (parcha) hamare WhatsApp number (${clinic.contact_phone}) par bhej dijiye. Parcha check karke dawai pack kar di jayegi."
+     In English: "Please send your doctor's prescription to our WhatsApp number (${clinic.contact_phone})."
+
+3. STORE TIMINGS & LOCATION:
+   - If asked "Dukan kab khulti hai?", "Timing kya hai?":
+     "Hamara store ${clinic.working_hours} khula rehta hai."
+   - If asked "Dukan kahan par hai?", "Address kya hai?":
+     "Hamara store ${clinic.address} par sthit hai."
+
+4. HOME DELIVERY:
+   - If asked about home delivery:
+     ${(clinic as any).delivery_available !== false ? `"Ji haan, hamare yahan home delivery ki suvidha uplabdh hai. Kripya apna pata aur dawaiyon ki list bata dein."` : `"Maaf kijiye, abhi home delivery uplabdh nahi hai, aap store par aakar dawai le sakte hain."`}
+
+5. ESCALATION & PHARMACIST CALL TRANSFER:
+   - NEVER give medical dosage instructions, diagnose illness, or recommend substitute drugs yourself.
+   - If customer asks: "Dawai kitni baar leni hai?", "Iska substitute kya hai?", or wants to speak to the chemist:
+     Say: "Main aapki call hamare pharmacist ko transfer kar rahi hoon, ek second line par rahiye."
+     Immediately invoke 'transferCall'.
+
+6. SCOPE BOUNDARIES:
+   - Do NOT talk about doctor appointments unless specifically asked.
+   - Refuse non-pharmacy discussions politely: "Main sirf medical store aur dawaiyon ke order me madad kar sakti hoon."
+
+7. BILINGUAL PREFERENCE (HINDI & ENGLISH):
+   - You greet with: "Namaste, ${clinic.clinic_name}! Main ${receptionistName} bol rahi hoon. Aap Hindi me baat karenge ya English me?"
+   - If caller selects or speaks English (e.g. "English", "In English please", "Hello"):
+     Converse fluently in polite, clear English. (e.g. "Sure! Welcome to ${clinic.clinic_name}. What medicine do you need and would you prefer store pickup or home delivery?")
+   - If caller selects or speaks Hindi / Hinglish (e.g. "Hindi", "Haanji", "Dawai chahiye"):
+     Converse warmly in natural Hindi / Hinglish. (e.g. "Ji bilkul! Kahiye, kaunsi dawai chahiye aur kitni quantity?")
+` : `
 # ROLE & IDENTITY (DYNAMIC MULTI-TENANT CLINIC RECEPTIONIST)
 You are ${receptionistName}, an experienced, polite, warm, and highly professional clinic receptionist at ${clinic.clinic_name}.
 You are on a live telephone call with a patient.
@@ -495,6 +656,8 @@ All clinic information below is DYNAMIC and specific to this clinic. Always use 
 ${doctorsListText}
 - Services & Treatments Provided:
 ${servicesListText}
+
+${callerContextText}
 
 # CRITICAL RULE 1: ANSWER QUESTIONS DIRECTLY & NEVER ASSUME TREATMENTS
 1. NEVER INVENT OR GUESS TREATMENTS (STRICT):
@@ -606,24 +769,27 @@ ${servicesListText}
      In English: "Your appointment is confirmed! Details have been sent via WhatsApp and SMS. Is there anything else I can help you with?"
 
 # CONVERSATION COMPLETION & AUTOMATIC HANGUP RULES (CRITICAL)
-You have a tool named 'endCall' that disconnects the live phone line. You MUST use this tool to hang up automatically as soon as the conversation is finished, saving the patient and clinic unnecessary phone call minutes.
+You have a tool named 'endCall' that disconnects the live phone line. You MUST use this tool to hang up automatically ONLY when the conversation has genuinely finished.
 
 1. INTENT RECOGNITION (WHEN TO END CALL):
-   - Caller expresses farewell, completion, or satisfaction:
-     * Hindi / Hinglish: "Theek hai", "Dhanyawad", "Thank you", "Bye", "Bas itna hi", "Kuch nahi chahiye", "Main phone rakhta hoon / rakhti hoon", "Ok bye", "Alvida", "Nahi bas", "Sab ho gaya".
-     * English: "Thank you, bye", "That's all", "That is all I needed", "Nothing else, thanks", "Goodbye", "I'm good".
-   - After Appointment Confirmation:
-     * If the patient confirms they have no more questions (e.g. "Nahi", "No", "Nahi bas", "Sab theek hai", "Thank you", "Bye"):
-       Immediately give your warm closing farewell AND call 'endCall'!
+   - Caller expresses clear farewell, satisfaction, or departure:
+     * Hindi / Hinglish: "Dhanyawad, phone rakhta hoon", "Bas itna hi chahiye tha, thank you", "Bye bye", "Kuch nahi chahiye, dhanyawad", "Sab ho gaya, bye", "Theek hai rakh raha hoon".
+     * English: "Thank you, that is all", "Nothing else, thanks, bye", "Goodbye", "Have a good day".
+
+   - CRITICAL GUARDRAIL ON "NAHI" / "NO" (NEVER HANG UP ON CORRECTIONS):
+     * If the caller says "Nahi" in response to "Kya aur kuch madad chahiye?" OR to correct/complain (e.g., "Nahi, address toh poocha nahi", "Nahi, delivery karani hai", "Nahi ye galat hai", "Nahi ruko", "Nahi suno"):
+       STRICTLY PROHIBITED: DO NOT invoke 'endCall'! DO NOT say goodbye!
+       Instead, listen carefully to what they need, address their concern, or take their address/correction!
+     * ONLY call 'endCall' if "Nahi" is explicitly paired with complete satisfaction/goodbye, such as: "Nahi, aur kuch nahi chahiye, shukriya, bye."
 
 2. HOW TO HANG UP:
    - ALWAYS speak a warm, polite closing goodbye in the same turn while calling 'endCall'.
    - STRICT LANGUAGE RULE FOR CLOSING GOODBYE:
-     * In Hindi / Hinglish (Even if caller says "Thank you", "Ok bye", "Thanks"):
+     * In Hindi / Hinglish:
        "Dhanyawad! ${clinic.clinic_name} me call karne ke liye shukriya. Namaste, aapka din shubh rahe!"
      * In English (ONLY if the entire call was conducted in English):
        "Thank you for calling ${clinic.clinic_name}! Have a wonderful day. Goodbye!"
-   - Invoke 'endCall' with reason='caller_said_bye' or reason='appointment_completed'.
+   - Invoke 'endCall' with reason='caller_said_bye' or reason='order_completed_user_left'.
 
 # NOISE & CARRIER AD TOLERANCE
 - If caller audio contains promotional carrier ads, credit cards, banking IVR, or distorted background sound:
@@ -639,7 +805,11 @@ You have a tool named 'endCall' that disconnects the live phone line. You MUST u
 
     const agent = new voice.Agent({
       instructions: systemInstructions,
-      tools: {
+      tools: isMedicalStore ? {
+        noteMedicineOrder: noteMedicineOrderTool,
+        transferCall: transferCallTool,
+        endCall: endCallTool
+      } : {
         checkAvailability: checkAvailabilityTool,
         bookAppointment: bookAppointmentTool,
         transferCall: transferCallTool,
@@ -834,8 +1004,14 @@ You have a tool named 'endCall' that disconnects the live phone line. You MUST u
 
     await session.start({ agent, room: ctx.room });
 
+    const initialGreeting = callerProfile.isRepeatCaller && callerProfile.customerName
+      ? (isMedicalStore
+          ? `Say warmly and politely in under 4 seconds in Hindi: "Namaste ${callerProfile.customerName} ji! ${clinic.clinic_name} me aapka swagat hai. Aap Hindi me baat karenge ya English me? Kya pichle order ka status janna hai ya naya order dena hai?"`
+          : `Say warmly and politely in under 4 seconds in Hindi: "Namaste ${callerProfile.customerName} ji! ${clinic.clinic_name} me aapka swagat hai. Aap Hindi me baat karenge ya English me? Kya doctor appointment ke baare me baat karni hai ya koi jankari chahiye?"`)
+      : `Say warmly and clearly in under 3 seconds: "Namaste, ${clinic.clinic_name}! Main ${receptionistName} bol rahi hoon. Aap Hindi me baat karenge ya English me?"`;
+
     await session.generateReply({
-      instructions: `Say warmly and clearly in under 3 seconds: "Namaste, ${clinic.clinic_name}! Main ${receptionistName} bol rahi hoon. Aap Hindi me baat karenge ya English me?"`
+      instructions: initialGreeting
     });
   } catch (err: any) {
     if (err.message?.includes("Room disconnected") || err.message?.includes("closed") || err.message?.includes("waiting for participant")) {

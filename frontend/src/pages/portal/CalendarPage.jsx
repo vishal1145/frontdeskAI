@@ -5,6 +5,7 @@ import {
   Plus, X, RefreshCw 
 } from 'lucide-react';
 import { useClinic } from '../../context/ClinicContext';
+import CustomSelect from '../../components/CustomSelect';
 
 export default function CalendarPage() {
   const {
@@ -56,18 +57,22 @@ export default function CalendarPage() {
 
   if (!clinic) return null;
 
+  const isMedical = clinic?.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic?.clinic_name || '');
+
   return (
-    <section className="cx-panel-enter space-y-6" role="region" aria-label="Clinic Calendar & Scheduling Control">
+    <section className="cx-panel-enter space-y-6" role="region" aria-label={isMedical ? "Store Calendar & Timings" : "Clinic Calendar & Scheduling Control"}>
       {/* 1. MASTER FEATURE TOGGLE: ON / OFF SCHEDULING */}
       <div className="bg-white border border-slate-900/[0.09] rounded-14 shadow-[0_1px_2px_theme(colors.ink.DEFAULT_/_0.04),0_10px_28px_-18px_theme(colors.blue.800_/_0.22)]">
         <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-6 sm:py-4.5 border-b border-slate-900/[0.09]">
           <div>
             <h2 className="text-18 font-semibold tracking-tight-10 text-ink flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-blue-600" />
-              Clinic Calendar &amp; Scheduling Control
+              {isMedical ? 'Store Calendar & Timings' : 'Clinic Calendar & Scheduling Control'}
             </h2>
             <p className="mt-0.5 text-13 text-ink-muted">
-              Configure live time slots, monitor patient bookings, and enable/disable automated appointment scheduling.
+              {isMedical
+                ? 'Configure store operating hours, monitor customer order pickups, and manage scheduling.'
+                : 'Configure live time slots, monitor patient bookings, and enable/disable automated appointment scheduling.'}
             </p>
           </div>
 
@@ -133,7 +138,7 @@ export default function CalendarPage() {
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-blue-600" />
-                Select Consultation Date
+                {isMedical ? 'Select Order / Pickup Date' : 'Select Consultation Date'}
               </h3>
               <div className="flex items-center gap-1">
                 <button
@@ -181,23 +186,24 @@ export default function CalendarPage() {
             {/* Doctor Selection Filter */}
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/70 space-y-2">
               <label htmlFor="doc_filter" className="block text-xs font-semibold text-slate-700">
-                Filter by Attending Doctor:
+                {isMedical ? 'Filter by Pharmacist / Staff:' : 'Filter by Attending Doctor:'}
               </label>
-              <select
+              <CustomSelect
                 id="doc_filter"
                 value={selectedDoctorFilter}
-                onChange={(e) => setSelectedDoctorFilter(e.target.value)}
-                className="w-full h-9 px-3.5 bg-white border border-slate-900/[0.16] rounded-10 text-xs text-ink transition-[border-color,box-shadow] duration-150 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-              >
-                <option value="">All Doctors</option>
-                {(clinic.doctors || []).map((doc, idx) => (
-                  <option key={idx} value={doc.name}>
-                    {doc.name} ({doc.timings || 'Regular Hours'})
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedDoctorFilter}
+                options={[
+                  { value: '', label: isMedical ? 'All Pharmacists / Staff' : 'All Doctors' },
+                  ...(clinic.doctors || []).map((doc) => ({
+                    value: doc.name,
+                    label: `${doc.name} (${doc.timings || 'Regular Hours'})`
+                  }))
+                ]}
+                className="w-full h-9 px-3.5 bg-white border border-slate-900/[0.16] rounded-10 text-xs text-ink transition-[border-color,box-shadow] duration-150 focus:outline-none hover:border-slate-400 cursor-pointer flex items-center justify-between gap-2"
+                menuClassName="w-full"
+              />
               <p className="text-11 text-slate-500">
-                Clinic Hours: <strong>{clinic.working_hours}</strong> | Slot Duration: <strong>{clinic.slot_duration_minutes || 30} mins</strong>
+                {isMedical ? 'Store Hours:' : 'Clinic Hours:'} <strong>{clinic.working_hours}</strong> | Slot Duration: <strong>{clinic.slot_duration_minutes || 30} mins</strong>
               </p>
             </div>
           </div>
@@ -218,7 +224,7 @@ export default function CalendarPage() {
                   </span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {selectedDoctorFilter || 'All Registered Doctors'}
+                  {selectedDoctorFilter || (isMedical ? 'All Registered Pharmacists & Staff' : 'All Registered Doctors')}
                 </p>
               </div>
 
@@ -330,7 +336,7 @@ export default function CalendarPage() {
                             className="w-full text-xs font-semibold py-1 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                           >
                             <Plus className="w-3 h-3" />
-                            <span>Book Patient</span>
+                            <span>{isMedical ? 'Book Order / Slot' : 'Book Patient'}</span>
                           </button>
                         ) : (
                           <span className="text-11 text-slate-400 italic">Slot Expired</span>
@@ -352,7 +358,7 @@ export default function CalendarPage() {
             <div className="p-4 sm:p-5 border-b border-slate-200/70 flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-base text-slate-900">
-                  Book Patient Appointment
+                  {isMedical ? 'Create Customer Order / Booking' : 'Book Patient Appointment'}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Slot: <strong>{selectedSlotForBooking.display_time}</strong> on{' '}
@@ -377,12 +383,12 @@ export default function CalendarPage() {
             <form onSubmit={handleDirectBookSubmit} className="p-5 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Patient Full Name *
+                  {isMedical ? 'Customer Full Name *' : 'Patient Full Name *'}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Ramesh Kumar"
+                  placeholder={isMedical ? "e.g. Ramesh Kumar" : "e.g. Ramesh Kumar"}
                   value={bookingPatientName}
                   onChange={(e) => setBookingPatientName(e.target.value)}
                   className="w-full h-10 px-3 bg-white border border-slate-900/[0.16] rounded-10 text-sm text-ink transition-[border-color,box-shadow] duration-150 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
@@ -392,7 +398,7 @@ export default function CalendarPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Patient Contact Mobile *
+                  {isMedical ? 'Customer Contact Mobile *' : 'Patient Contact Mobile *'}
                 </label>
                 <input
                   type="tel"
@@ -406,44 +412,42 @@ export default function CalendarPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Doctor
+                  {isMedical ? 'Pharmacist / Attending Staff' : 'Doctor'}
                 </label>
-                <select
+                <CustomSelect
                   value={bookingDoctor}
-                  onChange={(e) => {
-                    setBookingDoctor(e.target.value);
-                    setBookingService(getDoctorServices(e.target.value)[0] || 'General Consultation');
+                  onChange={(val) => {
+                    setBookingDoctor(val);
+                    setBookingService(getDoctorServices(val)[0] || (isMedical ? 'General Medicine' : 'General Consultation'));
                   }}
-                  className="w-full h-10 px-3 bg-white border border-slate-900/[0.16] rounded-10 text-sm text-ink transition-[border-color,box-shadow] duration-150 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-                >
-                  {(clinic.doctors || []).map((doc, idx) => (
-                    <option key={idx} value={doc.name}>
-                      {doc.name}
-                    </option>
-                  ))}
-                </select>
+                  options={(clinic.doctors || []).map((doc) => ({
+                    value: doc.name,
+                    label: doc.name
+                  }))}
+                  className="w-full h-10 px-3 bg-white border border-slate-900/[0.16] rounded-10 text-sm text-ink transition-[border-color,box-shadow] duration-150 focus:outline-none hover:border-slate-400 cursor-pointer flex items-center justify-between gap-2"
+                  menuClassName="w-full"
+                />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Reason for Visit / Procedure
+                  {isMedical ? 'Requested Product / Service' : 'Reason for Visit / Procedure'}
                 </label>
                 {getDoctorServices(bookingDoctor).length > 0 ? (
-                  <select
+                  <CustomSelect
                     value={bookingService}
-                    onChange={(e) => setBookingService(e.target.value)}
-                    className="w-full h-10 px-3 bg-white border border-slate-900/[0.16] rounded-10 text-sm text-ink transition-[border-color,box-shadow] duration-150 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                  >
-                    {getDoctorServices(bookingDoctor).map((service) => (
-                      <option key={service} value={service}>
-                        {service}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setBookingService}
+                    options={getDoctorServices(bookingDoctor).map((service) => ({
+                      value: service,
+                      label: service
+                    }))}
+                    className="w-full h-10 px-3 bg-white border border-slate-900/[0.16] rounded-10 text-sm text-ink transition-[border-color,box-shadow] duration-150 focus:outline-none hover:border-slate-400 cursor-pointer flex items-center justify-between gap-2"
+                    menuClassName="w-full"
+                  />
                 ) : (
                   <input
                     type="text"
-                    placeholder="e.g. Routine Consultation, Teeth Cleaning"
+                    placeholder={isMedical ? "e.g. Prescription medicines, First Aid items" : "e.g. Routine Consultation, Teeth Cleaning"}
                     value={bookingService}
                     onChange={(e) => setBookingService(e.target.value)}
                     className="w-full h-10 px-3 bg-white border border-slate-900/[0.16] rounded-10 text-sm text-ink transition-[border-color,box-shadow] duration-150 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
