@@ -48,7 +48,7 @@ function CallConsole({ feature }) {
   const done = step > feature.script.length;
 
   return (
-    <div className="rounded-3xl p-5 sm:p-6 min-h-[27rem] flex flex-col bg-tint-blue-38 border border-white/10 shadow-2xl relative overflow-hidden" aria-label={`Example call: ${feature.title}`}>
+    <div className="!rounded-xl rounded-xl p-5 sm:p-6 min-h-[27rem] flex flex-col bg-tint-blue-38 border border-white/10 shadow-2xl relative overflow-hidden" aria-label={`Example call: ${feature.title}`}>
       <div className="flex items-center gap-3 pb-4 border-b border-white/[0.08]">
         <span className="grid place-items-center w-10 h-10 flex-none rounded-xl text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[0_0_0_4px_theme(colors.blue.500_/_0.15),0_8px_18px_-8px_theme(colors.blue.500_/_0.8)] [&>svg]:w-[1.15rem] [&>svg]:h-[1.15rem]"><Icon /></span>
         <span className="flex flex-col min-w-0 leading-tight">
@@ -85,7 +85,7 @@ function CallConsole({ feature }) {
         })}
       </ol>
 
-      <div className={`rounded-2xl p-3.5 sm:p-4 bg-white/[0.05] transition-all duration-500 ${done ? 'opacity-100 translate-y-0 shadow-[inset_0_0_0_1px_theme(colors.tint.blue.28_/_0.5),0_0_26px_-10px_theme(colors.blue.500_/_0.9)]' : 'opacity-35 translate-y-1.5 shadow-[inset_0_0_0_1px_theme(colors.white_/_0.1)]'}`}>
+      <div className={`!rounded-xl rounded-xl p-3.5 sm:p-4 bg-white/[0.05] transition-all duration-500 ${done ? 'opacity-100 translate-y-0 shadow-[inset_0_0_0_1px_theme(colors.tint.blue.28_/_0.5),0_0_26px_-10px_theme(colors.blue.500_/_0.9)]' : 'opacity-35 translate-y-1.5 shadow-[inset_0_0_0_1px_theme(colors.white_/_0.1)]'}`}>
         <div className="flex items-center gap-2 mb-2.5 text-13 font-semibold text-white [&>svg]:w-4 [&>svg]:h-4 [&>svg]:text-blue-400">
           <CheckCircle2 />
           {feature.result.title}
@@ -112,10 +112,10 @@ export default function FeatureDetail({ slug, setActivePage }) {
   const others = FEATURES.filter((f) => f.slug !== feature.slug);
 
   return (
-    <div ref={rootRef} className="fdx w-full pt-10 sm:pt-14 lg:pt-16 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div ref={rootRef} className="fdx w-full pt-6 sm:pt-7 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
 
       {/* Hero */}
-      <section className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16 items-center mt-8 lg:mt-10">
+      <section className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16 items-start">
         <div className="[container-type:inline-size] space-y-5">
           <div className="eyebrow" data-reveal>
             <span>Feature {String(index + 1).padStart(2, '0')} / {String(FEATURES.length).padStart(2, '0')}</span>
@@ -156,7 +156,7 @@ export default function FeatureDetail({ slug, setActivePage }) {
         </div>
         <ol className="relative grid gap-4 md:grid-cols-3 md:gap-5 md:before:content-[''] md:before:absolute md:before:top-[2.85rem] md:before:left-10 md:before:right-10 md:before:h-[1px] md:before:bg-gradient-to-r md:before:from-blue-600/35 md:before:via-rim/50 md:before:to-blue-600/35 md:before:-z-10">
           {feature.steps.map((s, i) => (
-            <li key={s.title} className="p-7 glass rounded-2xl" data-reveal style={{ '--d': `${i * 120}ms` }}>
+            <li key={s.title} className="p-7 glass !rounded-xl rounded-xl" data-reveal style={{ '--d': `${i * 120}ms` }}>
               <span className="grid place-items-center w-9 h-9 rounded-full text-13 font-semibold text-white bg-gradient-to-b from-blue-500 to-blue-600 shadow-[0_0_0_5px_theme(colors.blue.500_/_0.12),0_8px_18px_-8px_theme(colors.blue.600_/_0.8)]">{String(i + 1).padStart(2, '0')}</span>
               <h3 className="mt-5 text-lg font-semibold tracking-tight-15 text-ink">{s.title}</h3>
               <p className="mt-2 text-14-5 leading-relaxed text-slate-600">{s.text}</p>
@@ -175,7 +175,7 @@ export default function FeatureDetail({ slug, setActivePage }) {
           {feature.capabilities.map((c, i) => {
             const CapIcon = c.icon;
             return (
-              <div key={c.title} className="p-6 glass glass-hover rounded-2xl transition-all duration-350 hover:-translate-y-1" data-reveal style={{ '--d': `${i * 90}ms` }}>
+              <div key={c.title} className="p-6 glass glass-hover !rounded-xl rounded-xl transition-all duration-350 hover:-translate-y-1" data-reveal style={{ '--d': `${i * 90}ms` }}>
                 <span className="icon-tile w-12 h-12"><CapIcon className="w-5 h-5" /></span>
                 <h3 className="mt-5 text-lg font-semibold tracking-tight-15 text-ink">{c.title}</h3>
                 <p className="mt-2 text-14-5 leading-relaxed text-slate-600">{c.text}</p>
@@ -186,7 +186,7 @@ export default function FeatureDetail({ slug, setActivePage }) {
       </section>
 
       {/* Why it matters */}
-      <section className="relative overflow-hidden mt-20 sm:mt-28 p-6 sm:p-8 md:p-10 rounded-28 panel-ink after:content-[''] after:absolute after:-top-[40%] after:-right-[10%] after:w-[28rem] after:h-[28rem] after:rounded-full after:bg-[radial-gradient(closest-side,theme(colors.rim_/_0.18),transparent)] after:pointer-events-none" data-reveal>
+      <section className="relative overflow-hidden mt-20 sm:mt-28 p-6 sm:p-8 md:p-10 !rounded-xl rounded-xl panel-ink after:content-[''] after:absolute after:-top-[40%] after:-right-[10%] after:w-[28rem] after:h-[28rem] after:rounded-full after:bg-[radial-gradient(closest-side,theme(colors.rim_/_0.18),transparent)] after:pointer-events-none" data-reveal>
         <div>
           <span className="text-11 font-semibold tracking-wide-120 uppercase text-tint-cyan-9">Why it matters</span>
           <h2 className="mt-3 max-w-[34rem] text-fluid-1 font-medium leading-tight tracking-tight-25 text-white">What {feature.title} changes for your front desk</h2>
@@ -220,7 +220,7 @@ export default function FeatureDetail({ slug, setActivePage }) {
                 key={f.slug}
                 type="button"
                 onClick={() => setActivePage('feature', f.slug)}
-                className="flex items-start gap-4 p-5 text-left rounded-2xl glass glass-hover group transition-all duration-350 hover:-translate-y-[3px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-[3px]"
+                className="flex items-start gap-4 p-5 text-left !rounded-xl rounded-xl glass glass-hover group transition-all duration-350 hover:-translate-y-[3px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-[3px]"
                 data-reveal
                 style={{ '--d': `${i * 70}ms` }}
               >
@@ -237,7 +237,7 @@ export default function FeatureDetail({ slug, setActivePage }) {
       </section>
 
       {/* Closing CTA */}
-      <section className="flex flex-col gap-6 mt-20 sm:mt-28 p-8 sm:p-12 lg:flex-row lg:items-center lg:justify-between rounded-28! glass" data-reveal>
+      <section className="flex flex-col gap-6 mt-20 sm:mt-28 p-8 sm:p-12 lg:flex-row lg:items-center lg:justify-between !rounded-xl rounded-xl glass" data-reveal>
         <div className="space-y-3">
           <h2 className="section-title-clamp text-ink">See {feature.title} on your own number</h2>
           <p className="lead">Test call forwarding with your existing business number. Zero hardware or SIM cards required.</p>

@@ -58,7 +58,12 @@ function hero(env, ctx) {
   const ctas = qa('.hr-actions > *');
   const chips = qa('.hr-actions .btn-chip');
   const strip = root.querySelector('[data-anim="marquee-ribbon"]');
-  env.cleanups.push(() => { gsap.killTweensOf(heroVoice); Object.assign(heroVoice, RIBBON_REST); });
+  env.cleanups.push(() => {
+    gsap.killTweensOf(heroVoice);
+    Object.assign(heroVoice, RIBBON_REST);
+    if (lines.length) gsap.set(lines, { clearProps: 'transform' });
+    if (title) gsap.set(title, { clearProps: 'opacity,transform' });
+  });
 
   // ── Tactile press feedback for [data-press] controls (mouse, touch, keyboard). `scale` only.
   const MIN_PRESS = 0.15;
@@ -137,19 +142,21 @@ function hero(env, ctx) {
     const d = isDesktop ? 1 : 0.7;
     gsap.timeline({
       defaults: { ease: 'none' },
-      scrollTrigger: { trigger: section, start: 'top top', end: 'bottom top', scrub: 0.8, invalidateOnRefresh: true },
+      scrollTrigger: { trigger: section, start: 'top top', end: 'bottom top', scrub: 0.8 },
     })
-      .to(bg, { y: 120 * d, duration: 1 }, 0)
-      .to(title, { y: -110 * d, duration: 1 }, 0)
-      .to(title, { opacity: 0, duration: 0.3 }, 0.5)
-      .to(ribbon, { y: -50 * d, duration: 1 }, 0)
-      .to(heroVoice, { settle: 1, duration: 1 }, 0)
-      .to(base, { y: -30 * d, duration: 1 }, 0);
+      .fromTo(bg, { y: 0 }, { y: 120 * d, duration: 1 }, 0)
+      .fromTo(title, { y: 0 }, { y: -110 * d, duration: 1 }, 0)
+      .fromTo(title, { opacity: 1 }, { opacity: 0, duration: 0.3 }, 0.5)
+      .fromTo(ribbon, { y: 0 }, { y: -50 * d, duration: 1 }, 0)
+      .fromTo(heroVoice, { settle: 0 }, { settle: 1, duration: 1 }, 0)
+      .fromTo(base, { y: 0 }, { y: -30 * d, duration: 1 }, 0);
     // No global refresh: a new trigger measures itself, and a refresh would cancel in-progress smooth scrolls.
     ScrollTrigger.sort();
   };
 
   if (state.heroPlayed) {
+    gsap.set(lines, { yPercent: 0, rotationX: 0, clearProps: 'transform' });
+    gsap.set(title, { opacity: 1, y: 0 });
     buildScroll();
     return;
   }
@@ -170,7 +177,7 @@ function hero(env, ctx) {
       tl.fromTo(
         lines,
         { yPercent: 115, rotationX: isMobile ? 0 : -40, transformOrigin: '50% 100%' },
-        { yPercent: 0, rotationX: 0, duration: 1.35, stagger: 0.13 },
+        { yPercent: 0, rotationX: 0, duration: 1.35, stagger: 0.13, clearProps: 'transform' },
         0.15
       );
       tl.to(heroVoice, { reveal: 1, duration: 2.3, ease: 'power2.inOut' }, 0.45)
@@ -183,6 +190,8 @@ function hero(env, ctx) {
       if (strip) tl.fromTo(strip, { autoAlpha: 0, y: 24 * m }, { autoAlpha: 1, y: 0, duration: 1.2 }, 1.6);
       tl.eventCallback('onComplete', () => {
         state.heroPlayed = true;
+        gsap.set(title, { opacity: 1 });
+        gsap.set(lines, { yPercent: 0, clearProps: 'transform' });
         ctx.add(buildScroll);
       });
     });
@@ -529,11 +538,10 @@ function cta(env, ctx) {
   }, { start: 'top 75%' });
 }
 
-// ─── Interaction layer: tilt + magnetic (desktop pointers only) ───────────────────────────────
+// ─── Interaction layer: tilt (desktop pointers only) ───────────────────────────────
 function interactions(env) {
   const { root, cleanups } = env;
   root.querySelectorAll('.tilt-card:not(.story-step)').forEach((el) => cleanups.push(attachTilt(el, { max: 5, lift: 14 })));
-  root.querySelectorAll('.magnetic').forEach((el) => cleanups.push(attachMagnetic(el)));
 }
 
 // Built in DOM order so ScrollTrigger offsets (including the pinned story section) resolve correctly.

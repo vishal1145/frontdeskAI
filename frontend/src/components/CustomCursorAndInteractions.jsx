@@ -65,43 +65,10 @@ export default function CustomCursorAndInteractions({ activePage = 'home' }) {
     }
 
     const ctx = gsap.context(() => {
-      // 3. Character Flip Helper for Pill Buttons (.pill, .bf-btn) — only rewrites raw text nodes
-      document.querySelectorAll('.pill, .bf-btn').forEach((b) => {
-        if (b.querySelector('.bf')) return;
-        const textNodes = [...b.childNodes].filter((n) => n.nodeType === 3 && n.nodeValue.trim());
-        if (!textNodes.length) return;
-        const txt = textNodes.map((n) => n.nodeValue).join('').trim();
-        const icon = b.querySelector('svg, i');
-        const iconHtml = icon ? icon.outerHTML : '';
-
-        const makeLayer = (c) =>
-          `<span class="l ${c}">${[...txt]
-            .map((ch, i) => `<span class="ch" style="--i:${i}">${ch === ' ' ? '&nbsp;' : ch}</span>`)
-            .join('')}</span>`;
-
-        b.innerHTML = `<span class="bf">${makeLayer('l1')}${makeLayer('l2')}</span>${iconHtml ? ' ' + iconHtml : ''}`;
-      });
-
       const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-      // 4. Magnetic Buttons (.magnetic, .pill, button) outside the landing-page scope
+      // 5. 3D Tilt Cards with Gentle Lift (.tilt-card, .fc, .pc, .card-hover-lift)
       if (finePointer && !prefersReducedMotion()) {
-        pick('.magnetic, .pill, button').forEach((b) => {
-          on(b, 'mousemove', (e) => {
-            const r = b.getBoundingClientRect();
-            gsap.to(b, {
-              x: (e.clientX - r.left - r.width / 2) * 0.28,
-              y: (e.clientY - r.top - r.height / 2) * 0.38,
-              duration: 0.4,
-              ease: 'power3.out',
-            });
-          });
-          on(b, 'mouseleave', () => {
-            gsap.to(b, { x: 0, y: 0, duration: 0.8, ease: 'elastic.out(1, 0.4)' });
-          });
-        });
-
-        // 5. 3D Tilt Cards with Gentle Lift (.tilt-card, .fc, .pc, .card-hover-lift)
         pick('.tilt-card, .fc, .pc, .card-hover-lift').forEach((c) => {
           on(c, 'mousemove', (e) => {
             const r = c.getBoundingClientRect();

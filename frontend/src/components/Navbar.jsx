@@ -127,7 +127,16 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
 
         {/* Right Action Area */}
         <div className="flex items-center gap-3 shrink-0">
-          {isSuperAdmin ? (
+          {!isPortalOrLogin && (isSuperAdmin || clinicUser) ? (
+            /* On Home / Marketing pages: Clean Dashboard button without dropdown or calendar icon */
+            <button
+              onClick={() => handleNavClick(isSuperAdmin ? 'admin' : 'dashboard')}
+              className="h-nav-control px-3.5 rounded-full text-14-72 font-medium flex items-center gap-1.5 transition-all duration-200 cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Dashboard</span>
+            </button>
+          ) : isSuperAdmin ? (
             <div className="relative">
               <button
                 onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
@@ -196,7 +205,7 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
               {/* Calendar Icon Button */}
               <button
                 onClick={() => handleNavClick('calendar')}
-                className={`h-nav-control w-nav-control rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                className={`h-nav-control w-nav-control rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-95 ${
                   isClinicTabActive('calendar')
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/30'
                     : 'bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-600 border border-slate-200/90 shadow-xs'
@@ -210,7 +219,7 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
               <div className="relative">
                 <button
                   onClick={() => setClinicDropdownOpen(!clinicDropdownOpen)}
-                  className={`h-nav-control px-3 rounded-full text-14-72 font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                  className={`h-nav-control px-3 rounded-full text-14-72 font-medium flex items-center gap-1.5 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 active:scale-95 ${
                     isClinicPage || clinicDropdownOpen
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/30'
                       : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200'
@@ -420,8 +429,8 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
                 className="w-full py-3 px-4 rounded-2xl bg-blue-600 text-white font-bold text-sm flex items-center justify-between shadow-md shadow-blue-500/20"
               >
                 <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  <span>{clinicUser.clinic_name} Portal</span>
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>{isClinicPage ? `${clinicUser.clinic_name} Portal` : 'Dashboard'}</span>
                 </div>
                 <ArrowRight className="w-4 h-4" />
               </button>

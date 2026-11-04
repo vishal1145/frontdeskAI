@@ -183,40 +183,32 @@ body:has(.cx-page) textarea {
   }
 }
 
-/* Eyebrow: sentence-case glass pill with a glowing brand dot (Prevvi pattern) */
+/* Eyebrow: clean typography label (normal text, no chip) */
 .eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: theme('spacing.s-9-6');
+  display: inline-block;
   max-width: 100%;
-  padding: theme('spacing.s-7-2') theme('spacing.s-16') theme('spacing.s-7-2') theme('spacing.s-12-8');
-  border-radius: theme('borderRadius.9999');
-  font-size: theme('fontSize.12-8');
-  font-weight: var(--fd-weight-medium);
-  letter-spacing: 0;
+  padding: 0;
+  border-radius: 0;
+  font-size: theme('fontSize.13');
+  font-weight: var(--fd-weight-semibold);
+  letter-spacing: 0.02em;
   line-height: theme('lineHeight.ratio-130');
-  color: var(--fd-brand-deep);
-  background: linear-gradient(135deg, theme('colors.white / 0.9'), theme('colors.tint.blue.20 / 0.5'));
-  box-shadow: var(--fd-glass-shadow);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  color: var(--fd-brand);
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .eyebrow::before {
-  content: '';
-  flex-shrink: 0;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: theme('borderRadius.9999');
-  background: linear-gradient(135deg, var(--fd-glow), var(--fd-brand));
-  box-shadow: 0 0 0 3px theme('colors.glow / 0.22');
+  display: none;
 }
 
 /* Eyebrow placed on an ink surface */
 .eyebrow-ink {
-  color: theme('colors.blue.200');
-  background: theme('colors.white / 0.06');
-  box-shadow: inset 0 0 0 1px theme('colors.white / 0.12');
+  color: theme('colors.blue.300');
+  background: none;
+  box-shadow: none;
 }
 
 /* Character Flip Hover Animation */
@@ -248,7 +240,7 @@ body:has(.cx-page) textarea {
 a:hover .bf .ch,
 button:hover .bf .ch,
 .pill:hover .bf .ch {
-  transform: translateY(-100%);
+  transform: none;
 }
 
 /* 3D Tilt Card & Card Stagger Entrance */
@@ -347,7 +339,7 @@ button:hover .bf .ch,
 
 .pill:hover .btn-chip svg,
 .pill:focus-visible .btn-chip svg {
-  transform: translateX(2px) rotate(-35deg);
+  transform: translateX(3px);
 }
 
 /* Brand: azure → deep gradient glass */
@@ -355,10 +347,16 @@ button:hover .bf .ch,
   color: theme('colors.white');
   background: linear-gradient(135deg, theme('colors.tint.blue.32') 0%, var(--fd-brand) 48%, var(--fd-brand-deep) 100%);
   box-shadow: inset 0 1px 0 theme('colors.white / 0.35'), inset 0 0 0 1px theme('colors.white / 0.16'), 0 14px 30px -12px theme('colors.blue.600 / 0.6');
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .btn-brand:hover {
-  box-shadow: inset 0 1px 0 theme('colors.white / 0.45'), inset 0 0 0 1px theme('colors.glow / 0.45'), 0 18px 34px -12px theme('colors.blue.600 / 0.7'), 0 0 22px -2px theme('colors.glow / 0.45') !important;
+  transform: translateY(-1.5px);
+  box-shadow: inset 0 1px 0 theme('colors.white / 0.45'), inset 0 0 0 1px theme('colors.glow / 0.45'), 0 18px 34px -10px theme('colors.blue.600 / 0.7'), 0 0 18px -2px theme('colors.glow / 0.35') !important;
+}
+
+.btn-brand:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .btn-brand .btn-chip {
@@ -613,12 +611,16 @@ button:hover .bf .ch,
 
 /* Refined Pill Button & Hover Elevation */
 .pill {
-  /* transform is driven by GSAP (magnetic pull), so it is deliberately not transitioned here */
-  transition: box-shadow 0.45s var(--fd-ease), border-color 0.25s ease, background-color 0.25s ease, opacity 0.25s ease !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease !important;
 }
 
 .pill:hover {
-  box-shadow: 0 12px 28px -6px theme('colors.blue.600 / 0.35');
+  transform: translateY(-1.5px);
+  box-shadow: 0 14px 28px -6px theme('colors.blue.600 / 0.4') !important;
+}
+
+.pill:active {
+  transform: translateY(0) scale(0.98);
 }
 
 /* Feature Card Hover Polish */
@@ -677,6 +679,31 @@ button:hover .bf .ch,
 [data-anim="marquee-ribbon"] {
   /* Content is visible by default; GSAP sets initial opacity:0 on mount */
   /* This prevents content being stuck invisible if GSAP fails */
+}
+
+[data-anim="faq-item"] {
+  border-radius: theme('borderRadius.xl') !important;
+}
+
+/* All cards on the Home page use rounded-xl (12px / 0.75rem) */
+[data-motion-scope="home"] .glass,
+[data-motion-scope="home"] .glass-solid,
+[data-motion-scope="home"] .glass-well,
+[data-motion-scope="home"] .panel-ink,
+[data-motion-scope="home"] .eng-card,
+[data-motion-scope="home"] .tsx-console,
+[data-motion-scope="home"] .tilt-card,
+[data-motion-scope="home"] [data-motion="feature-card"],
+[data-motion-scope="home"] [data-motion="sim-window"],
+[data-motion-scope="home"] [data-anim="faq-item"],
+[data-motion-scope="home"] .story-step,
+/* All cards on the Feature Details page use rounded-xl (12px / 0.75rem) */
+.fdx .glass,
+.fdx .glass-solid,
+.fdx .glass-well,
+.fdx .panel-ink,
+.fdx [aria-label^="Example call"] {
+  border-radius: theme('borderRadius.xl') !important;
 }
 
 /* ─── Story Pinned Section Step Highlighting ───────────────────────────── */
@@ -1051,29 +1078,22 @@ button:hover .bf .ch,
 
 /* ─── Typography ──────────────────────────────────────────────────────── */
 .hr-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: theme('spacing.s-9-6');
+  display: inline-block;
   align-self: flex-start;
-  padding: theme('spacing.s-7-2') theme('spacing.s-16') theme('spacing.s-7-2') theme('spacing.s-12-8');
-  border-radius: theme('borderRadius.9999');
-  font-size: theme('fontSize.12-8');
+  padding: 0;
+  border-radius: 0;
+  font-size: theme('fontSize.13');
   font-weight: var(--fd-weight-semibold);
   letter-spacing: theme('letterSpacing.wide-10');
-  color: var(--fd-brand-deep);
-  background: theme('colors.white / 0.7');
-  box-shadow: var(--fd-glass-shadow);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  color: var(--fd-brand);
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .hr-eyebrow-dot {
-  position: relative;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: theme('borderRadius.9999');
-  background: theme('colors.tint.green.7');
-  box-shadow: 0 0 0 3px theme('colors.tint.green.7 / 0.18');
+  display: none;
 }
 
 .hr-eyebrow-dot::after {
