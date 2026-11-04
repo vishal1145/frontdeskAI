@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { 
-  Lock, 
-  ShieldCheck, 
-  EyeOff, 
-  Server, 
-  FileText, 
-  CheckCircle, 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Lock,
+  ShieldCheck,
+  EyeOff,
+  Server,
+  FileText,
+  CheckCircle,
   ArrowLeft,
   PhoneCall,
   Cpu,
@@ -16,47 +16,132 @@ import {
   Clock
 } from 'lucide-react';
 
+const SECTIONS = [
+  { id: 'overview', title: '1. Overview & Data Confidentiality' },
+  { id: 'collected-data', title: '2. Information Collected During Calls' },
+  { id: 'dpdp-act', title: '3. Purpose Limitation & Zero Training' },
+  { id: 'encryption', title: '4. Data Encryption & Security' },
+  { id: 'processors', title: '5. Authorized Service Processors' },
+  { id: 'rights', title: '6. Data Retention & Customer Rights' },
+];
+
 export default function Privacy({ setActivePage }) {
   const [activeSection, setActiveSection] = useState('overview');
+  const isManualScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (isManualScrollingRef.current) return;
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // If near the bottom of page, highlight the last section
+          if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 60) {
+            setActiveSection(SECTIONS[SECTIONS.length - 1].id);
+            ticking = false;
+            return;
+          }
+
+          // If at the very top of page
+          if (window.scrollY < 80) {
+            setActiveSection(SECTIONS[0].id);
+            ticking = false;
+            return;
+          }
+
+          let currentId = SECTIONS[0].id;
+          for (const sec of SECTIONS) {
+            const el = document.getElementById(sec.id);
+            if (el) {
+              const rect = el.getBoundingClientRect();
+              if (rect.top <= 140) {
+                currentId = sec.id;
+              }
+            }
+          }
+
+          setActiveSection((prev) => (prev !== currentId ? currentId : prev));
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    const handleUserInteraction = () => {
+      if (isManualScrollingRef.current) {
+        isManualScrollingRef.current = false;
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+          scrollTimeoutRef.current = null;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('wheel', handleUserInteraction, { passive: true });
+    window.addEventListener('touchmove', handleUserInteraction, { passive: true });
+
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wheel', handleUserInteraction);
+      window.removeEventListener('touchmove', handleUserInteraction);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const scrollToSection = (id) => {
     setActiveSection(id);
     const element = document.getElementById(id);
     if (element) {
+      isManualScrollingRef.current = true;
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
       const navOffset = 80;
       const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
       window.scrollTo({
         top: Math.max(0, elementPosition - navOffset),
         behavior: 'smooth'
       });
+
+      scrollTimeoutRef.current = setTimeout(() => {
+        isManualScrollingRef.current = false;
+      }, 850);
     }
   };
 
-  const sections = [
-    { id: 'overview', title: '1. Overview & Data Confidentiality' },
-    { id: 'collected-data', title: '2. Information Collected During Calls' },
-    { id: 'dpdp-act', title: '3. Purpose Limitation & Zero Training' },
-    { id: 'encryption', title: '4. Data Encryption & Security' },
-    { id: 'processors', title: '5. Authorized Service Processors' },
-    { id: 'rights', title: '6. Data Retention & Customer Rights' },
-  ];
+  const sections = SECTIONS;
 
   return (
-    <div className="w-full pt-8 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 sm:space-y-12">
-      
+    <div className="privacy-page w-full pt-8 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 sm:space-y-12">
+
       {/* Top Header & Trust Status */}
       <div className="border-b border-blue-900/10 pb-8 sm:pb-12" data-fade>
-        <div className="space-y-5 max-w-4xl">
+        <div className="space-y-4 max-w-4xl">
           <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide-140 text-blue-700">
-            <Lock className="w-3.5 h-3.5 shrink-0" />
-            <span>Customer Data Protection &amp; Trust</span>
+            — <Lock className="w-3.5 h-3.5 shrink-0" />
+            <span>Customer Data Protection &amp; Trust —</span>
           </div>
-          <h1 className="hero-title-clamp text-ink">
-            Privacy Policy
-          </h1>
-          <p className="text-sm sm:text-15-2 text-ink-muted leading-relaxed">
-            Last Updated: October 2026 • Compliant with Indian Digital Personal Data Protection (DPDP) Act 2023 &amp; Data Security Guidelines
-          </p>
+          <div className="space-y-2">
+            <h1 className="hero-title-clamp text-ink">
+              Privacy Policy
+            </h1>
+            <p className="text-sm sm:text-15-2 text-ink-muted leading-relaxed">
+              Last Updated: October 2026 • Compliant with Indian Digital Personal Data Protection (DPDP) Act 2023 &amp; Data Security Guidelines
+            </p>
+          </div>
         </div>
       </div>
 
@@ -73,11 +158,10 @@ export default function Privacy({ setActivePage }) {
               <button
                 key={sec.id}
                 onClick={() => scrollToSection(sec.id)}
-                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  isActive
+                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${isActive
                     ? 'btn-brand shadow-sm scale-[1.02]'
                     : 'glass text-ink-soft hover:text-ink active:scale-[0.98]'
-                }`}
+                  }`}
               >
                 {sec.title}
               </button>
@@ -88,10 +172,10 @@ export default function Privacy({ setActivePage }) {
 
       {/* Main Grid: Sticky Table of Contents & Content */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-        
+
         {/* Left Sticky Table of Contents on Desktop */}
         <div className="hidden lg:block lg:col-span-4 sticky top-28 space-y-4">
-          <div className="glass p-4 space-y-2">
+          <div className="glass !rounded-xl rounded-xl p-4 space-y-2">
             <div className="px-2 pt-1 pb-2 text-11 font-semibold uppercase tracking-wide-140 text-ink-muted flex items-center gap-2">
               <FileText className="w-4 h-4 text-blue-600" />
               <span>Table of Contents</span>
@@ -101,11 +185,10 @@ export default function Privacy({ setActivePage }) {
                 <button
                   key={sec.id}
                   onClick={() => scrollToSection(sec.id)}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-13 font-medium transition-all flex items-center justify-between ${
-                    activeSection === sec.id
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-13 font-medium transition-all flex items-center justify-between ${activeSection === sec.id
                       ? 'btn-brand'
                       : 'text-ink-soft hover:text-ink hover:bg-white/80'
-                  }`}
+                    }`}
                 >
                   <span>{sec.title}</span>
                 </button>
@@ -113,7 +196,7 @@ export default function Privacy({ setActivePage }) {
             </nav>
           </div>
 
-          <div className="glass p-5 text-13 text-ink-soft space-y-2">
+          <div className="glass !rounded-xl rounded-xl p-5 text-13 text-ink-soft space-y-2">
             <div className="font-bold text-blue-900 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-blue-600" />
               <span>Data Protection Officer</span>
@@ -121,7 +204,7 @@ export default function Privacy({ setActivePage }) {
             <p className="text-ink-soft leading-relaxed">
               Have questions regarding caller voice data or business retention logs? Reach our compliance desk:
             </p>
-            <a 
+            <a
               href="mailto:privacy@frontdesk-ai.in"
               className="inline-flex items-center gap-1.5 text-blue-700 font-semibold hover:underline pt-1 break-all"
             >
@@ -133,9 +216,9 @@ export default function Privacy({ setActivePage }) {
 
         {/* Right Content Column */}
         <div className="lg:col-span-8 space-y-5 text-15-2 sm:text-base text-ink-soft leading-relaxed font-normal prose-legal">
-          
+
           {/* Section 1 */}
-          <section id="overview" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="overview" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
                 <ShieldCheck className="w-4 h-4" />
@@ -144,7 +227,7 @@ export default function Privacy({ setActivePage }) {
             </h2>
             <div className="space-y-3 text-ink-soft">
               <p>
-                FrontDesk AI Technologies ("we", "our", or "FrontDesk AI") operates an artificial intelligence-driven inbound telephony and automated front desk receptionist platform for businesses, professional practices, and service enterprises ("Subscribers"). 
+                FrontDesk AI Technologies ("we", "our", or "FrontDesk AI") operates an artificial intelligence-driven inbound telephony and automated front desk receptionist platform for businesses, professional practices, and service enterprises ("Subscribers").
               </p>
               <p>
                 We recognize the utmost sensitivity of customer communication and business interactions. This Privacy Policy details how voice audio, transcripts, caller telephone numbers, and booking details are collected, processed, encrypted, and retained.
@@ -153,7 +236,7 @@ export default function Privacy({ setActivePage }) {
           </section>
 
           {/* Section 2 */}
-          <section id="collected-data" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="collected-data" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
                 2
@@ -162,13 +245,13 @@ export default function Privacy({ setActivePage }) {
                 2. Information Collected During Phone Calls
               </h2>
             </div>
-            
+
             <p className="text-ink-soft">
               When a customer dials a registered business phone number or when a call is forwarded to FrontDesk AI, we collect only data strictly necessary to fulfill appointment scheduling and inquiry handling:
             </p>
-            
+
             <div className="grid grid-cols-1 gap-3 pt-1">
-              <div className="glass-well p-4 sm:p-5">
+              <div className="glass-well !rounded-xl rounded-xl p-4 sm:p-5">
                 <strong className="text-ink font-semibold block text-sm sm:text-15-2 mb-1">
                   Caller Phone Number:
                 </strong>
@@ -177,7 +260,7 @@ export default function Privacy({ setActivePage }) {
                 </p>
               </div>
 
-              <div className="glass-well p-4 sm:p-5">
+              <div className="glass-well !rounded-xl rounded-xl p-4 sm:p-5">
                 <strong className="text-ink font-semibold block text-sm sm:text-15-2 mb-1">
                   Audio Stream &amp; Live Voice:
                 </strong>
@@ -186,7 +269,7 @@ export default function Privacy({ setActivePage }) {
                 </p>
               </div>
 
-              <div className="glass-well p-4 sm:p-5">
+              <div className="glass-well !rounded-xl rounded-xl p-4 sm:p-5">
                 <strong className="text-ink font-semibold block text-sm sm:text-15-2 mb-1">
                   Call Transcripts:
                 </strong>
@@ -195,7 +278,7 @@ export default function Privacy({ setActivePage }) {
                 </p>
               </div>
 
-              <div className="glass-well p-4 sm:p-5">
+              <div className="glass-well !rounded-xl rounded-xl p-4 sm:p-5">
                 <strong className="text-ink font-semibold block text-sm sm:text-15-2 mb-1">
                   Appointment Records:
                 </strong>
@@ -207,19 +290,19 @@ export default function Privacy({ setActivePage }) {
           </section>
 
           {/* Section 3 */}
-          <section id="dpdp-act" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="dpdp-act" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
                 <EyeOff className="w-4 h-4" />
               </div>
               <span>3. Purpose Limitation &amp; Zero Training on Customer Data</span>
             </h2>
-            
+
             <p>
               Under the provisions of the <strong className="text-ink font-semibold">Digital Personal Data Protection (DPDP) Act 2023</strong>:
             </p>
-            
-            <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/80 ring-1 ring-blue-200 space-y-2.5 text-sm sm:text-15-2">
+
+            <div className="p-4 sm:p-5 !rounded-xl rounded-xl bg-blue-50/80 ring-1 ring-blue-200 space-y-2.5 text-sm sm:text-15-2">
               <div className="flex items-center gap-2 text-blue-900 font-bold">
                 <CheckCircle className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>Zero LLM Training Guarantee</span>
@@ -231,7 +314,7 @@ export default function Privacy({ setActivePage }) {
           </section>
 
           {/* Section 4 */}
-          <section id="encryption" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="encryption" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl !text-indigo-600 shrink-0">
                 <Server className="w-4 h-4" />
@@ -244,20 +327,20 @@ export default function Privacy({ setActivePage }) {
           </section>
 
           {/* Section 5 */}
-          <section id="processors" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="processors" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
                 5
               </div>
               <span>5. Authorized Service Processors</span>
             </h2>
-            
+
             <p className="text-ink-soft">
               To deliver real-time voice receptionist services, we work with enterprise-grade infrastructure providers:
             </p>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm pt-1">
-              <div className="glass-well p-4 sm:p-5 space-y-2">
+              <div className="glass-well !rounded-xl rounded-xl p-4 sm:p-5 space-y-2">
                 <div className="flex items-center gap-2 text-ink font-semibold text-15-2">
                   <PhoneCall className="w-4 h-4 text-blue-600 shrink-0" />
                   <span>Telephony Gateway</span>
@@ -267,7 +350,7 @@ export default function Privacy({ setActivePage }) {
                 </p>
               </div>
 
-              <div className="glass-well p-4 sm:p-5 space-y-2">
+              <div className="glass-well !rounded-xl rounded-xl p-4 sm:p-5 space-y-2">
                 <div className="flex items-center gap-2 text-ink font-semibold text-15-2">
                   <Cpu className="w-4 h-4 text-blue-600 shrink-0" />
                   <span>Inference Engine</span>
@@ -277,7 +360,7 @@ export default function Privacy({ setActivePage }) {
                 </p>
               </div>
 
-              <div className="glass-well p-4 sm:p-5 space-y-2">
+              <div className="glass-well !rounded-xl rounded-xl p-4 sm:p-5 space-y-2">
                 <div className="flex items-center gap-2 text-ink font-semibold text-15-2">
                   <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>Notification Gateway</span>
@@ -287,7 +370,7 @@ export default function Privacy({ setActivePage }) {
                 </p>
               </div>
 
-              <div className="glass-well p-4 sm:p-5 space-y-2">
+              <div className="glass-well !rounded-xl rounded-xl p-4 sm:p-5 space-y-2">
                 <div className="flex items-center gap-2 text-ink font-semibold text-15-2">
                   <Database className="w-4 h-4 text-indigo-600 shrink-0" />
                   <span>Database</span>
@@ -300,7 +383,7 @@ export default function Privacy({ setActivePage }) {
           </section>
 
           {/* Section 6 */}
-          <section id="rights" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="rights" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
                 6
@@ -309,7 +392,7 @@ export default function Privacy({ setActivePage }) {
             </h2>
             <div className="space-y-3 text-ink-soft">
               <p>
-                Customers and account administrators have the right to request access, correction, or deletion of their appointment data. Businesses can configure automated transcript purging (e.g., 30-day auto-expiry). 
+                Customers and account administrators have the right to request access, correction, or deletion of their appointment data. Businesses can configure automated transcript purging (e.g., 30-day auto-expiry).
               </p>
               <p>
                 To exercise data rights or file a privacy inquiry, contact our Data Protection Officer at <a href="mailto:privacy@frontdesk-ai.in" className="text-blue-700 underline underline-offset-2 font-semibold hover:text-blue-800">privacy@frontdesk-ai.in</a>.
@@ -320,14 +403,14 @@ export default function Privacy({ setActivePage }) {
           {/* Bottom Back Button */}
           <div className="pt-8 border-t border-blue-900/10 flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-3">
             <button
-              onClick={() => { setActivePage('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onClick={() => { setActivePage('home'); window.scrollTo(0, 0); }}
               className="glass-pill inline-flex items-center justify-center gap-2 text-13 font-medium text-blue-700 hover:text-blue-800 px-4 py-2.5"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to FrontDesk AI Home</span>
             </button>
             <button
-              onClick={() => { setActivePage('terms'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onClick={() => { setActivePage('terms'); window.scrollTo(0, 0); }}
               className="pill btn-brand !min-h-[2.75rem] !text-13 active:scale-[0.98]"
             >
               <span>View Terms of Service &rarr;</span>

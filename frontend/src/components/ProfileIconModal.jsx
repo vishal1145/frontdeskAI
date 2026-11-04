@@ -13,7 +13,7 @@ export default function ProfileIconModal({
 }) {
   const [activeTab, setActiveTab] = useState('preset'); // 'preset' | 'upload'
   const [selectedIconId, setSelectedIconId] = useState(isMedical ? 'pill' : 'building');
-  const [selectedColorId, setSelectedColorId] = useState(isMedical ? 'emerald' : 'blue');
+  const [selectedColorId, setSelectedColorId] = useState('blue');
   const [customImageUrl, setCustomImageUrl] = useState('');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const fileInputRef = useRef(null);
@@ -27,7 +27,7 @@ export default function ProfileIconModal({
       setActiveTab('upload');
       setCustomImageUrl(parsed.url);
       setSelectedIconId(isMedical ? 'pill' : 'building');
-      setSelectedColorId(isMedical ? 'emerald' : 'blue');
+      setSelectedColorId('blue');
     } else {
       setActiveTab('preset');
       setCustomImageUrl('');

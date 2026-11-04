@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  HelpCircle, 
-  PhoneForwarded, 
-  MessageSquare, 
-  Mail, 
-  PhoneCall, 
-  CheckCircle2, 
-  Send, 
-  Activity, 
-  Copy, 
-  ExternalLink, 
-  Clock, 
+import {
+  HelpCircle,
+  PhoneForwarded,
+  MessageSquare,
+  Mail,
+  PhoneCall,
+  CheckCircle2,
+  Send,
+  Activity,
+  Copy,
+  ExternalLink,
+  Clock,
   Check,
   AlertCircle,
   X,
@@ -21,6 +21,10 @@ import {
 import { colors } from '../../design-tokens.js';
 
 export default function Support({ setActivePage }) {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [copiedCode, setCopiedCode] = useState('');
   const [errors, setErrors] = useState({});
@@ -153,11 +157,11 @@ export default function Support({ setActivePage }) {
   ];
 
   return (
-    <div className="w-full pt-8 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-16 sm:space-y-24 relative">
-      
+    <div className="support-page w-full pt-8 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-16 sm:space-y-24 relative">
+
       {/* Top-Right Toaster Notification */}
       {toast && (
-        <div 
+        <div
           className="fixed top-4 inset-x-3 sm:inset-x-auto sm:top-6 sm:right-6 z-[99999] sm:max-w-sm w-auto sm:w-full animate-toast shadow-2xl rounded-2xl overflow-hidden border transition-all duration-300"
           style={{
             backgroundColor: toast.type === 'error' ? colors.tint.rose[2] : colors.tint.green[1],
@@ -165,11 +169,10 @@ export default function Support({ setActivePage }) {
           }}
         >
           <div className="p-4 flex items-start gap-3">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-              toast.type === 'error' 
-                ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/30' 
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${toast.type === 'error'
+                ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/30'
                 : 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
-            }`}>
+              }`}>
               {toast.type === 'error' ? (
                 <AlertCircle className="w-4 h-4 font-bold" />
               ) : (
@@ -178,14 +181,12 @@ export default function Support({ setActivePage }) {
             </div>
 
             <div className="flex-1 pt-0.5">
-              <h4 className={`text-xs font-bold ${
-                toast.type === 'error' ? 'text-rose-900' : 'text-emerald-900'
-              }`}>
+              <h4 className={`text-xs font-bold ${toast.type === 'error' ? 'text-rose-900' : 'text-emerald-900'
+                }`}>
                 {toast.title}
               </h4>
-              <p className={`text-11 mt-0.5 leading-relaxed ${
-                toast.type === 'error' ? 'text-rose-700' : 'text-emerald-700'
-              }`}>
+              <p className={`text-11 mt-0.5 leading-relaxed ${toast.type === 'error' ? 'text-rose-700' : 'text-emerald-700'
+                }`}>
                 {toast.message}
               </p>
             </div>
@@ -201,25 +202,26 @@ export default function Support({ setActivePage }) {
       )}
 
       {/* Hero Header */}
-      <div className="text-left max-w-4xl space-y-5" data-fade>
+      <div className="text-left max-w-4xl space-y-4" data-fade>
         <div className="eyebrow">
-          <span>24/7 Business Support &amp; Onboarding Desk</span>
+          <span>— 24/7 Business Support &amp; Onboarding Desk —</span>
         </div>
-        
-        <h1 className="hero-title-clamp text-ink">
-          How Can We Help Your Business Today?
-        </h1>
-        
-        <p className="lead">
-          From carrier call forwarding setup to custom team roster configuration, our voice telephony team is available 24/7.
-        </p>
+        <div className="space-y-2">
+          <h1 className="hero-title-clamp text-ink">
+            How Can We Help Your Business Today?
+          </h1>
+
+          <p className="lead">
+            From carrier call forwarding setup to custom team roster configuration, our voice telephony team is available 24/7.
+          </p>
+        </div>
       </div>
 
       {/* Grid: Contact Form & Telephony Status */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start" data-fade>
-        
+
         {/* Contact / Demo Form */}
-        <div className="lg:col-span-7 glass-solid !rounded-28 p-5 sm:p-8 md:p-10 space-y-7">
+        <div className="lg:col-span-7 glass-solid !rounded-xl rounded-xl p-5 sm:p-8 md:p-10 space-y-7">
           <div>
             <h2 className="text-2xl sm:text-3xl font-medium text-ink tracking-tight mb-2">
               Book a Demo or Request Setup
@@ -230,7 +232,7 @@ export default function Support({ setActivePage }) {
           </div>
 
           {formSubmitted ? (
-            <div className="p-6 sm:p-8 glass text-center space-y-4 flex flex-col items-center">
+            <div className="p-6 sm:p-8 glass !rounded-xl rounded-xl text-center space-y-4 flex flex-col items-center">
               <CheckCircle2 className="w-12 h-12 text-blue-600 mx-auto" />
               <h3 className="text-2xl font-medium tracking-tight text-ink">Inquiry Received Successfully!</h3>
               <p className="text-sm text-ink-soft max-w-md mx-auto leading-relaxed">
@@ -383,9 +385,9 @@ export default function Support({ setActivePage }) {
 
         {/* Right Info & Live Systems Status */}
         <div className="lg:col-span-5 space-y-5">
-          
+
           {/* Direct WhatsApp Callout */}
-          <div className="glass glass-hover p-5 sm:p-7 space-y-4">
+          <div className="glass glass-hover !rounded-xl rounded-xl p-5 sm:p-7 space-y-4">
             <div className="flex items-center gap-2.5 text-ink font-semibold text-base">
               <span className="w-9 h-9 icon-tile !rounded-xl !text-emerald-600"><MessageSquare className="w-4 h-4" /></span>
               <span>Instant WhatsApp Priority Support</span>
@@ -405,7 +407,7 @@ export default function Support({ setActivePage }) {
           </div>
 
           {/* Live Telephony Health Dashboard */}
-          <div className="glass glass-hover p-5 sm:p-7 space-y-4">
+          <div className="glass glass-hover !rounded-xl rounded-xl p-5 sm:p-7 space-y-4">
             <div className="flex items-center justify-between border-b border-blue-900/10 pb-3 gap-2">
               <span className="text-sm font-semibold text-ink flex items-center gap-2">
                 <Activity className="w-4 h-4 text-blue-600 animate-pulse shrink-0" />
@@ -437,7 +439,7 @@ export default function Support({ setActivePage }) {
           </div>
 
           {/* Operating Hours */}
-          <div className="glass p-5 sm:p-7 text-13 text-ink-soft space-y-2">
+          <div className="glass !rounded-xl rounded-xl p-5 sm:p-7 text-13 text-ink-soft space-y-2">
             <div className="flex items-center gap-2 text-ink font-semibold text-base pb-1">
               <Clock className="w-4 h-4 text-blue-600 shrink-0" />
               <span>Support Desk Working Hours</span>
@@ -453,11 +455,12 @@ export default function Support({ setActivePage }) {
 
       {/* ================= CARRIER CALL FORWARDING REFERENCE ================= */}
       <div className="space-y-10 sm:space-y-12" data-fade>
-        <div className="text-left max-w-4xl space-y-5">
+        <div className="text-left max-w-4xl space-y-4">
           <div className="glass-pill inline-flex items-center gap-1.5 text-11 sm:text-xs text-blue-800 px-3.5 py-1.5 font-mono font-semibold uppercase tracking-wider">
-            <PhoneForwarded className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-            <span>Business Telephony Quick Codes</span>
+            — <PhoneForwarded className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            <span>Business Telephony Quick Codes —</span>
           </div>
+          <div className="space-y-2">
           <h2 className="section-title-clamp text-ink">
             Quick Carrier Forwarding Dial Codes
           </h2>
@@ -465,10 +468,11 @@ export default function Support({ setActivePage }) {
             Dial these standard carrier USSD codes from your office phone to automatically forward busy or unanswered calls to FrontDesk AI.
           </p>
         </div>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {carrierGuides.map((guide, idx) => (
-            <div key={idx} className="glass glass-hover card-hover-lift p-5 sm:p-6 space-y-4 flex flex-col justify-between">
+            <div key={idx} className="glass glass-hover card-hover-lift !rounded-xl rounded-xl p-5 sm:p-6 space-y-4 flex flex-col justify-between">
               <div className="space-y-3.5">
                 <div className="flex items-center justify-between">
                   <span className="font-display font-medium text-ink text-lg tracking-tight">{guide.carrier}</span>
@@ -479,10 +483,10 @@ export default function Support({ setActivePage }) {
 
                 <div className="space-y-2 text-xs">
                   <div className="text-ink-muted text-11 font-medium">Forward When Busy:</div>
-                  <div className="flex items-center justify-between glass-well p-2.5 font-mono text-blue-700 text-11 gap-1">
+                  <div className="flex items-center justify-between glass-well !rounded-xl rounded-xl p-2.5 font-mono text-blue-700 text-11 gap-1">
                     <span className="break-all">{guide.busyCode}</span>
-                    <button 
-                      onClick={() => handleCopy(guide.busyCode)} 
+                    <button
+                      onClick={() => handleCopy(guide.busyCode)}
                       className="text-ink-muted hover:text-blue-700 p-1.5 rounded-lg hover:bg-blue-50 transition-colors shrink-0"
                       title="Copy code"
                       aria-label="Copy code"
@@ -492,10 +496,10 @@ export default function Support({ setActivePage }) {
                   </div>
 
                   <div className="text-ink-muted text-11 font-medium">Forward When Unanswered:</div>
-                  <div className="flex items-center justify-between glass-well p-2.5 font-mono text-sky-700 text-11 gap-1">
+                  <div className="flex items-center justify-between glass-well !rounded-xl rounded-xl p-2.5 font-mono text-sky-700 text-11 gap-1">
                     <span className="break-all">{guide.noAnswerCode}</span>
-                    <button 
-                      onClick={() => handleCopy(guide.noAnswerCode)} 
+                    <button
+                      onClick={() => handleCopy(guide.noAnswerCode)}
                       className="text-ink-muted hover:text-blue-700 p-1.5 rounded-lg hover:bg-blue-50 transition-colors shrink-0"
                       title="Copy code"
                       aria-label="Copy code"
@@ -505,7 +509,7 @@ export default function Support({ setActivePage }) {
                   </div>
 
                   <div className="text-ink-muted text-11 font-medium">Cancel / Disable:</div>
-                  <div className="glass-well p-2.5 font-mono text-slate-500 text-11 break-all">
+                  <div className="glass-well !rounded-xl rounded-xl p-2.5 font-mono text-slate-500 text-11 break-all">
                     {guide.cancelCode}
                   </div>
                 </div>

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   Phone, Clock, Calendar, CreditCard, Search,
   ArrowUpRight, AlertTriangle, ChevronLeft, ChevronRight,
-  RefreshCw, Download
+  RefreshCw, Download, X, Copy, User, UserCheck,
+  FileText, Volume2, PhoneCall
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useClinic } from '../../context/ClinicContext';
 import CallAudioPlayer from '../../components/CallAudioPlayer';
 import CustomSelect from '../../components/CustomSelect';
@@ -13,6 +15,7 @@ export default function DashboardPage() {
     clinic,
     billing,
     callLogs,
+    appointments,
     searchQuery,
     setSearchQuery,
     dateFilter,
@@ -31,9 +34,39 @@ export default function DashboardPage() {
   } = useClinic();
 
   const [callsPage, setCallsPage] = useState(1);
+  const [selectedCall, setSelectedCall] = useState(null);
   const rowsPerPage = 20;
 
   const isMedical = clinic?.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(clinic?.clinic_name || '');
+
+  // Escape key listener & scroll lock for modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setSelectedCall(null);
+    };
+    if (selectedCall) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [selectedCall]);
+
+  // Match caller phone with appointment or order if available
+  const cleanPhone = (p) => (p || '').replace(/\D/g, '').slice(-10);
+  const matchedAppointment = selectedCall
+    ? (appointments || []).find((apt) => {
+        const aptPhone = cleanPhone(apt.patient_phone || apt.customer_phone);
+        const callerPhone = cleanPhone(selectedCall.caller_phone);
+        return aptPhone && callerPhone && aptPhone === callerPhone;
+      })
+    : null;
+
+  const selectedDuration = Number(selectedCall?.duration_seconds || 0);
+  const selectedStatus = String(selectedCall?.call_status || '').toUpperCase();
+  const selectedIsShortCall = selectedDuration <= 10 || selectedStatus.includes('CANCEL');
 
   // Filter call logs based on search query and date filter
   const filteredLogs = callLogs.filter((log) => {
@@ -283,14 +316,22 @@ export default function DashboardPage() {
                     const isShortCall = duration <= 10 || status.includes('CANCEL');
 
                     const dynamicTag = log.is_transferred
-                      ? 'Forwarded to Doctor Reception'
-                      : (status.includes('BUSY') ? 'Unanswered Busy' : (isShortCall ? 'Missed Short Call' : 'Patient Inquiry Handled by AI'));
+                      ? (isMedical ? 'Forwarded to Pharmacist' : 'Forwarded to Doctor Reception')
+                      : (status.includes('BUSY') ? 'Unanswered Busy' : (isShortCall ? 'Missed Short Call' : (isMedical ? 'Medicine Inquiry Handled by AI' : 'Patient Inquiry Handled by AI')));
 
                     return (
-                      <tr key={log.call_sid} className="transition-colors duration-100 hover:bg-tint-blue-2 last:[&>td]:border-b-0">
+                      <tr 
+                        key={log.call_sid} 
+                        onClick={() => setSelectedCall(log)}
+                        className="transition-colors duration-150 hover:!bg-tint-blue-12/80 cursor-pointer last:[&>td]:border-b-0 group/tr"
+                        title="Click to view full caller & call details"
+                      >
                         {/* Caller */}
                         <td className="px-4 py-3 sm:first:pl-6 sm:last:pr-6 align-top border-b border-slate-900/[0.06] text-ink font-medium whitespace-nowrap">
-                          <div className="font-semibold">{log.caller_phone || 'Anonymous'}</div>
+                          <div className="font-semibold flex items-center justify-between gap-1.5">
+                            <span>{log.caller_phone || 'Anonymous'}</span>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover/tr:text-blue-500 transition-colors shrink-0" />
+                          </div>
                           <div className="text-11 text-slate-400 font-mono mt-0.5">To: {log.called_number}</div>
                         </td>
 
@@ -352,7 +393,10 @@ export default function DashboardPage() {
                         </td>
 
                         {/* Recording */}
-                        <td className="px-4 py-3 sm:first:pl-6 sm:last:pr-6 align-top border-b border-slate-900/[0.06] whitespace-nowrap">
+                        <td 
+                          className="px-4 py-3 sm:first:pl-6 sm:last:pr-6 align-top border-b border-slate-900/[0.06] whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <CallAudioPlayer log={log} clinicId={clinic?.clinic_id} />
                         </td>
                       </tr>
@@ -419,6 +463,294 @@ export default function DashboardPage() {
           </>
         )}
       </section>
+
+      {/* Selected Call & Caller Details Modal (Super Admin Deep Dive Design) */}
+      {selectedCall && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setSelectedCall(null)}
+        >
+          <div
+            className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="relative px-6 py-5 sm:px-8 sm:py-6 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 via-white to-blue-50/30 flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+                  <PhoneCall className="w-6 h-6" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight truncate">
+                      {matchedAppointment?.patient_name ? matchedAppointment.patient_name : (selectedCall.caller_phone || 'Inbound Caller')}
+                    </h2>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      selectedCall.is_transferred
+                        ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                        : selectedIsShortCall
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200/80'
+                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        selectedCall.is_transferred ? 'bg-amber-500' : selectedIsShortCall ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'
+                      }`} />
+                      {selectedCall.is_transferred
+                        ? (isMedical ? 'Forwarded to Pharmacist' : 'Forwarded to Doctor Reception')
+                        : selectedIsShortCall
+                        ? 'Short / Missed Call'
+                        : (isMedical ? 'Medicine Inquiry Handled' : 'Patient Inquiry Handled')}
+                    </span>
+                    {isMedical ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                        💊 Pharmacy Caller
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                        🏥 Clinic Patient
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
+                    <span className="flex items-center gap-1 font-mono text-11 text-slate-400">
+                      Call ID: {selectedCall.call_sid}
+                    </span>
+                    <span>&bull;</span>
+                    <span className="inline-flex items-center gap-1 text-blue-600 font-medium">
+                      <UserCheck className="w-3.5 h-3.5" />
+                      AI Receptionist: {clinic?.receptionist_name || 'Riya'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => setSelectedCall(null)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors shrink-0 cursor-pointer"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="overflow-y-auto p-6 sm:p-8 space-y-6">
+              {/* Core Stats Overview */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {/* Total Duration */}
+                <div className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-blue-50/70 border border-blue-200/80 flex flex-col justify-between">
+                  <span className="text-10 font-bold text-blue-600 uppercase tracking-wider">Call Duration</span>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="text-xl font-bold text-blue-900 tabular-nums">
+                      {Math.floor(selectedDuration / 60)}m {selectedDuration % 60}s
+                    </span>
+                    <span className="text-11 font-medium text-blue-500">total</span>
+                  </div>
+                </div>
+
+                {/* Billable Minutes */}
+                <div className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col justify-between">
+                  <span className="text-10 font-bold text-emerald-600 uppercase tracking-wider">Billable Usage</span>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="text-xl font-bold text-emerald-900 tabular-nums">
+                      {selectedCall.billable_minutes || Math.ceil(selectedDuration / 60)}
+                    </span>
+                    <span className="text-11 font-medium text-emerald-600">min</span>
+                  </div>
+                </div>
+
+                {/* Telephony Cost */}
+                <div className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-purple-50/70 border border-purple-200/80 flex flex-col justify-between">
+                  <span className="text-10 font-bold text-purple-600 uppercase tracking-wider">Telephony Cost</span>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="text-xl font-bold text-purple-900 tabular-nums">
+                      ₹{Number(selectedCall.cost_inr || 0).toFixed(2)}
+                    </span>
+                    <span className="text-11 font-medium text-purple-500">INR</span>
+                  </div>
+                </div>
+
+                {/* Date & Time */}
+                <div className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 flex flex-col justify-between">
+                  <span className="text-10 font-bold text-amber-700 uppercase tracking-wider">Call Timestamp</span>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="text-sm font-bold text-amber-900 truncate">
+                      {new Date(selectedCall.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className="text-10 font-medium text-amber-600 whitespace-nowrap">
+                      {new Date(selectedCall.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Telephony Connection Details */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-blue-600" />
+                  Telephony Connection Details
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Caller Phone */}
+                  <div className="py-2.5 px-3.5 rounded-xl border border-slate-200/80 bg-white">
+                    <span className="text-xs text-slate-500 block">Caller Phone (Inbound)</span>
+                    <span className="font-semibold text-slate-800 text-sm tracking-wide block truncate font-mono">
+                      {selectedCall.caller_phone || 'Anonymous'}
+                    </span>
+                  </div>
+
+                  {/* Virtual Dialed Line */}
+                  <div className="py-2.5 px-3.5 rounded-xl border border-slate-200/80 bg-white">
+                    <span className="text-xs text-slate-500 block">Dialed Virtual AI Receptionist Line</span>
+                    <span className="font-semibold text-blue-600 text-sm tracking-wide block truncate font-mono">
+                      {selectedCall.called_number || ((Array.isArray(clinic?.virtual_phone_numbers) && clinic?.virtual_phone_numbers[0]) || '+91 8065355910')}
+                    </span>
+                  </div>
+
+                  {/* Telephony Call SID with Copy */}
+                  <div className="py-2.5 px-3.5 rounded-xl border border-slate-200/80 bg-white sm:col-span-2 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className="text-xs text-slate-500 block">Carrier Telephony Call SID</span>
+                      <span className="font-mono text-xs text-slate-800 block truncate" title={selectedCall.call_sid}>
+                        {selectedCall.call_sid}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(selectedCall.call_sid);
+                        toast.success('Call SID copied to clipboard');
+                      }}
+                      className="px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 rounded-lg transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Linked Customer / Booking Record (if found) */}
+              {matchedAppointment ? (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-emerald-600" />
+                    {isMedical ? 'Linked Order & Customer Details' : 'Linked Patient & Appointment Record'}
+                  </h3>
+                  <div className="p-4 rounded-xl border border-emerald-200/80 bg-emerald-50/40 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div className="py-2 px-3 rounded-lg bg-white border border-emerald-200/60">
+                        <span className="text-11 text-emerald-700 font-semibold block uppercase">
+                          {isMedical ? 'Customer Name' : 'Patient Name'}
+                        </span>
+                        <span className="text-sm font-bold text-slate-900">
+                          {matchedAppointment.patient_name || 'Customer on Call'}
+                        </span>
+                      </div>
+                      <div className="py-2 px-3 rounded-lg bg-white border border-emerald-200/60">
+                        <span className="text-11 text-emerald-700 font-semibold block uppercase">
+                          Contact Phone
+                        </span>
+                        <span className="text-sm font-mono font-semibold text-slate-900">
+                          {matchedAppointment.patient_phone || selectedCall.caller_phone}
+                        </span>
+                      </div>
+                      <div className="py-2 px-3 rounded-lg bg-white border border-emerald-200/60">
+                        <span className="text-11 text-emerald-700 font-semibold block uppercase">
+                          {isMedical ? 'Order Type / Schedule' : 'Booked Time Slot'}
+                        </span>
+                        <span className="text-sm font-medium text-slate-800">
+                          {matchedAppointment.display_time || (matchedAppointment.slot_iso_timestamp ? new Date(matchedAppointment.slot_iso_timestamp).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Scheduled')}
+                        </span>
+                      </div>
+                      <div className="py-2 px-3 rounded-lg bg-white border border-emerald-200/60">
+                        <span className="text-11 text-emerald-700 font-semibold block uppercase">
+                          {isMedical ? 'Delivery / Store' : 'Doctor / Specialist'}
+                        </span>
+                        <span className="text-sm font-medium text-slate-800">
+                          {matchedAppointment.doctor_name || (isMedical ? 'Store Counter' : 'Consultant')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-blue-600" />
+                    Caller Profile &amp; Receptionist Context
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="py-2.5 px-3.5 rounded-xl border border-slate-200/80 bg-white">
+                      <span className="text-xs text-slate-500 block">Caller Identity</span>
+                      <span className="font-semibold text-slate-800 text-sm tracking-wide block truncate">
+                        Direct Inbound Caller ({selectedCall.caller_phone || 'Unlisted'})
+                      </span>
+                    </div>
+                    <div className="py-2.5 px-3.5 rounded-xl border border-slate-200/80 bg-white">
+                      <span className="text-xs text-slate-500 block">Associated Business</span>
+                      <span className="font-semibold text-slate-800 text-sm tracking-wide block truncate">
+                        {clinic?.clinic_name || 'FrontDesk AI Portal'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Call Summary & AI Interaction */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                  Call Summary &amp; Conversation Details
+                </h3>
+                <div className="py-3 px-4 rounded-xl border border-slate-200/80 bg-slate-50/60 space-y-2">
+                  {selectedCall.summary ? (
+                    <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-normal">
+                      {selectedCall.summary}
+                    </p>
+                  ) : selectedCall.transfer_reason ? (
+                    <div className="text-xs sm:text-sm text-amber-900 bg-amber-50 p-2.5 rounded-lg border border-amber-200/80">
+                      <strong className="block mb-0.5">Call Forwarding Note:</strong>
+                      {selectedCall.transfer_reason}
+                    </div>
+                  ) : (
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                      Inbound phone conversation handled automatically by FrontDesk AI Receptionist ({clinic?.receptionist_name || 'Riya'}). Caller inquiry was addressed according to current business schedule and parameters.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Call Recording Playback */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <Volume2 className="w-3.5 h-3.5 text-blue-600" />
+                  Call Recording &amp; Voice Audio
+                </h3>
+                <div className="py-3 px-4 rounded-xl border border-slate-200/80 bg-slate-50/40">
+                  <CallAudioPlayer log={selectedCall} clinicId={clinic?.clinic_id} />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 sm:px-8 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between gap-3">
+              <span className="text-xs text-slate-500 font-mono">
+                FrontDesk AI Telephony Record
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedCall(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 shadow-xs transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -118,7 +118,7 @@ export default function ProfilePage() {
         address: (clinic.address || '').slice(0, 200),
         working_hours: clinic.working_hours || 'Monday to Saturday, 10:00 AM - 08:00 PM',
         slot_duration_minutes: Number(clinic.slot_duration_minutes) || 30,
-        profile_icon: clinic.profile_icon || (isMedical ? 'pill:emerald' : 'building:blue')
+        profile_icon: clinic.profile_icon || (isMedical ? 'pill:blue' : 'building:blue')
       });
     }
   }, [clinic]);
@@ -194,7 +194,7 @@ export default function ProfilePage() {
         address: (clinic.address || '').slice(0, 200),
         working_hours: clinic.working_hours || 'Monday to Saturday, 10:00 AM - 08:00 PM',
         slot_duration_minutes: Number(clinic.slot_duration_minutes) || 30,
-        profile_icon: clinic.profile_icon || (isMedical ? 'pill:emerald' : 'building:blue')
+        profile_icon: clinic.profile_icon || (isMedical ? 'pill:blue' : 'building:blue')
       });
     }
     setIsEditing(false);
@@ -300,23 +300,28 @@ export default function ProfilePage() {
             {/* Glossy Brand Avatar Badge */}
             <button
               type="button"
-              onClick={() => setShowIconModal(true)}
-              className="relative group w-12 h-12 sm:w-13 sm:h-13 rounded-2xl shadow-md shadow-blue-600/20 bg-gradient-to-b from-blue-500 via-blue-600 to-indigo-700 text-white p-1.5 flex items-center justify-center text-center cursor-pointer hover:scale-102 transition-transform shrink-0"
-              title="Click to update profile icon or logo"
-              aria-label="Change profile icon"
+              onClick={() => isEditing && setShowIconModal(true)}
+              disabled={!isEditing}
+              className={`relative group w-12 h-12 sm:w-13 sm:h-13 rounded-2xl shadow-md shadow-blue-600/20 bg-gradient-to-b from-blue-500 via-blue-600 to-indigo-700 text-white p-1.5 flex items-center justify-center text-center shrink-0 ${
+                isEditing ? 'cursor-pointer hover:scale-102 transition-transform' : 'cursor-default'
+              }`}
+              title={isEditing ? "Click to update profile icon or logo" : undefined}
+              aria-label={isEditing ? "Change profile icon" : "Profile icon"}
             >
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white">
                 <ProfileIcon
-                  icon={isEditing ? formData.profile_icon : (clinic.profile_icon || (isMedical ? 'pill:emerald' : 'building:blue'))}
+                  icon={isEditing ? formData.profile_icon : (clinic.profile_icon || (isMedical ? 'pill:blue' : 'building:blue'))}
                   isMedical={isMedical}
                   containerClassName="w-full h-full rounded-xl bg-transparent"
                   iconClassName="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white"
                   alt={clinic.clinic_name}
                 />
               </div>
-              <span className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-white border border-slate-200 text-blue-600 shadow-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Pencil className="w-2.5 h-2.5" />
-              </span>
+              {isEditing && (
+                <span className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-white border border-slate-200 text-blue-600 shadow-xs flex items-center justify-center transition-transform group-hover:scale-110">
+                  <Pencil className="w-2.5 h-2.5" />
+                </span>
+              )}
             </button>
 
             {/* Title & Subtitle */}
@@ -492,18 +497,11 @@ export default function ProfilePage() {
                       ∿∿
                     </span>
                   </div>
-                  <div className="flex flex-col items-end">
+                  <div className="flex items-center">
                     <span className="inline-flex items-center gap-1 text-10 font-bold text-emerald-600">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       Active
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(true)}
-                      className="text-10 font-semibold text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-                    >
-                      View Settings
-                    </button>
                   </div>
                 </div>
               ) : (
@@ -865,7 +863,7 @@ export default function ProfilePage() {
       <ProfileIconModal
         isOpen={showIconModal}
         onClose={() => setShowIconModal(false)}
-        currentIcon={formData.profile_icon || clinic.profile_icon || (isMedical ? 'pill:emerald' : 'building:blue')}
+        currentIcon={formData.profile_icon || clinic.profile_icon || (isMedical ? 'pill:blue' : 'building:blue')}
         isMedical={isMedical}
         clinicName={formData.clinic_name || clinic.clinic_name}
         onApply={(newIcon) => {

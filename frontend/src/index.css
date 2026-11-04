@@ -702,7 +702,26 @@ button:hover .bf .ch,
 .fdx .glass-solid,
 .fdx .glass-well,
 .fdx .panel-ink,
-.fdx [aria-label^="Example call"] {
+.fdx [aria-label^="Example call"],
+/* All cards on About, Privacy, Terms, Support (Contact) pages use rounded-xl (12px / 0.75rem) */
+.about-page .glass,
+.about-page .glass-solid,
+.about-page .glass-well,
+.about-page .panel-ink,
+.privacy-page .glass,
+.privacy-page .glass-solid,
+.privacy-page .glass-well,
+.privacy-page .panel-ink,
+.terms-page .glass,
+.terms-page .glass-solid,
+.terms-page .glass-well,
+.terms-page .panel-ink,
+.support-page .glass,
+.support-page .glass-solid,
+.support-page .glass-well,
+.support-page .panel-ink,
+footer .glass,
+footer .glass-solid {
   border-radius: theme('borderRadius.xl') !important;
 }
 

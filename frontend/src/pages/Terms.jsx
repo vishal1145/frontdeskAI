@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { 
-  FileText, 
-  AlertTriangle, 
-  Scale, 
-  ShieldAlert, 
-  CheckCircle2, 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  FileText,
+  AlertTriangle,
+  Scale,
+  ShieldAlert,
+  CheckCircle2,
   ArrowLeft,
   PhoneCall,
   Clock,
@@ -13,49 +13,134 @@ import {
   Building
 } from 'lucide-react';
 
+const CLAUSES = [
+  { id: 'disclaimer', title: 'Service & Urgent Request Disclaimer' },
+  { id: 'clause-1', title: '1. Acceptance of Terms' },
+  { id: 'clause-2', title: '2. Scope of Service' },
+  { id: 'clause-3', title: '3. Client Responsibilities & Schedules' },
+  { id: 'clause-4', title: '4. Telephony Carrier Compliance' },
+  { id: 'clause-5', title: '5. Fair Usage & Prohibited Activities' },
+  { id: 'clause-6', title: '6. Limitation of Liability' },
+  { id: 'clause-7', title: '7. Governing Law & Jurisdiction' },
+];
+
 export default function Terms({ setActivePage }) {
-  const [activeClause, setActiveClause] = useState('clause-1');
+  const [activeClause, setActiveClause] = useState('disclaimer');
+  const isManualScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (isManualScrollingRef.current) return;
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // If near the bottom of page, highlight the last clause
+          if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 60) {
+            setActiveClause(CLAUSES[CLAUSES.length - 1].id);
+            ticking = false;
+            return;
+          }
+
+          // If at the very top of page
+          if (window.scrollY < 80) {
+            setActiveClause(CLAUSES[0].id);
+            ticking = false;
+            return;
+          }
+
+          let currentId = CLAUSES[0].id;
+          for (const c of CLAUSES) {
+            const el = document.getElementById(c.id);
+            if (el) {
+              const rect = el.getBoundingClientRect();
+              if (rect.top <= 140) {
+                currentId = c.id;
+              }
+            }
+          }
+
+          setActiveClause((prev) => (prev !== currentId ? currentId : prev));
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    const handleUserInteraction = () => {
+      if (isManualScrollingRef.current) {
+        isManualScrollingRef.current = false;
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+          scrollTimeoutRef.current = null;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('wheel', handleUserInteraction, { passive: true });
+    window.addEventListener('touchmove', handleUserInteraction, { passive: true });
+
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wheel', handleUserInteraction);
+      window.removeEventListener('touchmove', handleUserInteraction);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const scrollToClause = (id) => {
     setActiveClause(id);
     const element = document.getElementById(id);
     if (element) {
+      isManualScrollingRef.current = true;
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
       const navOffset = 80;
       const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
       window.scrollTo({
         top: Math.max(0, elementPosition - navOffset),
         behavior: 'smooth'
       });
+
+      scrollTimeoutRef.current = setTimeout(() => {
+        isManualScrollingRef.current = false;
+      }, 850);
     }
   };
 
-  const clauses = [
-    { id: 'disclaimer', title: 'Service & Urgent Request Disclaimer' },
-    { id: 'clause-1', title: '1. Acceptance of Terms' },
-    { id: 'clause-2', title: '2. Scope of Service' },
-    { id: 'clause-3', title: '3. Client Responsibilities & Schedules' },
-    { id: 'clause-4', title: '4. Telephony Carrier Compliance' },
-    { id: 'clause-5', title: '5. Fair Usage & Prohibited Activities' },
-    { id: 'clause-6', title: '6. Limitation of Liability' },
-    { id: 'clause-7', title: '7. Governing Law & Jurisdiction' },
-  ];
+  const clauses = CLAUSES;
 
   return (
-    <div className="w-full pt-8 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 sm:space-y-12">
-      
+    <div className="terms-page w-full pt-8 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 sm:space-y-12">
+
       {/* Top Header */}
       <div className="border-b border-blue-900/10 pb-8 sm:pb-12" data-fade>
-        <div className="space-y-5 max-w-4xl">
+        <div className="space-y-4 max-w-4xl">
           <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide-140 text-blue-700">
-            <FileText className="w-3.5 h-3.5 shrink-0" />
-            <span>Legal Agreement &amp; Service Terms</span>
+            — <FileText className="w-3.5 h-3.5 shrink-0" />
+            <span>Legal Agreement &amp; Service Terms —</span>
           </div>
-          <h1 className="hero-title-clamp text-ink">
-            Terms &amp; Conditions of Service
-          </h1>
-          <p className="text-sm sm:text-15-2 text-ink-muted leading-relaxed">
-            Effective Date: October 2026 • Please read these terms carefully before deploying FrontDesk AI for your business
-          </p>
+          <div className="space-y-2">
+            <h1 className="hero-title-clamp text-ink">
+              Terms &amp; Conditions of Service
+            </h1>
+            <p className="text-sm sm:text-15-2 text-ink-muted leading-relaxed">
+              Effective Date: October 2026 • Please read these terms carefully before deploying FrontDesk AI for your business
+            </p>
+          </div>
         </div>
       </div>
 
@@ -72,11 +157,10 @@ export default function Terms({ setActivePage }) {
               <button
                 key={c.id}
                 onClick={() => scrollToClause(c.id)}
-                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  isActive
+                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${isActive
                     ? 'btn-brand shadow-sm scale-[1.02]'
                     : 'glass text-ink-soft hover:text-ink active:scale-[0.98]'
-                }`}
+                  }`}
               >
                 {c.title}
               </button>
@@ -87,10 +171,10 @@ export default function Terms({ setActivePage }) {
 
       {/* Main Grid: Sticky Clause Nav & Clauses Content */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-        
+
         {/* Left Sticky Clause Navigator */}
         <div className="hidden lg:block lg:col-span-4 sticky top-28 space-y-4">
-          <div className="glass p-4 space-y-2">
+          <div className="glass !rounded-xl rounded-xl p-4 space-y-2">
             <div className="px-2 pt-1 pb-2 text-11 font-semibold uppercase tracking-wide-140 text-ink-muted flex items-center gap-2">
               <Scale className="w-4 h-4 text-blue-600" />
               <span>Clause Navigator</span>
@@ -100,11 +184,10 @@ export default function Terms({ setActivePage }) {
                 <button
                   key={c.id}
                   onClick={() => scrollToClause(c.id)}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-13 font-medium transition-all flex items-center justify-between ${
-                    activeClause === c.id
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-13 font-medium transition-all flex items-center justify-between ${activeClause === c.id
                       ? 'btn-brand'
                       : 'text-ink-soft hover:text-ink hover:bg-white/80'
-                  }`}
+                    }`}
                 >
                   <span>{c.title}</span>
                 </button>
@@ -112,7 +195,7 @@ export default function Terms({ setActivePage }) {
             </nav>
           </div>
 
-          <div className="rounded-24 p-5 bg-amber-50/80 ring-1 ring-amber-200/80 text-13 text-amber-950 space-y-2">
+          <div className="!rounded-xl rounded-xl p-5 bg-amber-50/80 ring-1 ring-amber-200/80 text-13 text-amber-950 space-y-2">
             <div className="font-bold flex items-center gap-2 text-amber-900">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
               <span>Urgent Request Protocol</span>
@@ -125,21 +208,21 @@ export default function Terms({ setActivePage }) {
 
         {/* Right Content Column */}
         <div className="lg:col-span-8 space-y-5 text-15-2 sm:text-base text-ink-soft leading-relaxed font-normal prose-legal">
-          
+
           {/* EMERGENCY DISCLAIMER */}
-          <div id="disclaimer" className="scroll-mt-28 p-6 sm:p-8 md:p-10 rounded-28 bg-amber-50/90 ring-1 ring-amber-300/70 text-amber-950 space-y-4 shadow-[0_18px_38px_-22px_theme(colors.accent.amber.hover_/_0.35)] relative overflow-hidden">
+          <div id="disclaimer" className="scroll-mt-28 p-6 sm:p-8 md:p-10 !rounded-xl rounded-xl bg-amber-50/90 ring-1 ring-amber-300/70 text-amber-950 space-y-4 shadow-[0_18px_38px_-22px_theme(colors.accent.amber.hover_/_0.35)] relative overflow-hidden">
             <div className="flex items-center gap-2.5 font-extrabold text-amber-950 text-sm sm:text-base md:text-lg">
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/20">
                 <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <span>IMPORTANT SERVICE &amp; URGENT REQUEST DISCLAIMER</span>
             </div>
-            
+
             <p className="text-sm sm:text-15-2 leading-relaxed text-amber-900">
               FrontDesk AI is an <strong>administrative automated receptionist and appointment scheduling system</strong>. It is <strong>NOT an emergency response service or replacement for professional human judgment in critical life situations</strong>. FrontDesk AI does not provide emergency medical intervention or specialized statutory advisories over the telephone.
             </p>
-            
-            <div className="p-4 rounded-2xl bg-white/80 ring-1 ring-amber-200 text-sm leading-relaxed font-semibold text-amber-950 flex flex-col xs:flex-row items-start gap-2.5 sm:gap-3">
+
+            <div className="p-4 !rounded-xl rounded-xl bg-white/80 ring-1 ring-amber-200 text-sm leading-relaxed font-semibold text-amber-950 flex flex-col xs:flex-row items-start gap-2.5 sm:gap-3">
               <span className="px-2.5 py-1 rounded bg-amber-600 text-white font-mono font-bold text-10 shrink-0">
                 DIAL 112
               </span>
@@ -150,7 +233,7 @@ export default function Terms({ setActivePage }) {
           </div>
 
           {/* Section 1 */}
-          <section id="clause-1" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="clause-1" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
                 <FileText className="w-4 h-4" />
@@ -163,7 +246,7 @@ export default function Terms({ setActivePage }) {
           </section>
 
           {/* Section 2 */}
-          <section id="clause-2" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="clause-2" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
                 2
@@ -172,23 +255,23 @@ export default function Terms({ setActivePage }) {
             </h2>
             <p className="text-ink-soft">FrontDesk AI provides:</p>
             <div className="space-y-2.5 pt-1">
-              <div className="glass-well p-3.5 sm:p-4 text-sm text-ink-soft flex items-start gap-2.5 sm:gap-3">
+              <div className="glass-well !rounded-xl rounded-xl p-3.5 sm:p-4 text-sm text-ink-soft flex items-start gap-2.5 sm:gap-3">
                 <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <span>Inbound telephony reception for business numbers via SIP and GSM Call Forwarding.</span>
               </div>
-              <div className="glass-well p-3.5 sm:p-4 text-sm text-ink-soft flex items-start gap-2.5 sm:gap-3">
+              <div className="glass-well !rounded-xl rounded-xl p-3.5 sm:p-4 text-sm text-ink-soft flex items-start gap-2.5 sm:gap-3">
                 <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <span>Real-time speech-to-text, intent parsing, and natural vocal responses in English and regional languages.</span>
               </div>
-              <div className="glass-well p-3.5 sm:p-4 text-sm text-ink-soft flex items-start gap-2.5 sm:gap-3">
+              <div className="glass-well !rounded-xl rounded-xl p-3.5 sm:p-4 text-sm text-ink-soft flex items-start gap-2.5 sm:gap-3">
                 <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <span>Appointment slot availability queries, slot reservation locks, and booking confirmations.</span>
               </div>
-              <div className="glass-well p-3.5 sm:p-4 text-sm text-ink-soft flex items-start gap-2.5 sm:gap-3">
+              <div className="glass-well !rounded-xl rounded-xl p-3.5 sm:p-4 text-sm text-ink-soft flex items-start gap-2.5 sm:gap-3">
                 <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <span>Post-call notification dispatch via WhatsApp Cloud API and SMS.</span>
               </div>
-              <div className="glass-well p-3.5 sm:p-4 text-sm text-ink-soft flex items-start gap-2.5 sm:gap-3">
+              <div className="glass-well !rounded-xl rounded-xl p-3.5 sm:p-4 text-sm text-ink-soft flex items-start gap-2.5 sm:gap-3">
                 <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <span>Automated urgent request detection with human call bridging and transfer protocols.</span>
               </div>
@@ -196,7 +279,7 @@ export default function Terms({ setActivePage }) {
           </section>
 
           {/* Section 3 */}
-          <section id="clause-3" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="clause-3" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
                 3
@@ -209,7 +292,7 @@ export default function Terms({ setActivePage }) {
           </section>
 
           {/* Section 4 */}
-          <section id="clause-4" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="clause-4" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
                 <Radio className="w-4 h-4" />
@@ -222,7 +305,7 @@ export default function Terms({ setActivePage }) {
           </section>
 
           {/* Section 5 */}
-          <section id="clause-5" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="clause-5" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
                 5
@@ -235,7 +318,7 @@ export default function Terms({ setActivePage }) {
           </section>
 
           {/* Section 6 */}
-          <section id="clause-6" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="clause-6" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl !text-rose-600 shrink-0">
                 <ShieldAlert className="w-4 h-4" />
@@ -248,7 +331,7 @@ export default function Terms({ setActivePage }) {
           </section>
 
           {/* Section 7 */}
-          <section id="clause-7" className="space-y-4 scroll-mt-28 glass-solid p-6 sm:p-8 md:p-10">
+          <section id="clause-7" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
               <div className="w-10 h-10 icon-tile !rounded-xl !text-indigo-600 shrink-0">
                 <Landmark className="w-4 h-4" />
@@ -263,14 +346,14 @@ export default function Terms({ setActivePage }) {
           {/* Bottom Back Button */}
           <div className="pt-8 border-t border-blue-900/10 flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-3">
             <button
-              onClick={() => { setActivePage('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onClick={() => { setActivePage('home'); window.scrollTo(0, 0); }}
               className="glass-pill inline-flex items-center justify-center gap-2 text-13 font-medium text-blue-700 hover:text-blue-800 px-4 py-2.5"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to FrontDesk AI Home</span>
             </button>
             <button
-              onClick={() => { setActivePage('privacy'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onClick={() => { setActivePage('privacy'); window.scrollTo(0, 0); }}
               className="pill btn-brand !min-h-[2.75rem] !text-13 active:scale-[0.98]"
             >
               <span>View Privacy Policy &rarr;</span>

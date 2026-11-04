@@ -104,6 +104,10 @@ function App() {
 
   // Handle URL pathname/hash changes and browser back/forward buttons (popstate)
   useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
     // If URL contains #home or empty hash, cleanly normalize to root URL
     if (window.location.hash === '#home' || window.location.hash === '#/' || window.location.hash === '#') {
       window.history.replaceState(null, '', window.location.pathname);
@@ -118,7 +122,10 @@ function App() {
         setTimeout(() => {
           const el = document.getElementById(section);
           if (el) el.scrollIntoView({ behavior: 'smooth' });
+          else window.scrollTo(0, 0);
         }, 100);
+      } else {
+        window.scrollTo(0, 0);
       }
     };
 
@@ -129,6 +136,8 @@ function App() {
         const el = document.getElementById(section);
         if (el) el.scrollIntoView({ behavior: 'smooth' });
       }, 150);
+    } else {
+      window.scrollTo(0, 0);
     }
 
     window.addEventListener('popstate', handleLocationChange);
@@ -139,6 +148,14 @@ function App() {
     };
   }, []);
 
+  // Guarantee scroll to top immediately whenever activePage changes without a section anchor
+  useEffect(() => {
+    const { section } = parseCurrentRoute();
+    if (!section || section === 'home') {
+      window.scrollTo(0, 0);
+    }
+  }, [activePage, featureSlug]);
+
   const handlePageChange = (newPage, sectionId = null) => {
     // Feature detail pages: setActivePage('feature', '<slug>')
     if (newPage === 'feature' && FEATURE_SLUGS.includes(sectionId)) {
@@ -148,7 +165,7 @@ function App() {
       if (window.location.pathname !== featureUrl) {
         window.history.pushState({ page: 'feature', sectionId }, '', featureUrl);
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
       return;
     }
 
@@ -158,7 +175,7 @@ function App() {
       if (window.location.pathname !== '/admin/create') {
         window.history.pushState({ page: 'admin-create' }, '', '/admin/create');
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
       return;
     }
 
@@ -168,7 +185,7 @@ function App() {
       if (window.location.pathname !== '/portal/dashboard') {
         window.history.pushState({ page: 'dashboard' }, '', '/portal/dashboard');
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
       return;
     }
     if (newPage === 'appointments') {
@@ -176,7 +193,7 @@ function App() {
       if (window.location.pathname !== '/portal/appointments') {
         window.history.pushState({ page: 'appointments' }, '', '/portal/appointments');
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
       return;
     }
     if (newPage === 'doctors-services' || newPage === 'doctors') {
@@ -184,7 +201,7 @@ function App() {
       if (window.location.pathname !== '/portal/doctors-services') {
         window.history.pushState({ page: 'doctors-services' }, '', '/portal/doctors-services');
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
       return;
     }
     if (newPage === 'calendar') {
@@ -192,7 +209,7 @@ function App() {
       if (window.location.pathname !== '/portal/calendar') {
         window.history.pushState({ page: 'calendar' }, '', '/portal/calendar');
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
       return;
     }
     if (newPage === 'profile') {
@@ -200,7 +217,7 @@ function App() {
       if (window.location.pathname !== '/portal/profile') {
         window.history.pushState({ page: 'profile' }, '', '/portal/profile');
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
       return;
     }
 
@@ -227,10 +244,10 @@ function App() {
       setTimeout(() => {
         const el = document.getElementById(sectionId);
         if (el) el.scrollIntoView({ behavior: 'smooth' });
-        else window.scrollTo({ top: 0, behavior: 'smooth' });
+        else window.scrollTo(0, 0);
       }, 80);
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
     }
   };
 

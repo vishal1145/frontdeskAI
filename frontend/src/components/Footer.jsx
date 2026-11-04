@@ -15,12 +15,12 @@ export default function Footer({ setActivePage }) {
 
   const navigateTo = (pageId) => {
     setActivePage(pageId);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   };
 
   return (
     <footer ref={footerRef} className="w-full max-w-7xl mx-auto relative text-ink-muted px-4 sm:px-6 lg:px-8 pb-16 pt-0">
-      <div className="w-full glass-solid !rounded-28 px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-8 sm:pb-10 relative overflow-hidden">
+      <div className="w-full glass-solid !rounded-xl rounded-xl px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-8 sm:pb-10 relative overflow-hidden">
         {/* Soft cyan bloom in the card corner */}
         <div className="absolute -top-32 -right-24 w-96 h-72 bg-cyan-200/40 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-9 sm:gap-10 lg:gap-12 relative">

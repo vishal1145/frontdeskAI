@@ -49,7 +49,7 @@ export function ProfileIcon({
   iconClassName = 'w-5 h-5',
   alt = 'Profile Icon'
 }) {
-  const iconStr = icon || (isMedical ? 'pill:emerald' : 'building:blue');
+  const iconStr = icon || (isMedical ? 'pill:blue' : 'building:blue');
 
   // Custom image (Data URL or HTTP URL)
   if (iconStr.startsWith('data:image') || iconStr.startsWith('http://') || iconStr.startsWith('https://')) {
@@ -60,7 +60,7 @@ export function ProfileIcon({
     );
   }
 
-  const [iconId, colorId = isMedical ? 'emerald' : 'blue'] = iconStr.split(':');
+  const [iconId, colorId = 'blue'] = iconStr.split(':');
   const matchedColor = COLOR_OPTIONS.find((c) => c.id === colorId) || COLOR_OPTIONS[0];
   const matchedIcon = ICON_OPTIONS.find((i) => i.id === iconId);
   const IconComponent = matchedIcon?.icon || (isMedical ? Pill : Building2);
@@ -77,7 +77,7 @@ export function parseProfileIcon(iconStr, isMedical = false) {
     return {
       type: 'preset',
       iconId: isMedical ? 'pill' : 'building',
-      colorId: isMedical ? 'emerald' : 'blue'
+      colorId: 'blue'
     };
   }
   if (iconStr.startsWith('data:image') || iconStr.startsWith('http://') || iconStr.startsWith('https://')) {
@@ -86,7 +86,7 @@ export function parseProfileIcon(iconStr, isMedical = false) {
       url: iconStr
     };
   }
-  const [iconId = isMedical ? 'pill' : 'building', colorId = isMedical ? 'emerald' : 'blue'] = iconStr.split(':');
+  const [iconId = isMedical ? 'pill' : 'building', colorId = 'blue'] = iconStr.split(':');
   return {
     type: 'preset',
     iconId,

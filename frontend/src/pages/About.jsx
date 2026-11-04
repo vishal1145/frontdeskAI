@@ -1,13 +1,13 @@
-import React from 'react';
-import { 
-  Building2, 
-  Briefcase, 
-  ShieldCheck, 
-  Users, 
-  Award, 
-  Heart, 
-  Cpu, 
-  PhoneCall, 
+import React, { useEffect } from 'react';
+import {
+  Building2,
+  Briefcase,
+  ShieldCheck,
+  Users,
+  Award,
+  Heart,
+  Cpu,
+  PhoneCall,
   ArrowRight,
   CheckCircle2,
   AlertTriangle,
@@ -15,23 +15,27 @@ import {
 } from 'lucide-react';
 
 export default function About({ setActivePage }) {
-  return (
-    <div className="w-full pt-8 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-20 sm:space-y-28">
-      
-      {/* Hero Header with Apex-Inspired Hierarchy */}
-      <div className="text-left max-w-4xl space-y-5" data-fade>
-        <div className="eyebrow">
-          <span>Our Mission for Modern Businesses</span>
-        </div>
-        
-        <h1 className="hero-title-clamp text-ink">
-          Reinventing Front Desks with Voice Intelligence
-        </h1>
-        
-        <p className="lead">
-          Built by systems engineers and voice AI researchers to ensure that no customer is met with a busy dial tone when they reach out to your business.
-        </p>
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
+  return (
+    <div className="about-page w-full pt-8 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-20 sm:space-y-28">
+
+      {/* Hero Header with Apex-Inspired Hierarchy */}
+      <div className="text-left max-w-4xl space-y-4" data-fade>
+        <div className="eyebrow">
+          <span>— Our Mission for Modern Businesses —</span>
+        </div>
+        <div className="space-y-2">
+          <h1 className="hero-title-clamp text-ink">
+            Reinventing Front Desks with Voice Intelligence
+          </h1>
+
+          <p className="lead">
+            Built by systems engineers and voice AI researchers to ensure that no customer is met with a busy dial tone when they reach out to your business.
+          </p>
+        </div>
         {/* Subtle Decorative Metric Pills */}
         <div className="pt-2 flex flex-wrap items-center justify-start gap-2 sm:gap-2.5 text-xs sm:text-13 font-medium text-ink-soft">
           <span className="glass-pill px-3.5 py-2 flex items-center gap-1.5">
@@ -51,17 +55,17 @@ export default function About({ setActivePage }) {
 
       {/* The Core Problem & Our Story Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-center" data-fade>
-        
+
         {/* Left Column: Story & Problem Analysis */}
         <div className="lg:col-span-7 space-y-6 sm:space-y-7">
           <div className="inline-flex px-3.5 py-1.5 rounded-full bg-rose-50/80 text-rose-700 text-11 font-mono font-semibold ring-1 ring-rose-200 uppercase tracking-wider">
             THE UNSEEN RECEPTION CRISIS
           </div>
-          
+
           <h2 className="section-title-clamp text-ink">
             Why Front Desks and Reception Lines Are Overwhelmed
           </h2>
-          
+
           <div className="space-y-4 text-15-2 sm:text-base text-ink-soft leading-relaxed">
             <p>
               During peak operational hours, businesses across India face overwhelming call volumes. A single receptionist or front desk executive has to juggle physical walk-in visitors, counter service, admin duties, and simultaneously answer dozens of ringing phone calls.
@@ -72,7 +76,7 @@ export default function About({ setActivePage }) {
           </div>
 
           {/* Elevated Callout Card */}
-          <div className="p-4 sm:p-6 glass text-ink flex items-start gap-3 sm:gap-4 shadow-sm">
+          <div className="p-4 sm:p-6 glass !rounded-xl rounded-xl text-ink flex items-start gap-3 sm:gap-4 shadow-sm">
             <div className="w-10 h-10 rounded-xl btn-brand flex items-center justify-center shrink-0 mt-0.5">
               <CheckCircle2 className="w-5 h-5 text-white" />
             </div>
@@ -88,7 +92,7 @@ export default function About({ setActivePage }) {
         </div>
 
         {/* Right Column: Core Architecture Card */}
-        <div className="lg:col-span-5 panel-ink rounded-28 p-5 sm:p-7 md:p-8 space-y-5 sm:space-y-6 text-white relative overflow-hidden">
+        <div className="lg:col-span-5 panel-ink !rounded-xl rounded-xl p-5 sm:p-7 md:p-8 space-y-5 sm:space-y-6 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
@@ -165,20 +169,22 @@ export default function About({ setActivePage }) {
 
       {/* Operational Guardrails / Safety Principles */}
       <div className="space-y-10 sm:space-y-12" data-fade>
-        <div className="text-left max-w-4xl space-y-5">
+        <div className="text-left max-w-4xl space-y-4">
           <div className="eyebrow">
-            <span>Operational Guardrails</span>
+            <span>— Operational Guardrails —</span>
           </div>
-          <h2 className="section-title-clamp text-ink">
-            How We Guarantee Reliability and Customer Trust
-          </h2>
-          <p className="lead">
-            Every layer of our telephony stack is architected around strict privacy, reliable escalation, and data security.
-          </p>
+          <div className="space-y-2">
+            <h2 className="section-title-clamp text-ink">
+              How We Guarantee Reliability and Customer Trust
+            </h2>
+            <p className="lead">
+              Every layer of our telephony stack is architected around strict privacy, reliable escalation, and data security.
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-          <div className="glass glass-hover card-hover-lift p-6 sm:p-8 space-y-6 relative flex flex-col justify-between">
+          <div className="glass glass-hover card-hover-lift !rounded-xl rounded-xl p-6 sm:p-8 space-y-6 relative flex flex-col justify-between">
             <div className="space-y-4">
               <div className="w-14 h-14 icon-tile">
                 <ShieldCheck className="w-6 h-6" />
@@ -196,7 +202,7 @@ export default function About({ setActivePage }) {
             </div>
           </div>
 
-          <div className="glass glass-hover card-hover-lift p-6 sm:p-8 space-y-6 relative flex flex-col justify-between">
+          <div className="glass glass-hover card-hover-lift !rounded-xl rounded-xl p-6 sm:p-8 space-y-6 relative flex flex-col justify-between">
             <div className="space-y-4">
               <div className="w-14 h-14 icon-tile">
                 <PhoneCall className="w-6 h-6" />
@@ -214,7 +220,7 @@ export default function About({ setActivePage }) {
             </div>
           </div>
 
-          <div className="glass glass-hover card-hover-lift p-6 sm:p-8 space-y-6 relative flex flex-col justify-between">
+          <div className="glass glass-hover card-hover-lift !rounded-xl rounded-xl p-6 sm:p-8 space-y-6 relative flex flex-col justify-between">
             <div className="space-y-4">
               <div className="w-14 h-14 icon-tile">
                 <Award className="w-6 h-6" />
@@ -235,25 +241,25 @@ export default function About({ setActivePage }) {
       </div>
 
       {/* CTA Box - Matching Dark Luxury CTA */}
-      <div 
-        className="glass !rounded-36 p-6 sm:p-12 lg:p-16 text-left max-w-7xl mx-auto space-y-6 relative overflow-hidden"
+      <div
+        className="glass !rounded-xl rounded-xl p-6 sm:p-12 lg:p-16 text-left max-w-7xl mx-auto space-y-6 relative overflow-hidden"
         data-fade
       >
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[36rem] max-w-full h-72 bg-cyan-200/50 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
 
         <div className="relative space-y-5 max-w-2xl text-left">
           <div className="eyebrow">
-            <span>Partner With FrontDesk AI</span>
+            <span>— Partner With FrontDesk AI —</span>
           </div>
-          
+
           <h3 className="section-title-clamp text-ink">
             Want to partner with FrontDesk AI?
           </h3>
-          
+
           <p className="lead">
             We onboard modern businesses, professional practices, and service teams in under 15 minutes.
           </p>
-          
+
           <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-4 w-full sm:w-auto">
             <button
               onClick={() => setActivePage('support')}

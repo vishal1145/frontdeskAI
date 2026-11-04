@@ -227,10 +227,10 @@ export default function Navbar({ activePage, setActivePage, clinicUser, isSuperA
                   aria-expanded={clinicDropdownOpen}
                 >
                   <ProfileIcon
-                    icon={clinicUser.profile_icon}
+                    icon={clinicUser.profile_icon ? (clinicUser.profile_icon.includes(':') ? clinicUser.profile_icon.replace(/:[a-z]+$/, ':blue') : `${clinicUser.profile_icon}:blue`) : (isMedical ? 'pill:blue' : 'building:blue')}
                     isMedical={isMedical}
-                    containerClassName="w-4 h-4 rounded-md shrink-0"
-                    iconClassName="w-2.5 h-2.5"
+                    containerClassName="w-4 h-4 rounded-md shrink-0 bg-blue-600 text-white"
+                    iconClassName="w-2.5 h-2.5 text-white"
                   />
                   <span>{clinicUser.clinic_name?.split(' ')[0] || 'Clinic'} Portal</span>
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${clinicDropdownOpen ? 'rotate-180' : ''}`} />

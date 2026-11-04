@@ -345,10 +345,10 @@ export default function Home({ setActivePage }) {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
 
             {/* Left Column: Arched Image Card Collage & Rotating Badge */}
-            <div className="lg:col-span-5 relative flex justify-center" data-anim="from-left">
+            <div className="lg:col-span-5 relative flex justify-center lg:justify-start" data-anim="from-left">
 
               {/* Engine Card */}
-              <div className="eng-card relative w-full max-w-[calc(100vw-2.5rem)] sm:max-w-sm !rounded-xl rounded-xl p-5 sm:p-6 pt-5 sm:pt-6 overflow-hidden panel-ink">
+              <div className="eng-card relative w-full max-w-[calc(100vw-2.5rem)] sm:max-w-md lg:max-w-none !rounded-xl rounded-xl p-5 sm:p-6 pt-5 sm:pt-6 overflow-hidden panel-ink">
 
                 {/* Voice core: globe with orbiting signals and live sound waves */}
                 <div className="eng-core" aria-hidden="true">

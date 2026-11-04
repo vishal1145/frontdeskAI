@@ -355,9 +355,10 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                 </thead>
                 <tbody>
                   {filteredClinics.map((c, rowIndex) => {
+                    const isPharmacy = isPharmacyClinic(c);
                     const doctorsList = Array.isArray(c.doctors) ? c.doctors : [];
                     const servicesList = Array.isArray(c.services) ? c.services : [];
-                    const servicesText = servicesList.length > 0 ? servicesList.join(', ') : 'General Healthcare';
+                    const servicesText = servicesList.length > 0 ? servicesList.join(', ') : (isPharmacy ? 'Pharmacy & Healthcare Products' : 'General Healthcare');
 
                     return (
                       <tr
@@ -379,7 +380,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                                 <UserCheck className="w-3 h-3" />
                                 AI: {c.receptionist_name || 'Neha'}
                               </span>
-                              {c.business_type === 'medical_store' || /medical|pharmacy|chemist|medicos|dawa/i.test(c.clinic_name) ? (
+                              {isPharmacy ? (
                                 <span className="inline-flex items-center gap-1 py-0.5 px-2 rounded-full text-10 font-semibold text-purple-700 bg-purple-50 border border-purple-200">
                                   💊 Pharmacy
                                 </span>
@@ -452,7 +453,7 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                         {/* Activity */}
                         <td className="px-s-13-6 py-4 align-top border-b border-slate-900/[0.06] group-hover/tr:bg-tint-blue-12/[0.55] transition-colors duration-200">
                           <div className="space-y-1 text-xs text-slate-500 whitespace-nowrap">
-                            <div><b className="font-semibold text-ink tabular-nums">{c.appointment_count || 0}</b> appts</div>
+                            <div><b className="font-semibold text-ink tabular-nums">{c.appointment_count || 0}</b> {isPharmacy ? (Number(c.appointment_count) === 1 ? 'order' : 'orders') : 'appts'}</div>
                             <div><b className="font-semibold text-ink tabular-nums">{c.call_count || 0}</b> calls</div>
                           </div>
                         </td>
@@ -576,12 +577,12 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                   </div>
                 </div>
 
-                {/* Appointments */}
+                {/* Appointments / Medicine Orders */}
                 <div className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col justify-between">
-                  <span className="text-10 font-bold text-emerald-600 uppercase tracking-wider">Appointments</span>
+                  <span className="text-10 font-bold text-emerald-600 uppercase tracking-wider">{isPharmacyClinic(selectedClinic) ? 'Medicine Orders' : 'Appointments'}</span>
                   <div className="flex items-baseline gap-1 mt-1">
                     <span className="text-xl font-bold text-emerald-900 tabular-nums">{selectedClinic.appointment_count || 0}</span>
-                    <span className="text-11 font-medium text-emerald-600">booked</span>
+                    <span className="text-11 font-medium text-emerald-600">{isPharmacyClinic(selectedClinic) ? (Number(selectedClinic.appointment_count) === 1 ? 'order' : 'orders') : 'booked'}</span>
                   </div>
                 </div>
 
@@ -594,14 +595,14 @@ export default function AdminPanel({ setActivePage, onLoginAsClinic }) {
                   </div>
                 </div>
 
-                {/* Specialists */}
+                {/* Specialists / Pharmacists */}
                 <div className="p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 flex flex-col justify-between">
-                  <span className="text-10 font-bold text-amber-700 uppercase tracking-wider">Specialists</span>
+                  <span className="text-10 font-bold text-amber-700 uppercase tracking-wider">{isPharmacyClinic(selectedClinic) ? 'Pharmacists' : 'Specialists'}</span>
                   <div className="flex items-baseline gap-1 mt-1">
                     <span className="text-xl font-bold text-amber-900 tabular-nums">
                       {Array.isArray(selectedClinic.doctors) ? selectedClinic.doctors.length : 0}
                     </span>
-                    <span className="text-11 font-medium text-amber-600">doctors</span>
+                    <span className="text-11 font-medium text-amber-600">{isPharmacyClinic(selectedClinic) ? 'staff' : 'doctors'}</span>
                   </div>
                 </div>
               </div>
