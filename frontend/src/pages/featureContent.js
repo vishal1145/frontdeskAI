@@ -13,7 +13,7 @@ export const FEATURES = [
     icon: CalendarCheck,
     title: 'Live Availability Search',
     summary: 'Converts spoken time requests into live calendar queries and offers open slots in real time.',
-    lead: 'Callers ask the way people actually talk — “tomorrow evening”, “around 6 PM”, “with Dr. Sharma”. FrontDesk AI turns that into a live calendar query and offers slots that are genuinely open, while the caller is still on the line.',
+    lead: 'Callers ask the way people actually talk — “tomorrow evening”, “around 6 PM”, “with Dr. Sharma”. FrontDesk AI turns that into a live calendar query and offers slots that are genuinely open, while the caller is still on the line. The system understands relative dates and physician specialties in real time, offering the closest viable alternatives if a slot is taken. Confirmed bookings land straight on your active schedule with zero manual intervention.',
     facts: ['Natural-language dates & times', 'Doctor & service aware', 'Alternatives when a slot is taken'],
     script: [
       { who: 'caller', text: 'Do you have anything tomorrow evening with Dr. Sharma?' },
@@ -28,7 +28,7 @@ export const FEATURES = [
       { title: 'Offers what is truly open', text: 'Matching slots are read back first; if the preferred time is taken, the nearest alternatives are offered instead.' },
     ],
     capabilities: [
-      { icon: Search, title: 'Natural-language search', text: 'No keypad menus — callers simply say when they would like to come in.' },
+      { icon: Search, title: 'Natural-language search', text: 'No keypad menus — callers simply speak when they would like to come in.' },
       { icon: CalendarClock, title: 'Real-time calendar', text: 'Every answer is based on the schedule at that moment, so callers never hear stale availability.' },
       { icon: Stethoscope, title: 'Doctor & service filters', text: 'Narrow results to a specific doctor or visit type in the same sentence.' },
       { icon: Repeat, title: 'Smart alternatives', text: 'When a time is full, open slots nearby are suggested so the booking still happens.' },
@@ -44,7 +44,7 @@ export const FEATURES = [
     icon: ShieldCheck,
     title: 'Concurrency Slot Lock',
     summary: 'High-speed in-memory locking prevents double-booking across simultaneous callers.',
-    lead: 'When two callers reach for the same appointment at the same moment, only one can have it. An atomic, in-memory lock reserves the slot for the first confirmation and steers the second caller to another open time — no double-bookings, no awkward callbacks.',
+    lead: 'When two callers reach for the same appointment at the same moment, only one can have it. An atomic, in-memory lock reserves the slot for the first confirmation and steers the second caller to another open time — no double-bookings, no awkward callbacks. High-volume peak calls are handled with zero race conditions, immediately guiding the second caller to the next best opening. Your schedule stays completely synchronized, preventing double-bookings even during your busiest calling rush.',
     facts: ['Atomic per-slot locking', 'Safe under simultaneous calls', 'Second caller gets alternatives'],
     script: [
       { who: 'caller', text: 'Caller A: I’ll take 11:00 AM on Friday.' },
@@ -75,7 +75,7 @@ export const FEATURES = [
     icon: MessageSquare,
     title: 'Instant WhatsApp Slips',
     summary: 'Sends instant WhatsApp confirmations with booking ID, staff name, and location directions.',
-    lead: 'The moment an appointment is confirmed, the caller receives a clear WhatsApp slip with their booking ID, who they are seeing, when, and a map link to find you — with an SMS fallback for phones without WhatsApp.',
+    lead: 'The moment an appointment is confirmed, the caller receives a clear WhatsApp slip with their booking ID, who they are seeing, when, and a map link to find you — with an SMS fallback for phones without WhatsApp. Delivery happens automatically via official Meta Cloud APIs, including clinic address, GPS navigation, and instructions to drastically reduce no-shows. Patients always arrive well-prepared with verified confirmation records saved directly on their phone.',
     facts: ['Sent as soon as booking completes', 'Booking ID, doctor & time', 'Google Maps directions'],
     script: [
       { who: 'ai', text: 'You’re booked with Dr. Sharma tomorrow at 6:00 PM.' },
@@ -105,7 +105,7 @@ export const FEATURES = [
     icon: AlertTriangle,
     title: 'Urgent Call Escalation',
     summary: 'Bridges callers directly to on-call staff whenever high-priority emergencies are detected.',
-    lead: 'Some calls cannot wait for an appointment. When a caller describes an emergency or asks for a person, FrontDesk AI transfers the call live to your receptionist, doctor or emergency contact — and records why.',
+    lead: 'Some calls cannot wait for an appointment. When a caller describes an emergency or asks for a person, FrontDesk AI transfers the call live to your receptionist, doctor or emergency contact — and records why. Our voice engine continuously evaluates conversational tone and acute symptom keywords, pausing routine booking to initiate an immediate live phone transfer. Designated duty staff receive high-priority callers instantly without dropping the live voice connection.',
     facts: ['Live call transfer', 'Emergency & human-request triggers', 'Reason logged with the call'],
     script: [
       { who: 'caller', text: 'My father has severe chest pain — I need to speak to the doctor now.' },
@@ -135,7 +135,7 @@ export const FEATURES = [
     icon: Users,
     title: 'Multi-Department Calendars',
     summary: 'Manages multi-staff schedules and rotating shifts, booking appointments on live availability.',
-    lead: 'Every doctor has their own specialties and timings. FrontDesk AI knows who works when and what they handle, so each caller is matched to the right person and booked into a time that person is actually available.',
+    lead: 'Every doctor has their own specialties and timings. FrontDesk AI knows who works when and what they handle, so each caller is matched to the right person and booked into a time that person is actually available. The system cross-references patient symptoms with provider expertise, respecting individual buffers and consultation hours without internal call transfers. Staff rosters stay organized and evenly balanced across all clinic locations and departments.',
     facts: ['Per-doctor timings', 'Specialty-aware matching', 'Bookings on live availability'],
     script: [
       { who: 'caller', text: 'I need a dental check-up on Saturday morning.' },
@@ -165,7 +165,7 @@ export const FEATURES = [
     icon: Volume2,
     title: 'Natural Voice Intelligence',
     summary: 'Responds with natural human warmth and sub-second voice latency.',
-    lead: 'Callers should feel they are talking to a thoughtful receptionist, not a phone menu. FrontDesk AI listens, understands mixed and bilingual phrasing, and replies warmly with sub-second latency — so conversations flow naturally.',
+    lead: 'Callers should feel they are talking to a thoughtful receptionist, not a phone menu. FrontDesk AI listens, understands mixed and bilingual phrasing, and replies warmly with sub-second latency — so conversations flow naturally. Powered by real-time speech models, it effortlessly handles Indian regional accents, colloquial phrasing, and mid-sentence clarifications with professional front-desk warmth. Every caller enjoys a polite, attentive conversation that leaves a lasting positive impression.',
     facts: ['Sub-second responses', 'Understands accents & bilingual phrasing', 'Warm, conversational tone'],
     script: [
       { who: 'caller', text: 'Hello, kal subah appointment mil sakta hai?' },

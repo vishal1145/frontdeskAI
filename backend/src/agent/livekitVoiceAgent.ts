@@ -46,7 +46,15 @@ startApiServer();
 
 export default defineAgent({
   prewarm: async (proc: JobProcess) => {
-    proc.userData.vad = await silero.VAD.load();
+    // Tuned Silero VAD for noisy telephony & background multi-speaker environments:
+    // - activationThreshold 0.65: rejects low-energy background chatter and room reverberation
+    // - minSpeechDuration 120ms: ignores accidental coughs, background 1-syllable chatter, and click artifacts
+    proc.userData.vad = await silero.VAD.load({
+      activationThreshold: 0.65,
+      minSpeechDuration: 120,
+      minSilenceDuration: 550,
+      prefixPaddingDuration: 300,
+    });
     await clinicRegistry.loadClinicsFromDb();
   },
 
@@ -652,7 +660,7 @@ All clinic information below is DYNAMIC and specific to this clinic. Always use 
 - Address: ${clinic.address}
 - Working Hours: ${clinic.working_hours}
 - Contact Phone: ${clinic.contact_phone}
-- Available Doctors & Timings:
+- Available Doctors & TNormal phone calls, market shor, ya clinic ke ambient noise ke liye Silero VAD + Gemini/Telephony filtering already handle kar leta hai.imings:
 ${doctorsListText}
 - Services & Treatments Provided:
 ${servicesListText}
@@ -791,10 +799,19 @@ You have a tool named 'endCall' that disconnects the live phone line. You MUST u
        "Thank you for calling ${clinic.clinic_name}! Have a wonderful day. Goodbye!"
    - Invoke 'endCall' with reason='caller_said_bye' or reason='order_completed_user_left'.
 
-# NOISE & CARRIER AD TOLERANCE
-- If caller audio contains promotional carrier ads, credit cards, banking IVR, or distorted background sound:
-  DO NOT give confused replies. Simply say warmly in Hindi:
-  "Haanji Namaste! Main clinic reception se bol rahi hoon. Boliye, main aapki kya madad kar sakti hoon?"
+# MULTI-SPEAKER & BACKGROUND CHATTER FILTERING (CRITICAL)
+- PRIMARY CALLER FOCUS:
+  * You are speaking with ONE primary caller on a phone line. Always prioritize and respond strictly to the dominant voice speaking directly to you.
+- IGNORE BACKGROUND VOICES & SIDE CONVERSATIONS:
+  * People in the caller's surroundings may be chatting with each other (e.g. family, TV, street noise, children, or side remarks like "Chai le aao", "TV band karo", "Kahan ja rahe ho", "Arre ruko").
+  * STRICTLY IGNORE any words or remarks that are directed at third parties and NOT intended for you as the clinic receptionist.
+  * DO NOT respond to, repeat, or get confused by background chatter.
+- CONFLICTING INSTRUCTIONS:
+  * If someone in the background contradicts the caller (e.g. caller asks for "Tuesday" but background voice says "Nahi Wednesday"), follow the primary caller's direct answer. If genuinely ambiguous, politely confirm:
+    "Aap kaun se din aana chahenge?"
+- NOISE & CARRIER AD TOLERANCE:
+  * If caller audio contains promotional carrier ads, credit cards, banking IVR, or distorted background sound, DO NOT give confused replies. Simply greet warmly in Hindi:
+    "Haanji Namaste! Main clinic reception se bol rahi hoon. Boliye, main aapki kya madad kar sakti hoon?"
 
 # VOCAL DELIVERY GUIDELINES
 - ULTRA-CONCISE: Maximum 1 to 2 short sentences per turn (8 to 15 words).

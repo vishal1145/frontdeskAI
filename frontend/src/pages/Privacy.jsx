@@ -17,12 +17,12 @@ import {
 } from 'lucide-react';
 
 const SECTIONS = [
-  { id: 'overview', title: '1. Overview & Data Confidentiality' },
-  { id: 'collected-data', title: '2. Information Collected During Calls' },
-  { id: 'dpdp-act', title: '3. Purpose Limitation & Zero Training' },
-  { id: 'encryption', title: '4. Data Encryption & Security' },
-  { id: 'processors', title: '5. Authorized Service Processors' },
-  { id: 'rights', title: '6. Data Retention & Customer Rights' },
+  { id: 'overview', title: 'Overview & Data Confidentiality' },
+  { id: 'collected-data', title: 'Information Collected During Calls' },
+  { id: 'dpdp-act', title: 'Purpose Limitation & Zero Training' },
+  { id: 'encryption', title: 'Data Encryption & Security' },
+  { id: 'processors', title: 'Authorized Service Processors' },
+  { id: 'rights', title: 'Data Retention & Customer Rights' },
 ];
 
 export default function Privacy({ setActivePage }) {
@@ -223,7 +223,7 @@ export default function Privacy({ setActivePage }) {
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
                 <ShieldCheck className="w-4 h-4" />
               </div>
-              <span>1. Overview &amp; Data Confidentiality</span>
+              <span>Overview &amp; Data Confidentiality</span>
             </h2>
             <div className="space-y-3 text-ink-soft">
               <p>
@@ -237,14 +237,12 @@ export default function Privacy({ setActivePage }) {
 
           {/* Section 2 */}
           <section id="collected-data" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
-                2
+            <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
+              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
+                <PhoneCall className="w-4 h-4" />
               </div>
-              <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink">
-                2. Information Collected During Phone Calls
-              </h2>
-            </div>
+              <span>Information Collected During Phone Calls</span>
+            </h2>
 
             <p className="text-ink-soft">
               When a customer dials a registered business phone number or when a call is forwarded to FrontDesk AI, we collect only data strictly necessary to fulfill appointment scheduling and inquiry handling:
@@ -295,7 +293,7 @@ export default function Privacy({ setActivePage }) {
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
                 <EyeOff className="w-4 h-4" />
               </div>
-              <span>3. Purpose Limitation &amp; Zero Training on Customer Data</span>
+              <span>Purpose Limitation &amp; Zero Training on Customer Data</span>
             </h2>
 
             <p>
@@ -319,7 +317,7 @@ export default function Privacy({ setActivePage }) {
               <div className="w-10 h-10 icon-tile !rounded-xl !text-indigo-600 shrink-0">
                 <Server className="w-4 h-4" />
               </div>
-              <span>4. Data Encryption &amp; Storage Security</span>
+              <span>Data Encryption &amp; Storage Security</span>
             </h2>
             <p className="text-ink-soft leading-relaxed">
               All data in transit is encrypted using TLS 1.3 protocol. Appointment databases hosted on enterprise cloud infrastructure are encrypted at rest with AES-256 standard. Multi-tenant business data is strictly partitioned so Organization A cannot access records, customers, or logs of Organization B.
@@ -329,10 +327,10 @@ export default function Privacy({ setActivePage }) {
           {/* Section 5 */}
           <section id="processors" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
-              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
-                5
+              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
+                <Cpu className="w-4 h-4" />
               </div>
-              <span>5. Authorized Service Processors</span>
+              <span>Authorized Service Processors</span>
             </h2>
 
             <p className="text-ink-soft">
@@ -385,10 +383,10 @@ export default function Privacy({ setActivePage }) {
           {/* Section 6 */}
           <section id="rights" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
-              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
-                6
+              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
+                <Clock className="w-4 h-4" />
               </div>
-              <span>6. Data Retention &amp; Customer Rights</span>
+              <span>Data Retention &amp; Customer Rights</span>
             </h2>
             <div className="space-y-3 text-ink-soft">
               <p>

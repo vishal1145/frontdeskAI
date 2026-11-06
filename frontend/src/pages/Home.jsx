@@ -466,18 +466,19 @@ export default function Home({ setActivePage }) {
             </div>
 
             {/* Right Column: About Details (Preserving 100% Copy) */}
-            <div className="lg:col-span-7 space-y-6" data-motion="about-copy">
+            <div className="lg:col-span-7 space-y-5" data-motion="about-copy">
 
               <div className="eyebrow" data-anim="eyebrow">
                 <span>— About FrontDesk AI —</span>
               </div>
+              <div className="space-y-2">
+                <h2 className="section-title-clamp text-ink" data-anim="heading">
+                  Dedicated Telephony Intelligence
+                </h2>
 
-              <h2 className="section-title-clamp text-ink" data-anim="heading">
-                Dedicated Telephony Intelligence
-              </h2>
-
-              <p className="lead" data-anim="para">
-                Growing businesses miss 45% of calls during peak hours. FrontDesk AI answers 24/7, manages calendars, and transfers urgent calls—without changing your number.</p>
+                <p className="lead" data-anim="para">
+                  Growing businesses miss 45% of calls during peak hours. FrontDesk AI answers 24/7, manages calendars, and transfers urgent calls—without changing your number.</p>
+              </div>
 
               {/* Feature Points with Stars */}
               <div className="space-y-3 pt-2" data-anim="stagger-list">
@@ -849,8 +850,9 @@ export default function Home({ setActivePage }) {
                 <p className="text-sm text-ink-soft leading-relaxed">
                   Callers dial your existing business number as listed on Google Maps, website, or ads.
                 </p>
-                <div className="glass-well !rounded-xl rounded-xl px-3 py-2.5 text-11 font-mono text-ink-soft">
-                  Incoming: Main Office Line / SIM
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50/60 border border-blue-900/[0.08] text-12 font-medium text-slate-700 shadow-2xs group-hover:bg-blue-50 group-hover:border-blue-200 transition-colors">
+                  <PhoneIncoming className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span className="truncate">Existing Number &bull; No New SIM</span>
                 </div>
               </div>
 
@@ -863,8 +865,9 @@ export default function Home({ setActivePage }) {
                 <p className="text-sm text-ink-soft leading-relaxed">
                   If line is busy or unanswered for 15 seconds, your telecom carrier auto-forwards the call.
                 </p>
-                <div className="glass-well !rounded-xl rounded-xl px-3 py-2.5 text-11 font-mono text-ink-soft">
-                  Trigger: GSM Conditional Forward
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50/60 border border-blue-900/[0.08] text-12 font-medium text-slate-700 shadow-2xs group-hover:bg-blue-50 group-hover:border-blue-200 transition-colors">
+                  <PhoneForwarded className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span className="truncate">Carrier Divert &bull; Zero Hardware</span>
                 </div>
               </div>
 
@@ -877,8 +880,9 @@ export default function Home({ setActivePage }) {
                 <p className="text-sm text-ink-soft leading-relaxed">
                   Voice AI answers with your custom company greeting and checks team availability live.
                 </p>
-                <div className="glass-well !rounded-xl rounded-xl px-3 py-2.5 text-11 font-mono text-ink-soft">
-                  SIP Diversion &rarr; Team Roster Loaded
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50/60 border border-blue-900/[0.08] text-12 font-medium text-slate-700 shadow-2xs group-hover:bg-blue-50 group-hover:border-blue-200 transition-colors">
+                  <Radio className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span className="truncate">Instant AI &bull; Live Calendar Check</span>
                 </div>
               </div>
 
@@ -891,8 +895,9 @@ export default function Home({ setActivePage }) {
                 <p className="text-sm text-ink-soft leading-relaxed">
                   Appointment is confirmed and caller receives instant WhatsApp details with location link.
                 </p>
-                <div className="glass-well !rounded-xl rounded-xl px-3 py-2.5 text-11 font-mono text-ink-soft">
-                  Realtime: WhatsApp Cloud API
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50/60 border border-blue-900/[0.08] text-12 font-medium text-slate-700 shadow-2xs group-hover:bg-blue-50 group-hover:border-blue-200 transition-colors">
+                  <MessageSquare className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span className="truncate">WhatsApp Slip &bull; GPS Directions</span>
                 </div>
               </div>
 

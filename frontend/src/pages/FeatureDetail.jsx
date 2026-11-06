@@ -118,7 +118,7 @@ export default function FeatureDetail({ slug, setActivePage }) {
       <section className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16 items-start">
         <div className="[container-type:inline-size] space-y-5">
           <div className="eyebrow" data-reveal>
-            <span>Feature {String(index + 1).padStart(2, '0')} / {String(FEATURES.length).padStart(2, '0')}</span>
+            <span>— Feature {String(index + 1).padStart(2, '0')} / {String(FEATURES.length).padStart(2, '0')} —</span>
           </div>
           <div data-reveal style={{ '--d': '80ms' }}>
             <h1 className="hero-title-clamp text-ink whitespace-nowrap [font-size:min(clamp(1.75rem,1.1rem+1.8vw,2.65rem),calc(100cqi/(var(--len)*0.52)))]" style={{ '--len': feature.title.length }}>{feature.title}</h1>
@@ -151,7 +151,7 @@ export default function FeatureDetail({ slug, setActivePage }) {
       {/* How it works */}
       <section className="mt-20 sm:mt-28">
         <div className="max-w-[40rem] mb-9 space-y-4">
-          <div className="eyebrow" data-reveal><span>How it works</span></div>
+          <div className="eyebrow" data-reveal><span>— How it works —</span></div>
           <h2 className="section-title-clamp text-ink" data-reveal style={{ '--d': '80ms' }}>Three steps, handled on every call</h2>
         </div>
         <ol className="relative grid gap-4 md:grid-cols-3 md:gap-5 md:before:content-[''] md:before:absolute md:before:top-[2.85rem] md:before:left-10 md:before:right-10 md:before:h-[1px] md:before:bg-gradient-to-r md:before:from-blue-600/35 md:before:via-rim/50 md:before:to-blue-600/35 md:before:-z-10">
@@ -168,7 +168,7 @@ export default function FeatureDetail({ slug, setActivePage }) {
       {/* Capabilities */}
       <section className="mt-20 sm:mt-28">
         <div className="max-w-[40rem] mb-9 space-y-4">
-          <div className="eyebrow" data-reveal><span>What’s included</span></div>
+          <div className="eyebrow" data-reveal><span>— What’s included —</span></div>
           <h2 className="section-title-clamp text-ink" data-reveal style={{ '--d': '80ms' }}>Built into every conversation</h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
@@ -208,7 +208,7 @@ export default function FeatureDetail({ slug, setActivePage }) {
       <section className="mt-20 sm:mt-28">
         <div className="max-w-[40rem] mb-9 space-y-4">
           <div>
-            <div className="eyebrow" data-reveal><span>Keep exploring</span></div>
+            <div className="eyebrow" data-reveal><span>— Keep exploring —</span></div>
             <h2 className="section-title-clamp text-ink" data-reveal style={{ '--d': '80ms' }}>More ways FrontDesk AI helps</h2>
           </div>
         </div>

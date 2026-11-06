@@ -18,6 +18,16 @@ export default function Footer({ setActivePage }) {
     window.scrollTo(0, 0);
   };
 
+  const navigateToSection = (sectionId) => {
+    setActivePage('home', sectionId);
+    setTimeout(() => {
+      const el = document.getElementById(sectionId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
   return (
     <footer ref={footerRef} className="w-full max-w-7xl mx-auto relative text-ink-muted px-4 sm:px-6 lg:px-8 pb-16 pt-0">
       <div className="w-full glass-solid !rounded-xl rounded-xl px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-8 sm:pb-10 relative overflow-hidden">
@@ -39,8 +49,13 @@ export default function Footer({ setActivePage }) {
               <BrandLogo variant="footer" />
             </div>
 
-            <p className="text-sm text-ink-soft max-w-md leading-relaxed font-normal">
-The AI receptionist for modern businesses. Answers naturally and prevents missed bookings.            </p>
+            <p className="text-sm text-ink-soft max-w-sm sm:max-w-md leading-relaxed font-normal">
+              The AI receptionist for modern businesses.
+              <br className="hidden sm:inline" />
+              Answers incoming calls naturally, manages schedules,
+              <br className="hidden sm:inline" />
+              and prevents missed customer bookings 24/7.
+            </p>
 
             {/* Algofolks Company Contact Details */}
             {/* <div className="pt-1 space-y-2.5 text-sm text-ink-soft">
@@ -86,24 +101,24 @@ The AI receptionist for modern businesses. Answers naturally and prevents missed
             <ul className="space-y-3 text-sm">
               <li>
                 <button
-                  onClick={() => navigateTo('home')}
-                  className="hover:text-blue-700 hover:translate-x-1 transition-all duration-200 text-left"
+                  onClick={() => navigateToSection('simulator')}
+                  className="hover:text-blue-700 hover:translate-x-1 transition-all duration-200 text-left cursor-pointer"
                 >
                   AI Voice Call Simulator
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => navigateTo('home')}
-                  className="hover:text-blue-700 hover:translate-x-1 transition-all duration-200 text-left"
+                  onClick={() => navigateToSection('features')}
+                  className="hover:text-blue-700 hover:translate-x-1 transition-all duration-200 text-left cursor-pointer"
                 >
                   Slot Lock Concurrency
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => navigateTo('home')}
-                  className="hover:text-blue-700 hover:translate-x-1 transition-all duration-200 text-left"
+                  onClick={() => navigateToSection('telephony')}
+                  className="hover:text-blue-700 hover:translate-x-1 transition-all duration-200 text-left cursor-pointer"
                 >
                   WhatsApp Notification Engine
                 </button>

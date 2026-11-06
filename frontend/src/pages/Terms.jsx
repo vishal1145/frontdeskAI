@@ -15,13 +15,13 @@ import {
 
 const CLAUSES = [
   { id: 'disclaimer', title: 'Service & Urgent Request Disclaimer' },
-  { id: 'clause-1', title: '1. Acceptance of Terms' },
-  { id: 'clause-2', title: '2. Scope of Service' },
-  { id: 'clause-3', title: '3. Client Responsibilities & Schedules' },
-  { id: 'clause-4', title: '4. Telephony Carrier Compliance' },
-  { id: 'clause-5', title: '5. Fair Usage & Prohibited Activities' },
-  { id: 'clause-6', title: '6. Limitation of Liability' },
-  { id: 'clause-7', title: '7. Governing Law & Jurisdiction' },
+  { id: 'clause-1', title: 'Acceptance of Terms' },
+  { id: 'clause-2', title: 'Scope of Service' },
+  { id: 'clause-3', title: 'Client Responsibilities & Schedules' },
+  { id: 'clause-4', title: 'Telephony Carrier Compliance' },
+  { id: 'clause-5', title: 'Fair Usage & Prohibited Activities' },
+  { id: 'clause-6', title: 'Limitation of Liability' },
+  { id: 'clause-7', title: 'Governing Law & Jurisdiction' },
 ];
 
 export default function Terms({ setActivePage }) {
@@ -238,7 +238,7 @@ export default function Terms({ setActivePage }) {
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
                 <FileText className="w-4 h-4" />
               </div>
-              <span>1. Acceptance of Terms</span>
+              <span>Acceptance of Terms</span>
             </h2>
             <p className="text-ink-soft leading-relaxed">
               By subscribing to, provisioning, or connecting your business telephone numbers to FrontDesk AI, you ("Subscriber" or "Client") agree to be legally bound by these Terms and Conditions. If you do not agree to these terms, you must immediately terminate call forwarding and cease using the service.
@@ -248,10 +248,10 @@ export default function Terms({ setActivePage }) {
           {/* Section 2 */}
           <section id="clause-2" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
-              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
-                2
+              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
               </div>
-              <span>2. Scope of Service</span>
+              <span>Scope of Service</span>
             </h2>
             <p className="text-ink-soft">FrontDesk AI provides:</p>
             <div className="space-y-2.5 pt-1">
@@ -281,10 +281,10 @@ export default function Terms({ setActivePage }) {
           {/* Section 3 */}
           <section id="clause-3" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
-              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
-                3
+              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
+                <Clock className="w-4 h-4" />
               </div>
-              <span>3. Client Responsibilities &amp; Calendar Accuracy</span>
+              <span>Client Responsibilities &amp; Calendar Accuracy</span>
             </h2>
             <p className="text-ink-soft leading-relaxed">
               The Client is solely responsible for maintaining accurate staff shift timings, team schedules, business addresses, and service charges in the FrontDesk AI management portal. FrontDesk AI is not liable for customer inconvenience resulting from outdated schedules configured by client personnel.
@@ -297,7 +297,7 @@ export default function Terms({ setActivePage }) {
               <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
                 <Radio className="w-4 h-4" />
               </div>
-              <span>4. Telephony Carrier &amp; Forwarding Compliance</span>
+              <span>Telephony Carrier &amp; Forwarding Compliance</span>
             </h2>
             <p className="text-ink-soft leading-relaxed">
               Conditional Call Forwarding relies on underlying cellular telecommunications providers (such as Reliance Jio, Bharti Airtel, Vodafone Idea, or BSNL). While FrontDesk AI's cloud infrastructure maintains a 99.9% availability target, we are not responsible for telecom carrier cell tower outages, national network congestion, or cellular line drops caused by third-party telecom operators.
@@ -307,10 +307,10 @@ export default function Terms({ setActivePage }) {
           {/* Section 5 */}
           <section id="clause-5" className="space-y-4 scroll-mt-28 glass-solid !rounded-xl rounded-xl p-6 sm:p-8 md:p-10">
             <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-ink flex items-center gap-3">
-              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0 font-bold text-xs">
-                5
+              <div className="w-10 h-10 icon-tile !rounded-xl shrink-0">
+                <Scale className="w-4 h-4" />
               </div>
-              <span>5. Fair Usage &amp; Prohibited Activities</span>
+              <span>Fair Usage &amp; Prohibited Activities</span>
             </h2>
             <p className="text-ink-soft leading-relaxed">
               The service is provided strictly for legitimate customer appointment inquiries and business information. The Client shall not use the service for unsolicited telemarketing (cold calling), fraudulent activities, harassment, or transmission of malicious telecom traffic.
@@ -323,7 +323,7 @@ export default function Terms({ setActivePage }) {
               <div className="w-10 h-10 icon-tile !rounded-xl !text-rose-600 shrink-0">
                 <ShieldAlert className="w-4 h-4" />
               </div>
-              <span>6. Limitation of Liability</span>
+              <span>Limitation of Liability</span>
             </h2>
             <p className="text-ink-soft leading-relaxed">
               To the maximum extent permitted by applicable Indian law, FrontDesk AI Technologies Pvt. Ltd. shall not be liable for any indirect, punitive, or consequential damages resulting from missed appointments, telecom network drops, or miscommunication by callers. In all circumstances, total liability is limited to the subscription fees paid by the client in the preceding three (3) months.
@@ -336,7 +336,7 @@ export default function Terms({ setActivePage }) {
               <div className="w-10 h-10 icon-tile !rounded-xl !text-indigo-600 shrink-0">
                 <Landmark className="w-4 h-4" />
               </div>
-              <span>7. Governing Law &amp; Dispute Resolution</span>
+              <span>Governing Law &amp; Dispute Resolution</span>
             </h2>
             <p className="text-ink-soft leading-relaxed">
               These Terms shall be governed by and construed in accordance with the laws of the Republic of India. Any disputes arising under these Terms shall be subject to the exclusive jurisdiction of the competent courts in New Delhi / Gurugram, India.
